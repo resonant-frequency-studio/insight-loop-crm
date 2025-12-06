@@ -402,6 +402,7 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
             onClick={saveChanges}
             disabled={saving}
             className="px-6 py-2.5 bg-gray-100 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2 shadow-lg"
+            title="Save all changes to this contact (excluding draft)"
           >
             {saving ? (
               <>
@@ -416,7 +417,7 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Save Changes
+                Save All Changes
               </>
             )}
           </button>
@@ -441,39 +442,43 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
                 </div>
               </div>
             )}
-            {contact.engagementScore !== null && contact.engagementScore !== undefined && (
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                  Engagement Score
-                  <InfoPopover content="A numerical score (0-100) that measures how actively engaged this contact is with your communications. Higher scores indicate more frequent interactions, email opens, responses, and overall engagement with your content.">
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </InfoPopover>
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${Math.min(contact.engagementScore, 100)}%` }}
-                    ></div>
+            {(() => {
+              const engagementScore = Number(contact.engagementScore);
+              const isValidScore = !isNaN(engagementScore) && engagementScore !== null && engagementScore !== undefined;
+              return isValidScore ? (
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    Engagement Score
+                    <InfoPopover content="A numerical score (0-100) that measures how actively engaged this contact is with your communications. Higher scores indicate more frequent interactions, email opens, responses, and overall engagement with your content.">
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </InfoPopover>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${Math.min(engagementScore, 100)}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">
+                      {Math.round(engagementScore)}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {contact.engagementScore}
-                  </span>
                 </div>
-              </div>
-            )}
+              ) : null;
+            })()}
             {contact.threadCount && contact.threadCount > 0 && (
               <div>
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
@@ -703,6 +708,40 @@ function OutreachDraftEditor({
     }
   };
 
+  const openGmailCompose = async () => {
+    if (!contact.primaryEmail) {
+      alert("This contact does not have an email address.");
+      return;
+    }
+
+    if (!outreachDraft.trim()) {
+      alert("Please add a draft message before continuing in Gmail.");
+      return;
+    }
+
+    // Auto-save the draft before opening Gmail (if there are unsaved changes)
+    if (draftHasChanges) {
+      try {
+        await updateDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`), {
+          outreachDraft: outreachDraft || null,
+          updatedAt: new Date(),
+        });
+        setDraftHasChanges(false);
+      } catch (error) {
+        console.error("Error auto-saving draft:", error);
+        // Continue anyway - don't block user from opening Gmail
+      }
+    }
+
+    // Gmail compose URL format: https://mail.google.com/mail/?view=cm&to=EMAIL&body=BODY&su=SUBJECT
+    const email = encodeURIComponent(contact.primaryEmail);
+    const body = encodeURIComponent(outreachDraft);
+    const subject = encodeURIComponent("Follow up");
+    
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${email}&body=${body}&su=${subject}`;
+    window.open(gmailUrl, "_blank");
+  };
+
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
@@ -722,56 +761,81 @@ function OutreachDraftEditor({
           </svg>
           Outreach Draft
         </h2>
-        {draftHasChanges && (
-          <button
-            onClick={saveOutreachDraft}
-            disabled={savingDraft}
-            className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
-          >
-            {savingDraft ? (
-              <>
-                <svg
-                  className="animate-spin h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
+        <div className="flex items-center gap-2">
+          {draftHasChanges && (
+            <button
+              onClick={saveOutreachDraft}
+              disabled={savingDraft}
+              className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+              title="Save only this draft"
+            >
+              {savingDraft ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
                     stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Save
-              </>
-            )}
-          </button>
-        )}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Save Draft
+                </>
+              )}
+            </button>
+          )}
+          {outreachDraft.trim() && contact.primaryEmail && (
+            <button
+              onClick={openGmailCompose}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-2"
+              title="Open this draft in Gmail"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+              Continue in Gmail
+            </button>
+          )}
+        </div>
       </div>
       <textarea
         value={outreachDraft}

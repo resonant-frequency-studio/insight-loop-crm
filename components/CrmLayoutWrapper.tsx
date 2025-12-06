@@ -2,18 +2,21 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import Loading from "@/components/Loading";
 
 export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, loading } = useAuth();
   const isLoginPage = pathname === "/login";
   const showUserElements = user && !loading;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const previousPathname = useRef(pathname);
 
   const isActive = (path: string) => {
@@ -47,6 +50,85 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = "";
     };
   }, [isMobileMenuOpen]);
+
+  // Check session validity periodically (not immediately to avoid race conditions after login)
+  useEffect(() => {
+    if (isLoginPage || loading || !user) return;
+
+    let intervalId: NodeJS.Timeout | null = null;
+    let failureCount = 0;
+    const MAX_FAILURES = 2; // Allow 2 failures before redirecting (to account for timing issues)
+
+    const checkSession = async () => {
+      try {
+        const res = await fetch("/api/auth/check", {
+          credentials: "include", // Ensure cookies are sent
+        });
+        if (!res.ok) {
+          failureCount++;
+          // Only redirect after multiple failures (to avoid false positives after login)
+          if (failureCount >= MAX_FAILURES) {
+            router.push("/login?expired=true");
+          }
+        } else {
+          // Reset failure count on success
+          failureCount = 0;
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+        // Don't increment failure count on network errors
+      }
+    };
+
+    // Delay initial check to avoid race condition with cookie being set after login
+    // Longer delay to ensure cookie is fully available
+    const initialDelay = setTimeout(() => {
+      checkSession();
+      // Check session every 5 minutes
+      intervalId = setInterval(checkSession, 5 * 60 * 1000);
+    }, 2000); // Wait 2 seconds after mount before first check
+
+    return () => {
+      clearTimeout(initialDelay);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isLoginPage, loading, user, router]);
+
+  // Handle sign out with session cleanup
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      // Clear Firebase auth
+      await signOut(auth);
+      // Clear session cookie
+      await fetch("/api/auth/session", { method: "DELETE" });
+      // Redirect to login
+      router.push("/login");
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Still redirect even if cleanup fails
+      router.push("/login");
+    }
+  };
+
+  // Redirect to login if not authenticated and not on login page
+  useEffect(() => {
+    if (!isLoginPage && !loading && !user) {
+      router.push("/login");
+    }
+  }, [isLoginPage, loading, user, router]);
+
+  // Show loading state while checking auth
+  if (!isLoginPage && loading) {
+    return <Loading />;
+  }
+
+  // Show loading while redirecting
+  if (!isLoginPage && !loading && !user) {
+    return <Loading />;
+  }
 
   // Always show sidebar if not on login page (prevents flash)
   if (isLoginPage) {
@@ -188,30 +270,73 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         {/* User Profile and Sign Out - only show when user is loaded */}
         {showUserElements && (
           <div className="mt-auto space-y-3">
-            <button
-              onClick={() => signOut(auth)}
-              className="w-full flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200 font-medium text-sm cursor-pointer"
-            >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              Sign Out
-            </button>
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center mx-auto">
-              <span className="text-white font-semibold text-sm">
-                {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
-              </span>
+            {/* User Info Card */}
+            <div className="px-4 py-3 bg-gray-700 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-white font-semibold text-sm">
+                    {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm truncate">
+                    {user?.displayName || "User"}
+                  </p>
+                  <p className="text-gray-400 text-xs truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
             </div>
+            
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="w-full flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {signingOut ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4 mr-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing out...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  Sign Out
+                </>
+              )}
+            </button>
           </div>
         )}
       </nav>

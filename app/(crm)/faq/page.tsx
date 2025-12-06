@@ -48,7 +48,12 @@ const faqData: FAQItem[] = [
   {
     category: "AI Features",
     question: "How do I use the outreach draft feature?",
-    answer: "The outreach draft field on each contact's page allows you to write and save draft messages for your next outreach. This helps you prepare personalized messages in advance. The draft is saved independently and can be edited at any time.",
+    answer: "The outreach draft field on each contact's page allows you to write and save draft messages for your next outreach. Click 'Save Draft' to save only the draft, or use 'Continue in Gmail' to automatically save your draft and open Gmail with the message pre-filled. The draft is saved independently from other contact changes and can be edited at any time.",
+  },
+  {
+    category: "AI Features",
+    question: "What does 'Continue in Gmail' do?",
+    answer: "The 'Continue in Gmail' button appears when you have draft content and the contact has an email address. Clicking it will automatically save your draft, then open Gmail in a new tab with the contact's email address, your draft message, and a default subject line already filled in. This makes it easy to send your prepared outreach message directly from Gmail.",
   },
   {
     category: "Contact Management",
@@ -58,7 +63,12 @@ const faqData: FAQItem[] = [
   {
     category: "Contact Management",
     question: "Can I bulk update multiple contacts at once?",
-    answer: "Yes! Select contacts using the checkboxes, then click 'Reassign Segment' in the bulk action bar. You can select all filtered contacts at once or choose individual contacts. This is perfect for organizing contacts after importing or when restructuring your segments.",
+    answer: "Yes! Select contacts using the checkboxes, then click 'Reassign Segment' in the bulk action bar. You can select all filtered contacts at once or choose individual contacts. You can select an existing segment or create a new one. This is perfect for organizing contacts after importing or when restructuring your segments.",
+  },
+  {
+    category: "Contact Management",
+    question: "What's the difference between 'Save Draft' and 'Save All Changes'?",
+    answer: "'Save Draft' (in the Outreach Draft section) saves only the draft message. 'Save All Changes' (at the bottom of the page) saves all other contact fields like name, tags, segment, notes, and next touchpoint - but not the draft. This separation allows you to save your draft independently while you're still editing other contact information.",
   },
   {
     category: "Contact Management",
@@ -94,6 +104,31 @@ const faqData: FAQItem[] = [
     category: "Dashboard",
     question: "How are 'Recent Contacts' determined?",
     answer: "Recent Contacts shows the 5 most recently updated contacts, sorted by their last update time. This helps you quickly see which contacts you've been working with most recently.",
+  },
+  {
+    category: "Account & Security",
+    question: "How does multi-user authentication work?",
+    answer: "The CRM uses secure session-based authentication. Each user logs in with their Google account, and the system creates a secure session cookie that identifies you for all server operations. Your Gmail sync, contacts, and data are completely separate from other users. Each user's data is stored securely and privately.",
+  },
+  {
+    category: "Account & Security",
+    question: "How long does my session last?",
+    answer: "Your session lasts for 5 days. After that time, you'll need to log in again for security. If your session expires while you're using the CRM, you'll be automatically redirected to the login page with a message indicating your session has expired.",
+  },
+  {
+    category: "Account & Security",
+    question: "Can multiple people use the CRM at the same time?",
+    answer: "Yes! The CRM supports multiple users. Each user logs in with their own Google account, and all data (contacts, emails, summaries) is kept completely separate. You and your wife (or other users) can use the CRM simultaneously without seeing each other's data.",
+  },
+  {
+    category: "Account & Security",
+    question: "How do I sign out?",
+    answer: "Click the 'Sign Out' button at the bottom of the left sidebar. This will clear your Firebase authentication and session cookie, then redirect you to the login page. Your data remains safe and secure - you'll just need to log in again to access it.",
+  },
+  {
+    category: "Account & Security",
+    question: "Why do I see my name and email in the sidebar?",
+    answer: "The sidebar displays your profile information (name and email) so you can always confirm which account you're logged into. This is especially helpful in multi-user environments to ensure you're viewing your own data.",
   },
 ];
 

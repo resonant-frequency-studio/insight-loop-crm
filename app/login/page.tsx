@@ -3,8 +3,11 @@
 import { auth, googleProvider } from "@/lib/firebase-client";
 import { signInWithPopup } from "firebase/auth";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const expired = searchParams?.get("expired") === "true";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,11 +15,37 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      // Send ID token to session route to create session cookie
+      const sessionResponse = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create session");
+      }
+
+      // Verify session was created successfully before redirecting
+      const verifyResponse = await fetch("/api/auth/check", {
+        credentials: "include",
+      });
+      
+      if (!verifyResponse.ok) {
+        throw new Error("Session verification failed");
+      }
+
+      // Use router.push instead of window.location.href for smoother navigation
       window.location.href = "/";
     } catch (e) {
       console.error(e);
-      setError("Login failed. Please try again.");
+      setError(
+        e instanceof Error ? e.message : "Login failed. Please try again."
+      );
       setLoading(false);
     }
   };
@@ -59,6 +88,14 @@ export default function LoginPage() {
               Sign in with your Google account to continue
             </p>
           </div>
+
+          {expired && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                Your session has expired. Please sign in again.
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
