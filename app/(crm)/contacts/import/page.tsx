@@ -2,6 +2,7 @@
 
 import { useContactImportPage } from "@/hooks/useContactImportPage";
 import Modal from "@/components/Modal";
+import Card from "@/components/Card";
 import Loading from "@/components/Loading";
 
 export default function ImportContactsPage() {
@@ -26,7 +27,7 @@ export default function ImportContactsPage() {
   if (loading) {
     return <Loading />;
   }
-
+  
   if (!user) return null;
 
   // Determine the status message to display
@@ -44,13 +45,52 @@ export default function ImportContactsPage() {
         </p>
       </div>
 
-      {/* Upload Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* CSV Format Guide - Top on mobile, Right on desktop */}
+        <div className="lg:col-span-1 space-y-6 order-1 lg:order-2">
+          <Card padding="md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">CSV Format Guide</h3>
+            <div className="space-y-3 text-sm text-gray-600">
+              <p className="font-medium text-gray-900">Required columns:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>
+                  <code className="bg-gray-100 px-1 rounded">Email</code> - Contact email address
+                </li>
+              </ul>
+              <p className="font-medium text-gray-900 mt-4">Optional columns:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>
+                  <code className="bg-gray-100 px-1 rounded">FirstName</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">LastName</code>
+                </li>
+                <li>
+                  <code className="bg-gray-100 px-1 rounded">Summary</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">Notes</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">Tags</code>
+                </li>
+                <li>
+                  <code className="bg-gray-100 px-1 rounded">Segment</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">LeadSource</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">EngagementScore</code>
+                </li>
+                <li>
+                  <code className="bg-gray-100 px-1 rounded">NextTouchpointDate</code>,{" "}
+                  <code className="bg-gray-100 px-1 rounded">NextTouchpointMessage</code>
+                </li>
+                <li>And other CRM fields as needed</li>
+              </ul>
+            </div>
+          </Card>
+        </div>
+
+        {/* Upload Card - Left Column (2/3) */}
+        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+      <Card padding="lg">
         <div className="mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">CSV File Upload</h2>
           <p className="text-sm text-gray-500">
-            Select a CSV file with contact information. The file should include columns like
-            Email, FirstName, LastName, and other CRM fields.
+                Select a CSV file with contact information. The file should include columns like
+                Email, FirstName, LastName, and other CRM fields.
           </p>
         </div>
 
@@ -88,7 +128,7 @@ export default function ImportContactsPage() {
             <p className="text-lg font-medium text-gray-900 mb-1">
               {isImporting ? "Importing..." : "Click to upload CSV file"}
             </p>
-            <p className="text-sm text-gray-500">CSV files only (max size: 10MB)</p>
+                <p className="text-sm text-gray-500">CSV files only (max size: 10MB)</p>
           </label>
         </div>
 
@@ -96,7 +136,7 @@ export default function ImportContactsPage() {
         {status && (
           <div
             className={`mt-6 p-4 rounded-lg ${
-              hasError
+                  hasError
                 ? "bg-red-50 border border-red-200"
                 : status.includes("complete") || status.includes("Successfully")
                 ? "bg-green-50 border border-green-200"
@@ -125,7 +165,7 @@ export default function ImportContactsPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-              ) : hasError ? (
+                  ) : hasError ? (
                 <svg
                   className="w-5 h-5 text-red-600"
                   fill="none"
@@ -157,7 +197,7 @@ export default function ImportContactsPage() {
               <div>
                 <p
                   className={`font-medium ${
-                    hasError
+                        hasError
                       ? "text-red-800"
                       : status.includes("complete") || status.includes("Successfully")
                       ? "text-green-800"
@@ -166,22 +206,22 @@ export default function ImportContactsPage() {
                 >
                   {status}
                 </p>
-                {isImporting && importState.importCount > 0 && (
+                    {isImporting && importState.importCount > 0 && (
                   <p className="text-sm text-blue-600 mt-1">
-                    Processed {importState.importCount} contacts...
+                        Processed {importState.importCount} contacts...
                   </p>
                 )}
-                {importState.errorDetails.length > 0 && (
+                    {importState.errorDetails.length > 0 && (
                   <details className="mt-2 text-sm">
                     <summary className="cursor-pointer text-red-600 hover:text-red-800">
-                      View {importState.errorDetails.length} error
-                      {importState.errorDetails.length > 1 ? "s" : ""}
+                          View {importState.errorDetails.length} error
+                          {importState.errorDetails.length > 1 ? "s" : ""}
                     </summary>
                     <ul className="mt-2 space-y-1 text-red-700 max-h-40 overflow-y-auto">
-                      {importState.errorDetails.map((err, idx) => (
-                        <li key={idx} className="text-xs">
-                          {err}
-                        </li>
+                          {importState.errorDetails.map((err, idx) => (
+                            <li key={idx} className="text-xs">
+                              {err}
+                            </li>
                       ))}
                     </ul>
                   </details>
@@ -191,55 +231,22 @@ export default function ImportContactsPage() {
           </div>
         )}
 
-        {/* Cancel button if importing */}
+            {/* Cancel button if importing */}
         {isImporting && (
           <div className="mt-4 text-center">
             <button
-              onClick={cancel}
+                  onClick={cancel}
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
               Cancel Import
             </button>
           </div>
         )}
-      </div>
-
-      {/* CSV Format Guide */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">CSV Format Guide</h3>
-        <div className="space-y-3 text-sm text-gray-600">
-          <p className="font-medium text-gray-900">Required columns:</p>
-          <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>
-              <code className="bg-gray-100 px-1 rounded">Email</code> - Contact email address
-            </li>
-          </ul>
-          <p className="font-medium text-gray-900 mt-4">Optional columns:</p>
-          <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>
-              <code className="bg-gray-100 px-1 rounded">FirstName</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">LastName</code>
-            </li>
-            <li>
-              <code className="bg-gray-100 px-1 rounded">Summary</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">Notes</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">Tags</code>
-            </li>
-            <li>
-              <code className="bg-gray-100 px-1 rounded">Segment</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">LeadSource</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">EngagementScore</code>
-            </li>
-            <li>
-              <code className="bg-gray-100 px-1 rounded">NextTouchpointDate</code>,{" "}
-              <code className="bg-gray-100 px-1 rounded">NextTouchpointMessage</code>
-            </li>
-            <li>And other CRM fields as needed</li>
-          </ul>
+      </Card>
         </div>
       </div>
 
-      {/* Overwrite Modal */}
+            {/* Overwrite Modal */}
       <Modal isOpen={showOverwriteModal} onClose={handleCancelModal} title="Import Options">
         <p className="text-gray-600 mb-4">
           Found {existingContactsCount} existing contact

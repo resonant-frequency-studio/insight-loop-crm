@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface EngagementChartProps {
@@ -18,9 +19,9 @@ const renderTooltip = (props: any) => {
     const data = payload[0];
     if (!data) return null;
     return (
-      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900">{data.payload?.name || "Unknown"}</p>
-        <p className="text-sm text-gray-600">{data.value || 0} contacts</p>
+      <div className="bg-white p-2 lg:p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-900 text-xs lg:text-sm">{data.payload?.name || "Unknown"}</p>
+        <p className="text-xs text-gray-600">{data.value || 0} contacts</p>
       </div>
     );
   }
@@ -28,32 +29,56 @@ const renderTooltip = (props: any) => {
 };
 
 export default function EngagementChart({ data }: EngagementChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const chartData = [
-    { name: "High (70+)", value: data.high, color: "#10b981" },
-    { name: "Medium (40-69)", value: data.medium, color: "#f59e0b" },
-    { name: "Low (1-39)", value: data.low, color: "#ef4444" },
-    { name: "None (0)", value: data.none, color: "#9ca3af" },
+    { name: "High (70+)", value: data.high, color: "#14b8a6" }, // sophisticated teal
+    { name: "Medium (40-69)", value: data.medium, color: "#f59e0b" }, // warm amber
+    { name: "Low (1-39)", value: data.low, color: "#ec4899" }, // muted rose
+    { name: "None (0)", value: data.none, color: "#94a3b8" }, // elegant slate
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-        <XAxis 
-          dataKey="name" 
-          tick={{ fontSize: 12 }}
-          angle={-15}
-          textAnchor="end"
-          height={60}
-        />
-        <YAxis tick={{ fontSize: 12 }} />
-        <Tooltip content={renderTooltip} />
-        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="w-full -mb-2 lg:mb-0">
+      <ResponsiveContainer width="100%" height={isMobile ? 320 : 450}>
+        <BarChart 
+          data={chartData} 
+          margin={{ 
+            top: isMobile ? 5 : 5, 
+            right: isMobile ? 5 : 5, 
+            left: isMobile ? 0 : 5, 
+            bottom: isMobile ? 5 : 5 
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+          <XAxis 
+            dataKey="name" 
+            tick={{ fontSize: isMobile ? 11 : 13 }}
+            angle={isMobile ? -18 : -15}
+            textAnchor="end"
+            height={isMobile ? 28 : 45}
+          />
+          <YAxis 
+            tick={{ fontSize: isMobile ? 11 : 13 }}
+            width={isMobile ? 35 : undefined}
+          />
+          <Tooltip content={renderTooltip} />
+          <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

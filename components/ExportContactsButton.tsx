@@ -83,7 +83,7 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
     <button
       onClick={exportToCSV}
       disabled={disabled || contacts.length === 0}
-      className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 font-medium"
+      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium w-full sm:w-auto active:scale-95"
     >
       <svg
         className="w-5 h-5"

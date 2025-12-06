@@ -11,6 +11,7 @@ interface FilterState {
   emailSearch: string;
   firstNameSearch: string;
   lastNameSearch: string;
+  upcomingTouchpoints: boolean;
 }
 
 interface UseFilterContactsReturn {
@@ -21,11 +22,13 @@ interface UseFilterContactsReturn {
   emailSearch: string;
   firstNameSearch: string;
   lastNameSearch: string;
+  upcomingTouchpoints: boolean;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
   setFirstNameSearch: (firstName: string) => void;
   setLastNameSearch: (lastName: string) => void;
+  setUpcomingTouchpoints: (value: boolean) => void;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
@@ -36,7 +39,8 @@ interface UseFilterContactsReturn {
 }
 
 export function useFilterContacts(
-  contacts: ContactWithId[]
+  contacts: ContactWithId[],
+  initialUpcomingTouchpoints: boolean = false
 ): UseFilterContactsReturn {
   // Filter states
   const [selectedSegment, setSelectedSegment] = useState<string>("");
@@ -44,6 +48,7 @@ export function useFilterContacts(
   const [emailSearch, setEmailSearch] = useState<string>("");
   const [firstNameSearch, setFirstNameSearch] = useState<string>("");
   const [lastNameSearch, setLastNameSearch] = useState<string>("");
+  const [upcomingTouchpoints, setUpcomingTouchpoints] = useState<boolean>(initialUpcomingTouchpoints);
 
   const filters: FilterState = {
     selectedSegment,
@@ -51,6 +56,7 @@ export function useFilterContacts(
     emailSearch,
     firstNameSearch,
     lastNameSearch,
+    upcomingTouchpoints,
   };
 
   const filteredContacts = useMemo(() => {
@@ -92,8 +98,26 @@ export function useFilterContacts(
       );
     }
 
+    // Filter by upcoming touchpoints
+    if (filters.upcomingTouchpoints) {
+      const now = new Date();
+      filtered = filtered.filter((contact) => {
+        if (!contact.nextTouchpointDate) return false;
+        // Handle Firestore Timestamp or Date string
+        const touchpointDate =
+          contact.nextTouchpointDate instanceof Date
+            ? contact.nextTouchpointDate
+            : typeof contact.nextTouchpointDate === "string"
+            ? new Date(contact.nextTouchpointDate)
+            : typeof contact.nextTouchpointDate === "object" && "toDate" in contact.nextTouchpointDate
+            ? (contact.nextTouchpointDate as { toDate: () => Date }).toDate()
+            : null;
+        return touchpointDate && touchpointDate > now;
+      });
+    }
+
     return filtered;
-  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch]);
+  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.upcomingTouchpoints]);
 
   const clearFilters = () => {
     setSelectedSegment("");
@@ -101,6 +125,7 @@ export function useFilterContacts(
     setEmailSearch("");
     setFirstNameSearch("");
     setLastNameSearch("");
+    setUpcomingTouchpoints(false);
   };
 
   const hasActiveFilters = 
@@ -108,7 +133,8 @@ export function useFilterContacts(
     selectedTags.length > 0 || 
     emailSearch.trim() || 
     firstNameSearch.trim() || 
-    lastNameSearch.trim();
+    lastNameSearch.trim() ||
+    upcomingTouchpoints;
 
   return {
     filteredContacts,
@@ -118,11 +144,13 @@ export function useFilterContacts(
     emailSearch,
     firstNameSearch,
     lastNameSearch,
+    upcomingTouchpoints,
     setSelectedSegment,
     setSelectedTags,
     setEmailSearch,
     setFirstNameSearch,
     setLastNameSearch,
+    setUpcomingTouchpoints,
     onSegmentChange: setSelectedSegment,
     onTagsChange: setSelectedTags,
     onEmailSearchChange: setEmailSearch,

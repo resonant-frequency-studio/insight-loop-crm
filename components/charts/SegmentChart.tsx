@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface SegmentChartProps {
@@ -8,15 +9,15 @@ interface SegmentChartProps {
 
 
 const COLORS = [
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#8b5cf6", // purple
-  "#ec4899", // pink
-  "#06b6d4", // cyan
-  "#84cc16", // lime
-  "#f97316", // orange
+  "#6366f1", // elegant indigo
+  "#14b8a6", // sophisticated teal
+  "#8b5cf6", // refined purple
+  "#ec4899", // muted rose
+  "#f59e0b", // warm amber
+  "#06b6d4", // serene cyan
+  "#10b981", // fresh emerald
+  "#64748b", // sophisticated slate
+  "#f97316", // vibrant coral
 ];
 
 // Group small slices into "Other"
@@ -51,9 +52,9 @@ const renderTooltip = (props: any) => {
     const total = payload.reduce((sum, item) => sum + (item.value || 0), 0);
     const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : "0";
     return (
-      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900">{data.name}</p>
-        <p className="text-sm text-gray-600">
+      <div className="bg-white p-2 lg:p-3 border border-gray-200 rounded-lg shadow-lg">
+        <p className="font-semibold text-gray-900 text-xs lg:text-sm">{data.name}</p>
+        <p className="text-xs text-gray-600">
           {data.value} contacts ({percentage}%)
         </p>
       </div>
@@ -63,6 +64,17 @@ const renderTooltip = (props: any) => {
 };
 
 export default function SegmentChart({ data }: SegmentChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const allData = Object.entries(data)
     .map(([name, value]) => ({ name: name.trim() || "Uncategorized", value }))
     .filter((item) => item.value > 0)
@@ -79,36 +91,43 @@ export default function SegmentChart({ data }: SegmentChartProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={chartData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={90}
-          innerRadius={30}
-          fill="#8884d8"
-          dataKey="value"
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip content={renderTooltip} />
-        <Legend
-          verticalAlign="bottom"
-          height={36}
-          formatter={(value) => {
-            const item = chartData.find((d) => d.name === value);
-            if (!item) return value;
-            const total = chartData.reduce((sum, d) => sum + d.value, 0);
-            const percentage = ((item.value / total) * 100).toFixed(0);
-            return `${value} (${percentage}%)`;
-          }}
-          wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
-        />
-      </PieChart>
-    </ResponsiveContainer>
+    <div className="w-full">
+      <ResponsiveContainer width="100%" height={isMobile ? 380 : 450}>
+        <PieChart margin={isMobile ? { top: 0, right: 5, bottom: 0, left: 5 } : { top: 5, right: 5, bottom: 5, left: 5 }}>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy={isMobile ? "45%" : "48%"}
+            labelLine={false}
+            outerRadius={isMobile ? "70%" : "82%"}
+            innerRadius={isMobile ? "25%" : "45%"}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={renderTooltip} />
+          <Legend
+            verticalAlign="bottom"
+            height={isMobile ? 50 : 50}
+            formatter={(value) => {
+              const item = chartData.find((d) => d.name === value);
+              if (!item) return value;
+              const total = chartData.reduce((sum, d) => sum + d.value, 0);
+              const percentage = ((item.value / total) * 100).toFixed(0);
+              return `${value} (${percentage}%)`;
+            }}
+            wrapperStyle={{ 
+              fontSize: isMobile ? "11px" : "13px", 
+              paddingTop: isMobile ? "5px" : "10px",
+              lineHeight: "1.4"
+            }}
+            iconSize={isMobile ? 10 : 12}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

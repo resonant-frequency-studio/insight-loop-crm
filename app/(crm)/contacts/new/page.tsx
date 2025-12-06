@@ -2,6 +2,7 @@
 
 import { useNewContactPage } from "@/hooks/useNewContactPage";
 import Loading from "@/components/Loading";
+import Card from "@/components/Card";
 import ContactsLink from "@/components/ContactsLink";
 
 export default function NewContactPage() {
@@ -15,13 +16,20 @@ export default function NewContactPage() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button - Mobile: top, Desktop: in header */}
+      <div className="lg:hidden">
+        <ContactsLink variant="default" />
+      </div>
+
       {/* Header Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Add New Contact</h1>
           <p className="text-gray-600 text-lg">Create a new contact in your CRM</p>
         </div>
-        <ContactsLink variant="default" />
+        <div className="hidden lg:block">
+          <ContactsLink variant="default" />
+        </div>
       </div>
 
       {/* Error Message */}
@@ -46,63 +54,26 @@ export default function NewContactPage() {
         </div>
       )}
 
-      {/* Save Button - Fixed to Right Side */}
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-2.5 bg-gray-100 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2 shadow-lg"
-        >
-          {saving ? (
-            <>
-              <svg
-                className="animate-spin h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              Save Contact
-            </>
-          )}
-        </button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Sidebar - Right Column (1/3) - Top on mobile, Right on desktop */}
+        <div className="lg:col-span-1 space-y-6 order-1 lg:order-2">
+          {/* Quick Info Card */}
+          <Card padding="md">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Details</h2>
+            <div className="space-y-4 text-sm text-gray-600">
+              <p>Fill in the form fields to create a new contact. Email is required.</p>
+              <p>
+                Once saved, the contact will be added to your CRM and you can view and edit it
+                from the contacts list.
+              </p>
+            </div>
+          </Card>
+        </div>
+
         {/* Main Content - Left Column (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
           {/* Basic Information Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <Card padding="md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
@@ -158,10 +129,10 @@ export default function NewContactPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* CRM Fields Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <Card padding="md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
@@ -230,10 +201,10 @@ export default function NewContactPage() {
                 />
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Notes Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <Card padding="md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
@@ -257,10 +228,10 @@ export default function NewContactPage() {
               onChange={(e) => updateField("notes", e.target.value)}
               placeholder="Add notes about this contact..."
             />
-          </div>
+          </Card>
 
           {/* Next Touchpoint Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <Card padding="md">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
@@ -302,21 +273,58 @@ export default function NewContactPage() {
                 />
               </div>
             </div>
-          </div>
-        </div>
+          </Card>
 
-        {/* Sidebar - Right Column (1/3) */}
-        <div className="space-y-6">
-          {/* Quick Info Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Details</h2>
-            <div className="space-y-4 text-sm text-gray-600">
-              <p>Fill in the form fields to create a new contact. Email is required.</p>
-              <p>
-                Once saved, the contact will be added to your CRM and you can view and edit it
-                from the contacts list.
-              </p>
-            </div>
+          {/* Save Button - Below editable fields */}
+          <div className="flex justify-start">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95"
+            >
+              {saving ? (
+                <>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Save Contact
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

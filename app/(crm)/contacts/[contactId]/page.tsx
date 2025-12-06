@@ -51,8 +51,13 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Back Button - Mobile: top, Desktop: in header */}
+      <div className="lg:hidden">
+        <ContactsLink variant="default" />
+      </div>
+
       {/* Header Section */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-lg">
             {getInitials(contact)}
@@ -79,7 +84,9 @@ export default function ContactDetailPage({ params }: ContactDetailPageProps) {
             </p>
           </div>
         </div>
-        <ContactsLink variant="default" />
+        <div className="hidden lg:block">
+          <ContactsLink variant="default" />
+        </div>
       </div>
 
       {/* Contact Editor */}

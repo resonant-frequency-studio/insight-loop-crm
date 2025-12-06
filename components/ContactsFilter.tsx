@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Contact } from "@/types/firestore";
+import Card from "@/components/Card";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -60,7 +61,7 @@ export default function ContactsFilter({
   const hasActiveFilters = selectedSegment || selectedTags.length > 0 || emailSearch.trim() || firstNameSearch.trim() || lastNameSearch.trim();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <Card padding="md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Filters & Search</h2>
         {hasActiveFilters && (
@@ -229,7 +230,7 @@ export default function ContactsFilter({
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 

@@ -1,17 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const isLoginPage = pathname === "/login";
   const showUserElements = user && !loading;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const previousPathname = useRef(pathname);
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -20,21 +23,66 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
     return pathname?.startsWith(path);
   };
 
+  // Close mobile menu when pathname changes
+  // This closes the menu on navigation (e.g., browser back/forward, programmatic navigation)
+  useEffect(() => {
+    if (previousPathname.current !== pathname) {
+      previousPathname.current = pathname;
+      // Close menu on navigation - defer to avoid cascading renders
+      const timer = setTimeout(() => {
+        setIsMobileMenuOpen(false);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   // Always show sidebar if not on login page (prevents flash)
   if (isLoginPage) {
     return <>{children}</>;
   }
 
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <nav className="w-64 bg-[#212B36] p-6 border-r border-gray-700 flex flex-col">
+    <div className="flex h-screen overflow-hidden">
+      {/* Mobile Menu Overlay Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Hamburger Menu Button */}
+      <HamburgerMenu isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+
+      {/* Sidebar - Fixed on desktop, overlay on mobile */}
+      <nav
+        className={`w-full lg:w-64 bg-[#212B36] p-6 border-r border-gray-700 flex flex-col h-screen fixed left-0 top-0 z-50 transition-transform duration-300 ease-in-out ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
         <h2 className="text-xl font-semibold mb-8 text-white">Resilient Leadership CRM</h2>
 
         <ul className="space-y-2 flex-1">
           <li>
             <Link
               href="/"
+              onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/")
                   ? "bg-gray-700 text-white"
@@ -60,6 +108,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
           <li>
             <Link
               href="/contacts"
+              onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/contacts") && !pathname?.startsWith("/contacts/import")
                   ? "bg-gray-700 text-white"
@@ -85,6 +134,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
           <li>
             <Link
               href="/contacts/import"
+              onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/contacts/import")
                   ? "bg-gray-700 text-white"
@@ -105,6 +155,32 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                 />
               </svg>
               Import Contacts
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/faq"
+              onClick={handleLinkClick}
+              className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
+                isActive("/faq")
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              <svg
+                className="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              FAQ
             </Link>
           </li>
         </ul>
@@ -140,8 +216,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         )}
       </nav>
 
-      {/* Main content */}
-      <main className="flex-1 p-10 bg-neutral-200 text-gray-800">
+      {/* Main content - Scrollable */}
+      <main className="flex-1 lg:ml-64 p-6 lg:p-10 bg-white text-gray-800 overflow-y-auto h-screen">
         {children}
       </main>
     </div>

@@ -1,0 +1,35 @@
+import { ReactNode } from "react";
+
+interface CardProps {
+  children: ReactNode;
+  className?: string;
+  padding?: "none" | "sm" | "md" | "lg" | "xl" | "responsive";
+  hover?: boolean;
+}
+
+export default function Card({ 
+  children, 
+  className = "", 
+  padding = "md",
+  hover = false 
+}: CardProps) {
+  const paddingClasses = {
+    none: "",
+    sm: "p-3",
+    md: "p-6",
+    lg: "p-8",
+    xl: "p-12",
+    responsive: "p-3 lg:p-6",
+  };
+
+  const baseClasses = "bg-white rounded-xl shadow-[0px_4px_12px_rgba(0,0,0,0.1)] border border-gray-200";
+  const paddingClass = padding === "none" || className.includes("p-") ? "" : paddingClasses[padding];
+  const hoverClasses = hover ? "hover:shadow-[0px_6px_16px_rgba(0,0,0,0.15)] transition-shadow duration-200" : "";
+
+  return (
+    <div className={`${baseClasses} ${paddingClass} ${hoverClasses} ${className}`.trim()}>
+      {children}
+    </div>
+  );
+}
+

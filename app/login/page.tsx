@@ -22,7 +22,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-neutral-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-radial from-neutral-200 via-neutral-100 to-blue-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand Section */}
         <div className="text-center mb-12">
