@@ -9,6 +9,8 @@ import Modal from "@/components/Modal";
 import Card from "@/components/Card";
 import { formatContactDate } from "@/util/contact-utils";
 import SegmentSelect from "@/components/SegmentSelect";
+import ActionItemsList from "@/components/ActionItemsList";
+import TouchpointStatusActions from "@/components/TouchpointStatusActions";
 
 function InfoPopover({ content, children }: { content: string; children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,6 +47,7 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
   const [form, setForm] = useState<Contact>(contact);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const router = useRouter();
@@ -93,6 +96,29 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
       console.error("Error deleting contact:", error);
       alert("Failed to delete contact. Please try again.");
       setDeleting(false);
+    }
+  };
+
+  const archiveContact = async (archived: boolean) => {
+    setArchiving(true);
+    try {
+      const response = await fetch(`/api/contacts/${encodeURIComponent(contactDocumentId)}/archive`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to archive contact");
+      }
+
+      // Redirect to contacts page after archiving
+      router.push("/contacts");
+    } catch (error) {
+      console.error("Error archiving contact:", error);
+      alert(`Failed to ${archived ? "archive" : "unarchive"} contact. Please try again.`);
+      setArchiving(false);
     }
   };
 
@@ -368,10 +394,18 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
                   form.nextTouchpointDate instanceof Timestamp
                     ? form.nextTouchpointDate.toDate().toISOString().split("T")[0]
                     : typeof form.nextTouchpointDate === "string"
-                    ? form.nextTouchpointDate
+                    ? form.nextTouchpointDate.split("T")[0] // Ensure we only use the date part
                     : ""
                 }
-                onChange={(e) => updateField("nextTouchpointDate", e.target.value)}
+                onChange={(e) => {
+                  // Only update if we have a valid date value
+                  const dateValue = e.target.value;
+                  if (dateValue && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    updateField("nextTouchpointDate", dateValue);
+                  } else if (!dateValue) {
+                    updateField("nextTouchpointDate", null);
+                  }
+                }}
               />
             </div>
             <div>
@@ -387,6 +421,31 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
               />
             </div>
           </div>
+          
+          {/* Touchpoint Status Management */}
+          {(form.nextTouchpointDate || contact.touchpointStatus) && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <TouchpointStatusActions
+                contactId={contactDocumentId}
+                contactName={[form.firstName, form.lastName].filter(Boolean).join(" ") || form.primaryEmail}
+                currentStatus={form.touchpointStatus || contact.touchpointStatus}
+                onStatusUpdate={() => {
+                  // Refresh the contact data
+                  window.location.reload();
+                }}
+              />
+              {form.touchpointStatusUpdatedAt ? (
+                <p className="text-xs text-gray-500 mt-2">
+                  Status updated: {formatContactDate(form.touchpointStatusUpdatedAt, { relative: true })}
+                </p>
+              ) : null}
+              {form.touchpointStatusReason && (
+                <p className="text-xs text-gray-600 mt-1 italic">
+                  &quot;{form.touchpointStatusReason}&quot;
+                </p>
+              )}
+            </div>
+          )}
         </Card>
 
         {/* Outreach Draft Card */}
@@ -554,31 +613,34 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
               </div>
             )}
 
-            {contact.actionItems && (
-              <div className="border-l-4 border-amber-500 pl-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg
-                    className="w-4 h-4 text-amber-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-                    />
-                  </svg>
-                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Action Items
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
-                  {contact.actionItems}
-                </p>
+            {/* Action Items Section - Now using task system */}
+            <div className="border-l-4 border-amber-500 pl-4">
+              <div className="flex items-center gap-2 mb-3">
+                <svg
+                  className="w-4 h-4 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Action Items
+                </h3>
               </div>
-            )}
+              <ActionItemsList
+                userId={userId}
+                contactId={contactDocumentId}
+                onActionItemUpdate={() => {
+                  // Trigger a refresh if needed
+                }}
+              />
+            </div>
 
             {contact.painPoints && (
               <div className="border-l-4 border-red-500 pl-4">
@@ -643,11 +705,48 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
           </div>
         </Card>
 
+        {/* Archive Contact Button - Right Sidebar */}
+        <Card padding="md">
+          <button
+            onClick={() => archiveContact(!contact.archived)}
+            disabled={archiving || deleting}
+            className="w-full px-6 py-2.5 bg-gray-100 border-2 border-gray-600 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2 mb-3"
+          >
+            {archiving ? (
+              <>
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {contact.archived ? "Unarchiving..." : "Archiving..."}
+              </>
+            ) : (
+              <>
+                {contact.archived ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Unarchive Contact
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                    Archive Contact
+                  </>
+                )}
+              </>
+            )}
+          </button>
+        </Card>
+
         {/* Delete Contact Button - Right Sidebar */}
         <Card padding="md">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            disabled={deleting || showDeleteConfirm}
+            disabled={deleting || showDeleteConfirm || archiving}
             className="w-full px-6 py-2.5 bg-gray-100 border-2 border-red-600 text-red-600 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

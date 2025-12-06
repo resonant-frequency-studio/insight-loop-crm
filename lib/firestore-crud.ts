@@ -152,6 +152,56 @@ import { Contact, Message, SyncJob, Thread } from "@/types/firestore";
       }
     }
 
-    return { success, errors, errorDetails };
+  return { success, errors, errorDetails };
+}
+
+/**
+ * Bulk update contacts' archive status
+ */
+export async function bulkUpdateContactArchiveStatus(
+  userId: string,
+  contactIds: string[],
+  archived: boolean,
+  onProgress?: (completed: number, total: number) => void
+): Promise<{ success: number; errors: number; errorDetails: string[] }> {
+  let success = 0;
+  let errors = 0;
+  const errorDetails: string[] = [];
+  const batchSize = 10;
+
+  for (let i = 0; i < contactIds.length; i += batchSize) {
+    const batch = contactIds.slice(i, i + batchSize);
+    
+    const promises = batch.map(async (contactId) => {
+      try {
+        const ref = doc(db, contactDoc(userId, contactId));
+        await updateDoc(ref, {
+          archived: archived,
+          updatedAt: serverTimestamp(),
+        });
+        return { success: true, contactId };
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error";
+        return { success: false, contactId, error: errorMsg };
+      }
+    });
+
+    const results = await Promise.all(promises);
+    
+    results.forEach((result) => {
+      if (result.success) {
+        success++;
+      } else {
+        errors++;
+        errorDetails.push(`${result.contactId}: ${result.error}`);
+      }
+    });
+
+    if (onProgress) {
+      onProgress(success + errors, contactIds.length);
+    }
   }
+
+  return { success, errors, errorDetails };
+}
   

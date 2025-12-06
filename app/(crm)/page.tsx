@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
@@ -12,12 +12,14 @@ import LeadSourceChart from "@/components/charts/LeadSourceChart";
 import EngagementChart from "@/components/charts/EngagementChart";
 import TopTagsChart from "@/components/charts/TopTagsChart";
 import SentimentChart from "@/components/charts/SentimentChart";
-import { getInitials, getDisplayName, formatContactDate } from "@/util/contact-utils";
+import ContactCard from "@/components/ContactCard";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { contacts, stats, loading: statsLoading } = useDashboardStats(user?.uid || null);
+  const [selectedTouchpointIds, setSelectedTouchpointIds] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   
   // Get contacts with upcoming touchpoints
   const now = new Date();
@@ -32,26 +34,134 @@ export default function DashboardPage() {
     }
     return null;
   };
+
+
+  // Helper function to get days until touchpoint
+  const getDaysUntilTouchpoint = (date: unknown): number | null => {
+    const touchpointDate = getTouchpointDate(date);
+    if (!touchpointDate) return null;
+    const diffMs = touchpointDate.getTime() - now.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  };
+
+  // Helper function to check if touchpoint needs reminder (within 7 days)
+  const needsReminder = (date: unknown): boolean => {
+    const daysUntil = getDaysUntilTouchpoint(date);
+    if (daysUntil === null) return false;
+    return daysUntil <= 7 && daysUntil >= 0;
+  };
   
-  // Filter for upcoming touchpoints within the next 30 days
+  // Filter for upcoming touchpoints within the next 60 days (including overdue)
   const maxDaysAhead = 60;
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + maxDaysAhead);
   
-  const contactsWithUpcomingTouchpoints = contacts
+  // Separate overdue and upcoming touchpoints
+  const contactsWithOverdueTouchpoints = contacts
     .filter((contact) => {
+      // Exclude archived contacts
+      if (contact.archived) return false;
+      
       const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
-      return touchpointDate && touchpointDate > now && touchpointDate <= maxDate;
+      if (!touchpointDate) return false;
+      
+      // Exclude completed or cancelled touchpoints
+      const status = contact.touchpointStatus;
+      if (status === "completed" || status === "cancelled") return false;
+      
+      // Only include overdue (past dates)
+      return touchpointDate < now;
     })
     .sort((a, b) => {
       const dateA = getTouchpointDate(a.nextTouchpointDate) || new Date(0);
       const dateB = getTouchpointDate(b.nextTouchpointDate) || new Date(0);
+      // Sort by most overdue first
       return dateA.getTime() - dateB.getTime();
     })
-    .slice(0, 5);
+    .slice(0, 5); // Limit to 5 most overdue
+
+  const contactsWithUpcomingTouchpoints = contacts
+    .filter((contact) => {
+      // Exclude archived contacts
+      if (contact.archived) return false;
+      
+      const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
+      if (!touchpointDate) return false;
+      
+      // Exclude completed or cancelled touchpoints
+      const status = contact.touchpointStatus;
+      if (status === "completed" || status === "cancelled") return false;
+      
+      // Only include future dates (not overdue) within next 60 days
+      return touchpointDate >= now && touchpointDate <= maxDate;
+    })
+    .sort((a, b) => {
+      const dateA = getTouchpointDate(a.nextTouchpointDate) || new Date(0);
+      const dateB = getTouchpointDate(b.nextTouchpointDate) || new Date(0);
+      // Sort by soonest first
+      return dateA.getTime() - dateB.getTime();
+    })
+    .slice(0, 5); // Limit to 5 soonest
+
+  const toggleTouchpointSelection = (contactId: string) => {
+    setSelectedTouchpointIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(contactId)) {
+        newSet.delete(contactId);
+      } else {
+        newSet.add(contactId);
+      }
+      return newSet;
+    });
+  };
+
+
+  const handleBulkStatusUpdate = async (status: "completed" | "cancelled") => {
+    if (selectedTouchpointIds.size === 0) return;
+
+    const selectedIds = Array.from(selectedTouchpointIds);
+    setBulkUpdating(true);
+    
+    try {
+      const updates = selectedIds.map(contactId =>
+        fetch(`/api/contacts/${encodeURIComponent(contactId)}/touchpoint-status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        }).then(async (res) => {
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || "Update failed");
+          }
+          return res;
+        })
+      );
+
+      const results = await Promise.allSettled(updates);
+      const failures = results.filter(r => r.status === "rejected").length;
+      const successCount = selectedIds.length - failures;
+
+      // Clear selection immediately
+      setSelectedTouchpointIds(new Set());
+
+      if (failures > 0) {
+        alert(`Updated ${successCount} of ${selectedIds.length} touchpoints. Some updates failed.`);
+      } else {
+        // Don't show alert for successful bulk updates - let the UI update naturally
+        // The touchpoints will disappear from the list via real-time listener
+      }
+    } catch (error) {
+      console.error("Error updating touchpoints:", error);
+      alert("Failed to update touchpoints. Please try again.");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
   
-  // Get the 5 most recently updated contacts
-  const recentContacts = contacts.slice(0, 5);
+  // Get the 5 most recently updated contacts (excluding archived)
+  const recentContacts = contacts
+    .filter((contact) => !contact.archived)
+    .slice(0, 5);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -167,52 +277,268 @@ export default function DashboardPage() {
         {/* Upcoming Touchpoints Section */}
         {contactsWithUpcomingTouchpoints.length > 0 && (
           <div className="mb-6">
-            <div className="mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Upcoming Touchpoints</h2>
+              {contactsWithUpcomingTouchpoints.filter((c) => {
+                const needsReminderBadge = needsReminder(c.nextTouchpointDate);
+                return needsReminderBadge;
+              }).length > 0 && (
+                <span className="px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
+                  {contactsWithUpcomingTouchpoints.filter((c) => {
+                    const needsReminderBadge = needsReminder(c.nextTouchpointDate);
+                    return needsReminderBadge;
+                  }).length} need attention
+                </span>
+              )}
             </div>
+            
+            {/* Select All Checkbox for Upcoming */}
+            {contactsWithUpcomingTouchpoints.length > 0 && (
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-gray-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={contactsWithUpcomingTouchpoints.every(c => selectedTouchpointIds.has(c.id))}
+                    onChange={() => {
+                      if (contactsWithUpcomingTouchpoints.every(c => selectedTouchpointIds.has(c.id))) {
+                        // Deselect all upcoming
+                        setSelectedTouchpointIds(prev => {
+                          const newSet = new Set(prev);
+                          contactsWithUpcomingTouchpoints.forEach(c => newSet.delete(c.id));
+                          return newSet;
+                        });
+                      } else {
+                        // Select all upcoming
+                        setSelectedTouchpointIds(prev => {
+                          const newSet = new Set(prev);
+                          contactsWithUpcomingTouchpoints.forEach(c => newSet.add(c.id));
+                          return newSet;
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Select all {contactsWithUpcomingTouchpoints.length} upcoming touchpoint{contactsWithUpcomingTouchpoints.length !== 1 ? "s" : ""}
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Bulk Action Bar for Upcoming */}
+            {selectedTouchpointIds.size > 0 && contactsWithUpcomingTouchpoints.some(c => selectedTouchpointIds.has(c.id)) && (
+              <Card padding="md" className="bg-blue-50 border-blue-200 mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-900">
+                      {Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length} touchpoint{Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length !== 1 ? "s" : ""} selected
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBulkStatusUpdate("completed")}
+                      disabled={bulkUpdating}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Mark as Contacted ({Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length})
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusUpdate("cancelled")}
+                      disabled={bulkUpdating}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Skip Touchpoint ({Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length})
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 gap-3 mb-6">
               {contactsWithUpcomingTouchpoints.map((contact) => {
                 const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
+                if (!touchpointDate) return null;
+                
+                const daysUntil = getDaysUntilTouchpoint(contact.nextTouchpointDate);
+                const needsReminderBadge = needsReminder(contact.nextTouchpointDate);
+                const isSelected = selectedTouchpointIds.has(contact.id);
+                
                 return (
-                  <Link
+                  <ContactCard
                     key={contact.id}
-                    href={`/contacts/${contact.id}`}
-                    className="block bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-gray-100 hover:border-gray-300 hover:shadow-sm transition-all duration-200 group"
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Avatar */}
-                      <div className="shrink-0">
-                        <div className="w-10 h-10 bg-linear-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                          {getInitials(contact)}
-                        </div>
-                      </div>
-                      {/* Contact Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                            {getDisplayName(contact)}
-                          </h3>
-                          {touchpointDate && (
-                            <span className="text-xs font-medium text-gray-700 bg-gray-200 px-2 py-1 rounded-md whitespace-nowrap shrink-0">
-                              {touchpointDate > now 
-                                ? formatContactDate(touchpointDate, { relative: true })
-                                : `Due ${formatContactDate(touchpointDate, { relative: true })}`}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-600 truncate mb-2">{contact.primaryEmail}</p>
-                        {contact.nextTouchpointMessage && (
-                          <p className="text-xs text-gray-700 bg-white/80 rounded px-2 py-1.5 line-clamp-2">
-                            {contact.nextTouchpointMessage}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
+                    contact={contact}
+                    showCheckbox={true}
+                    isSelected={isSelected}
+                    onSelectChange={toggleTouchpointSelection}
+                    variant={isSelected ? "selected" : "touchpoint-upcoming"}
+                    showArrow={false}
+                    touchpointDate={touchpointDate}
+                    daysUntil={daysUntil}
+                    needsReminder={needsReminderBadge}
+                    showTouchpointActions={true}
+                    onTouchpointStatusUpdate={() => {
+                      // Refresh will happen automatically via real-time listener
+                    }}
+                  />
                 );
               })}
             </div>
             <div className="border-t border-gray-200 mb-6"></div>
+          </div>
+        )}
+
+        {/* Overdue Touchpoints Section */}
+        {contactsWithOverdueTouchpoints.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-red-900">Overdue Touchpoints</h2>
+              <span className="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                {contactsWithOverdueTouchpoints.length} overdue
+              </span>
+            </div>
+            
+            {/* Select All Checkbox */}
+            {contactsWithOverdueTouchpoints.length > 0 && (
+              <div className="flex items-center gap-3 pb-3 mb-3 border-b border-red-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={contactsWithOverdueTouchpoints.every(c => selectedTouchpointIds.has(c.id))}
+                    onChange={() => {
+                      if (contactsWithOverdueTouchpoints.every(c => selectedTouchpointIds.has(c.id))) {
+                        // Deselect all overdue
+                        setSelectedTouchpointIds(prev => {
+                          const newSet = new Set(prev);
+                          contactsWithOverdueTouchpoints.forEach(c => newSet.delete(c.id));
+                          return newSet;
+                        });
+                      } else {
+                        // Select all overdue
+                        setSelectedTouchpointIds(prev => {
+                          const newSet = new Set(prev);
+                          contactsWithOverdueTouchpoints.forEach(c => newSet.add(c.id));
+                          return newSet;
+                        });
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Select all {contactsWithOverdueTouchpoints.length} overdue touchpoint{contactsWithOverdueTouchpoints.length !== 1 ? "s" : ""}
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {/* Bulk Action Bar */}
+            {selectedTouchpointIds.size > 0 && contactsWithOverdueTouchpoints.some(c => selectedTouchpointIds.has(c.id)) && (
+              <Card padding="md" className="bg-blue-50 border-blue-200 mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-900">
+                      {Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length} touchpoint{Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length !== 1 ? "s" : ""} selected
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBulkStatusUpdate("completed")}
+                      disabled={bulkUpdating}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Mark as Contacted ({Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length})
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusUpdate("cancelled")}
+                      disabled={bulkUpdating}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Skip Touchpoint ({Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length})
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              {contactsWithOverdueTouchpoints.map((contact) => {
+                const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
+                if (!touchpointDate) return null;
+                
+                const daysUntil = getDaysUntilTouchpoint(contact.nextTouchpointDate);
+                const isSelected = selectedTouchpointIds.has(contact.id);
+                
+                return (
+                  <ContactCard
+                    key={contact.id}
+                    contact={contact}
+                    showCheckbox={true}
+                    isSelected={isSelected}
+                    onSelectChange={toggleTouchpointSelection}
+                    variant={isSelected ? "selected" : "touchpoint-overdue"}
+                    showArrow={false}
+                    touchpointDate={touchpointDate}
+                    daysUntil={daysUntil}
+                    showTouchpointActions={true}
+                    onTouchpointStatusUpdate={() => {
+                      // Refresh will happen automatically via real-time listener
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="border-t border-red-200 mb-6"></div>
           </div>
         )}
         
@@ -248,121 +574,12 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {recentContacts.map((contact) => (
-              <Link
+              <ContactCard
                 key={contact.id}
-                href={`/contacts/${contact.id}`}
-                className="block bg-gray-50 rounded-lg p-3 lg:p-4 hover:bg-gray-100 hover:shadow-sm transition-all duration-200 group"
-              >
-                <div className="flex items-start lg:items-center gap-3">
-                  {/* Avatar */}
-                  <div className="shrink-0">
-                    <div className="w-10 h-10 lg:w-10 lg:h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                      {getInitials(contact)}
-                    </div>
-                  </div>
-
-                  {/* Contact Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm lg:text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {getDisplayName(contact)}
-                    </h3>
-                    <p className="text-xs lg:text-sm text-gray-500 truncate mb-1">{contact.primaryEmail}</p>
-                    <div className="flex flex-col gap-0.5 mt-1">
-                      {contact.lastEmailDate != null && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <svg
-                            className="w-3 h-3 shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span className="truncate">Last email: {formatContactDate(contact.lastEmailDate, { relative: true })}</span>
-                        </p>
-                      )}
-                      {contact.updatedAt != null && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <svg
-                            className="w-3 h-3 shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                          </svg>
-                          <span className="truncate">Updated: {formatContactDate(contact.updatedAt, { relative: true })}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Tags - Mobile: show below, Desktop: show on right */}
-                    {contact.tags && contact.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2 lg:hidden">
-                        {contact.tags.slice(0, 3).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {contact.tags.length > 3 && (
-                          <span className="px-2 py-0.5 text-xs font-medium text-gray-500">
-                            +{contact.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tags - Desktop only */}
-                  {contact.tags && contact.tags.length > 0 && (
-                    <div className="hidden lg:flex flex-wrap gap-1 shrink-0 max-w-[200px] justify-end">
-                      {contact.tags.slice(0, 2).map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {contact.tags.length > 2 && (
-                        <span className="px-2 py-1 text-xs font-medium text-gray-500">
-                          +{contact.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Arrow Icon - Desktop only */}
-                  <div className="hidden lg:block shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
+                contact={contact}
+                showCheckbox={false}
+                variant="default"
+              />
             ))}
           </div>
         )}

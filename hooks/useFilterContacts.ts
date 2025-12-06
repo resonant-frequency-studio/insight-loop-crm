@@ -12,6 +12,7 @@ interface FilterState {
   firstNameSearch: string;
   lastNameSearch: string;
   upcomingTouchpoints: boolean;
+  showArchived: boolean;
 }
 
 interface UseFilterContactsReturn {
@@ -23,12 +24,14 @@ interface UseFilterContactsReturn {
   firstNameSearch: string;
   lastNameSearch: string;
   upcomingTouchpoints: boolean;
+  showArchived: boolean;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
   setFirstNameSearch: (firstName: string) => void;
   setLastNameSearch: (lastName: string) => void;
   setUpcomingTouchpoints: (value: boolean) => void;
+  setShowArchived: (value: boolean) => void;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
@@ -49,6 +52,7 @@ export function useFilterContacts(
   const [firstNameSearch, setFirstNameSearch] = useState<string>("");
   const [lastNameSearch, setLastNameSearch] = useState<string>("");
   const [upcomingTouchpoints, setUpcomingTouchpoints] = useState<boolean>(initialUpcomingTouchpoints);
+  const [showArchived, setShowArchived] = useState<boolean>(false);
 
   const filters: FilterState = {
     selectedSegment,
@@ -57,10 +61,19 @@ export function useFilterContacts(
     firstNameSearch,
     lastNameSearch,
     upcomingTouchpoints,
+    showArchived,
   };
 
   const filteredContacts = useMemo(() => {
     let filtered = [...contacts];
+
+    // Filter by archived status (default: hide archived, unless showArchived is true)
+    if (!filters.showArchived) {
+      filtered = filtered.filter(c => !c.archived);
+    } else {
+      // If showing archived, only show archived contacts
+      filtered = filtered.filter(c => c.archived === true);
+    }
 
     // Filter by segment
     if (filters.selectedSegment) {
@@ -117,7 +130,7 @@ export function useFilterContacts(
     }
 
     return filtered;
-  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.upcomingTouchpoints]);
+  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.upcomingTouchpoints, filters.showArchived]);
 
   const clearFilters = () => {
     setSelectedSegment("");
@@ -126,6 +139,7 @@ export function useFilterContacts(
     setFirstNameSearch("");
     setLastNameSearch("");
     setUpcomingTouchpoints(false);
+    setShowArchived(false);
   };
 
   const hasActiveFilters = 
@@ -134,7 +148,8 @@ export function useFilterContacts(
     emailSearch.trim() || 
     firstNameSearch.trim() || 
     lastNameSearch.trim() ||
-    upcomingTouchpoints;
+    upcomingTouchpoints ||
+    showArchived;
 
   return {
     filteredContacts,
@@ -145,12 +160,14 @@ export function useFilterContacts(
     firstNameSearch,
     lastNameSearch,
     upcomingTouchpoints,
+    showArchived,
     setSelectedSegment,
     setSelectedTags,
     setEmailSearch,
     setFirstNameSearch,
     setLastNameSearch,
     setUpcomingTouchpoints,
+    setShowArchived,
     onSegmentChange: setSelectedSegment,
     onTagsChange: setSelectedTags,
     onEmailSearchChange: setEmailSearch,

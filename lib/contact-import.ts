@@ -112,7 +112,7 @@ export async function importContact(
   // Prepare contact data
   const contactData = csvRowToContact(row, contactId);
   
-  // Handle createdAt based on overwrite mode
+  // Handle createdAt and archived status based on overwrite mode
   if (!exists) {
     contactData.createdAt = serverTimestamp();
   } else if (overwriteMode === "overwrite") {
@@ -122,6 +122,11 @@ export async function importContact(
       contactData.createdAt = existingData.createdAt;
     } else {
       contactData.createdAt = serverTimestamp();
+    }
+    
+    // Preserve archived status when overwriting (CSV won't have this field)
+    if (existingData?.archived !== undefined) {
+      contactData.archived = existingData.archived;
     }
   }
   

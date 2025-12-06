@@ -15,11 +15,13 @@ interface ContactsFilterProps {
   emailSearch: string;
   firstNameSearch: string;
   lastNameSearch: string;
+  showArchived: boolean;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
   onFirstNameSearchChange: (firstName: string) => void;
   onLastNameSearchChange: (lastName: string) => void;
+  onShowArchivedChange: (show: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -30,11 +32,13 @@ export default function ContactsFilter({
   emailSearch,
   firstNameSearch,
   lastNameSearch,
+  showArchived,
   onSegmentChange,
   onTagsChange,
   onEmailSearchChange,
   onFirstNameSearchChange,
   onLastNameSearchChange,
+  onShowArchivedChange,
   onClearFilters,
 }: ContactsFilterProps) {
   const [tagSearch, setTagSearch] = useState<string>("");
@@ -120,7 +124,7 @@ export default function ContactsFilter({
       </div>
 
       {/* Filter Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Segment Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -136,6 +140,24 @@ export default function ContactsFilter({
               <option key={segment} value={segment}>{segment}</option>
             ))}
           </select>
+        </div>
+
+        {/* Show Archived Toggle */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            View Archived
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => onShowArchivedChange(e.target.checked)}
+              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">
+              {showArchived ? "Showing archived contacts" : "Show archived contacts"}
+            </span>
+          </label>
         </div>
 
         {/* Tags Filter - Searchable Multi-Select */}

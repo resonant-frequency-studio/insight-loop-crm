@@ -12,10 +12,10 @@ import ContactsFilter from "@/components/ContactsFilter";
 import Card from "@/components/Card";
 import { useFilterContacts } from "@/hooks/useFilterContacts";
 import Loading from "@/components/Loading";
-import { getInitials, getDisplayName, formatContactDate } from "@/util/contact-utils";
 import { bulkUpdateContactSegments } from "@/lib/firestore-crud";
 import Modal from "@/components/Modal";
 import SegmentSelect from "@/components/SegmentSelect";
+import ContactCard from "@/components/ContactCard";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -33,7 +33,7 @@ export default function ContactsPage() {
   
   // Use filtering hook
   const filterContacts = useFilterContacts(contacts);
-  const { filteredContacts, hasActiveFilters, onClearFilters } = filterContacts;
+  const { filteredContacts, hasActiveFilters, onClearFilters, showArchived, setShowArchived } = filterContacts;
   
   // Get unique segments from all contacts for the bulk update dropdown
   const uniqueSegments = useMemo(() => 
@@ -106,6 +106,46 @@ export default function ContactsPage() {
     }
   };
 
+  const handleBulkArchive = async (archived: boolean) => {
+    if (!user || selectedContactIds.size === 0) return;
+    
+    setBulkUpdating(true);
+    setBulkUpdateProgress({ completed: 0, total: selectedContactIds.size });
+    
+    try {
+      const contactIdsArray = Array.from(selectedContactIds);
+      const response = await fetch("/api/contacts/bulk-archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactIds: contactIdsArray,
+          archived: archived,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to archive contacts");
+      }
+
+      const result = await response.json();
+      
+      if (result.errors > 0) {
+        alert(`${archived ? "Archived" : "Unarchived"} ${result.success} contact(s), but ${result.errors} failed. Check console for details.`);
+        console.error("Bulk archive errors:", result.errorDetails);
+      } else {
+        // Success - clear selection
+        setSelectedContactIds(new Set());
+      }
+    } catch (error) {
+      console.error("Error archiving contacts:", error);
+      alert(`Failed to ${archived ? "archive" : "unarchive"} contacts. Please try again.`);
+    } finally {
+      setBulkUpdating(false);
+      setBulkUpdateProgress({ completed: 0, total: 0 });
+    }
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -171,7 +211,12 @@ export default function ContactsPage() {
       </div>
 
       {/* Filters Section */}
-      <ContactsFilter contacts={contacts} {...filterContacts} />
+      <ContactsFilter 
+        contacts={contacts} 
+        {...filterContacts}
+        showArchived={showArchived}
+        onShowArchivedChange={setShowArchived}
+      />
 
       {/* Bulk Action Bar */}
       {selectedContactIds.size > 0 && filteredContacts.length > 0 && (
@@ -182,25 +227,70 @@ export default function ContactsPage() {
                 {selectedContactIds.size} {selectedContactIds.size === 1 ? "contact" : "contacts"} selected
               </span>
             </div>
-            <button
-              onClick={() => setShowBulkSegmentModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setShowBulkSegmentModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                />
-              </svg>
-              Reassign Segment
-            </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                  />
+                </svg>
+                Reassign Segment
+              </button>
+              {!showArchived ? (
+                <button
+                  onClick={() => handleBulkArchive(true)}
+                  disabled={bulkUpdating}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                    />
+                  </svg>
+                  Archive ({selectedContactIds.size})
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleBulkArchive(false)}
+                  disabled={bulkUpdating}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Unarchive ({selectedContactIds.size})
+                </button>
+              )}
+            </div>
           </div>
         </Card>
       )}
@@ -294,149 +384,14 @@ export default function ContactsPage() {
             {filteredContacts.map((contact) => {
               const isSelected = selectedContactIds.has(contact.id);
               return (
-                <div
+                <ContactCard
                   key={contact.id}
-                  className={`flex items-start gap-3 bg-gray-50 rounded-lg p-3 lg:p-4 hover:bg-gray-100 hover:shadow-sm transition-all duration-200 group ${
-                    isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""
-                  }`}
-                >
-                  {/* Checkbox */}
-                  <div className="shrink-0 pt-1">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        toggleContactSelection(contact.id);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  {/* Contact Card Content */}
-                  <Link
-                    href={`/contacts/${contact.id}`}
-                    className="flex-1 flex items-start lg:items-center gap-3"
-                  >
-                    {/* Avatar */}
-                    <div className="shrink-0">
-                      <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                        {getInitials(contact)}
-                      </div>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm lg:text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {getDisplayName(contact)}
-                      </h3>
-                      <p className="text-xs lg:text-sm text-gray-500 truncate mb-1">{contact.primaryEmail}</p>
-                      <div className="flex flex-col gap-0.5 mt-1">
-                        {contact.lastEmailDate != null && (
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3 shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span className="truncate">Last email: {formatContactDate(contact.lastEmailDate, { relative: true })}</span>
-                          </p>
-                        )}
-                        {contact.updatedAt != null && (
-                          <p className="text-xs text-gray-400 flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3 shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                            <span className="truncate">Updated: {formatContactDate(contact.updatedAt, { relative: true })}</span>
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Tags - Mobile: show below, Desktop: show on right */}
-                      {contact.tags && contact.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2 lg:hidden">
-                          {contact.tags.slice(0, 3).map((tag, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {contact.tags.length > 3 && (
-                            <span className="px-2 py-0.5 text-xs font-medium text-gray-500">
-                              +{contact.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Segment - Mobile only */}
-                      {contact.segment && (
-                        <div className="lg:hidden mt-2">
-                          <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                            {contact.segment}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Tags - Desktop only */}
-                    {contact.tags && contact.tags.length > 0 && (
-                      <div className="hidden lg:flex flex-wrap gap-1 shrink-0 max-w-[200px] justify-end">
-                        {contact.tags.slice(0, 2).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {contact.tags.length > 2 && (
-                          <span className="px-2 py-1 text-xs font-medium text-gray-500">
-                            +{contact.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Arrow Icon - Desktop only */}
-                    <div className="hidden lg:block shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-                  </Link>
-                </div>
+                  contact={contact}
+                  showCheckbox={true}
+                  isSelected={isSelected}
+                  onSelectChange={toggleContactSelection}
+                  variant={isSelected ? "selected" : "default"}
+                />
               );
             })}
           </div>
