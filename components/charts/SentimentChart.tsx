@@ -23,7 +23,7 @@ const renderTooltip = (props: any) => {
   const { active, payload } = props;
   if (active && payload && payload.length) {
     const data = payload[0];
-    const total = payload.reduce((sum, item) => sum + (item.value || 0), 0);
+    const total = payload.reduce((sum: number, item: { value?: number }) => sum + (item.value || 0), 0);
     const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : "0";
     return (
       <div className="bg-white p-2 lg:p-3 border border-gray-200 rounded-lg shadow-lg">

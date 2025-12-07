@@ -119,6 +119,7 @@ export default function ActionItemsList({
     // No polling - only fetch on mount and when contactId changes
     // Updates will be triggered manually via onActionItemUpdate callback
     // Note: quotaExceeded is NOT in dependencies to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, contactId]);
 
   const handleAdd = async () => {
@@ -425,7 +426,7 @@ export default function ActionItemsList({
               onComplete={() => handleComplete(item.actionItemId)}
               onDelete={() => handleDelete(item.actionItemId)}
               onEdit={(text, dueDate) =>
-                handleEdit(item.actionItemId, text, dueDate)
+                handleEdit(item.actionItemId, text, dueDate ?? null)
               }
               disabled={updating === item.actionItemId}
             />

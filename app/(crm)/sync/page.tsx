@@ -8,7 +8,6 @@ import Loading from "@/components/Loading";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
 import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
-import { SyncJob } from "@/types/firestore";
 
 export default function SyncStatusPage() {
   const { user, loading: authLoading } = useAuth();
@@ -184,7 +183,7 @@ export default function SyncStatusPage() {
               <p className="text-sm font-medium text-gray-500 mb-1">Messages Processed</p>
               <p className="text-2xl font-bold text-gray-900">{lastSync.processedMessages || 0}</p>
             </div>
-            {lastSync.finishedAt && (
+            {lastSync.finishedAt != null && (
               <div>
                 <p className="text-sm font-medium text-gray-500 mb-1">Finished At</p>
                 <p className="text-gray-900">{formatDate(lastSync.finishedAt)}</p>

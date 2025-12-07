@@ -1,6 +1,6 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { ActionItem } from "@/types/firestore";
-import { serverTimestamp } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 
 /**
  * Get action items path for a contact
@@ -92,15 +92,15 @@ export async function getAllActionItemsForUser(
 
   return allActionItems.sort((a, b) => {
     const aTime =
-      typeof a.createdAt === "object" && "toMillis" in a.createdAt
+      a.createdAt && typeof a.createdAt === "object" && "toMillis" in a.createdAt
         ? (a.createdAt as { toMillis: () => number }).toMillis()
-        : typeof a.createdAt === "number"
+        : a.createdAt && typeof a.createdAt === "number"
         ? a.createdAt
         : 0;
     const bTime =
-      typeof b.createdAt === "object" && "toMillis" in b.createdAt
+      b.createdAt && typeof b.createdAt === "object" && "toMillis" in b.createdAt
         ? (b.createdAt as { toMillis: () => number }).toMillis()
-        : typeof b.createdAt === "number"
+        : b.createdAt && typeof b.createdAt === "number"
         ? b.createdAt
         : 0;
     return bTime - aTime;
@@ -142,7 +142,7 @@ export async function createActionItem(
     .toString(36)
     .substr(2, 9)}`;
 
-  const now = serverTimestamp();
+  const now = FieldValue.serverTimestamp();
   const actionItem: Omit<ActionItem, "actionItemId"> = {
     contactId,
     userId,
@@ -179,7 +179,7 @@ export async function updateActionItem(
   }
 ): Promise<void> {
   const updateData: Partial<ActionItem> = {
-    updatedAt: serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   };
 
   if (updates.text !== undefined) {
@@ -189,7 +189,7 @@ export async function updateActionItem(
   if (updates.status !== undefined) {
     updateData.status = updates.status;
     if (updates.status === "completed") {
-      updateData.completedAt = serverTimestamp();
+      updateData.completedAt = FieldValue.serverTimestamp();
     } else {
       updateData.completedAt = null;
     }

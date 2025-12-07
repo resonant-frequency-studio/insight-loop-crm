@@ -101,7 +101,7 @@ export default function CleanupTouchpointsPage() {
           <div>
             <h3 className="text-lg font-semibold text-yellow-900 mb-2">Warning</h3>
             <p className="text-sm text-yellow-800">
-              This script will mark all touchpoints overdue by more than 120 days as "Skipped". 
+              This script will mark all touchpoints overdue by more than 120 days as &quot;Skipped&quot;. 
               This is a one-time cleanup operation. After running, this page and the API endpoint should be deleted.
             </p>
           </div>
@@ -114,8 +114,8 @@ export default function CleanupTouchpointsPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-2">What this does:</h2>
             <ul className="list-disc list-inside space-y-1 text-gray-700">
               <li>Finds all contacts with touchpoints overdue by more than 120 days</li>
-              <li>Only updates touchpoints that are still "pending" (not already completed/cancelled)</li>
-              <li>Sets status to "cancelled" (Skip Touchpoint) with an auto-generated reason</li>
+              <li>Only updates touchpoints that are still &quot;pending&quot; (not already completed/cancelled)</li>
+              <li>Sets status to &quot;cancelled&quot; (Skip Touchpoint) with an auto-generated reason</li>
               <li>These touchpoints will disappear from your dashboard</li>
             </ul>
           </div>

@@ -143,11 +143,11 @@ export function useFilterContacts(
   };
 
   const hasActiveFilters = 
-    selectedSegment || 
+    !!selectedSegment || 
     selectedTags.length > 0 || 
-    emailSearch.trim() || 
-    firstNameSearch.trim() || 
-    lastNameSearch.trim() ||
+    !!emailSearch.trim() || 
+    !!firstNameSearch.trim() || 
+    !!lastNameSearch.trim() ||
     upcomingTouchpoints ||
     showArchived;
 

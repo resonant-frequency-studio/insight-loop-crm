@@ -1,5 +1,4 @@
 import { Firestore } from "firebase-admin/firestore";
-import { getAccessToken } from "./get-access-token";
 import { normalizeMessage } from "./normalize-message";
 import { findContactIdByEmail } from "./find-contact-id";
 
@@ -192,7 +191,14 @@ export async function performIncrementalSync(
 
           // Update thread metadata with blind upsert (no read needed)
           // If contactId found, include it; otherwise merge will preserve existing contactId
-          const threadUpdate: any = {
+          const threadUpdate: {
+            threadId: string;
+            gmailThreadId: string;
+            historyId: string | null;
+            lastMessageAt: string;
+            updatedAt: number;
+            contactId?: string;
+          } = {
             threadId,
             gmailThreadId: threadId,
             historyId: msgData.historyId || null, // Will merge with existing if present

@@ -36,7 +36,10 @@ export function useDashboardStats(userId: string | null) {
 
   useEffect(() => {
     if (!userId) {
-      setLoading(false);
+      // Defer setState to avoid cascading renders
+      queueMicrotask(() => {
+        setLoading(false);
+      });
       return;
     }
 

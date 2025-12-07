@@ -30,7 +30,7 @@ function logRead(operation: string, path: string, count?: number) {
 /**
  * Wrapper for DocumentReference.get()
  */
-export function loggedGetDoc<T = any>(
+export function loggedGetDoc<T = unknown>(
   ref: DocumentReference<T>
 ): Promise<DocumentSnapshot<T>> {
   logRead("getDoc", ref.path);
@@ -40,11 +40,12 @@ export function loggedGetDoc<T = any>(
 /**
  * Wrapper for Query.get()
  */
-export function loggedGetDocs<T = any>(
+export function loggedGetDocs<T = unknown>(
   query: Query<T>
 ): Promise<QuerySnapshot<T>> {
   // Try to extract path info from query
-  const path = (query as any)._queryOptions?.parentPath || "query";
+  const queryWithOptions = query as unknown as { _queryOptions?: { parentPath?: string } };
+  const path = queryWithOptions._queryOptions?.parentPath || "query";
   logRead("getDocs", path);
   
   return query.get().then((snapshot) => {

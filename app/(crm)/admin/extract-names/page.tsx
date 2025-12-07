@@ -116,8 +116,8 @@ export default function ExtractNamesPage() {
           <div>
             <h3 className="text-lg font-semibold text-blue-900 mb-2">How it works</h3>
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-              <li><strong>dorothy.adams@yahoo.com</strong> → firstName: "Dorothy", lastName: "Adams"</li>
-              <li><strong>dorothy@gmail.com</strong> → firstName: "Dorothy", lastName: null</li>
+              <li><strong>dorothy.adams@yahoo.com</strong> → firstName: &quot;Dorothy&quot;, lastName: &quot;Adams&quot;</li>
+              <li><strong>dorothy@gmail.com</strong> → firstName: &quot;Dorothy&quot;, lastName: null</li>
               <li>Only updates contacts that are missing firstName or lastName</li>
               <li>Preserves existing names if they already exist</li>
             </ul>

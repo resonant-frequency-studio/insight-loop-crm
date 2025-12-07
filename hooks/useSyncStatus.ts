@@ -20,7 +20,10 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
 
   useEffect(() => {
     if (!userId) {
-      setLoading(false);
+      // Defer setState to avoid cascading renders
+      queueMicrotask(() => {
+        setLoading(false);
+      });
       return;
     }
 
@@ -77,8 +80,11 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
       };
     } catch (err) {
       console.error("Error setting up sync status:", err);
-      setError("Failed to initialize sync status");
-      setLoading(false);
+      // Defer setState to avoid cascading renders
+      queueMicrotask(() => {
+        setError("Failed to initialize sync status");
+        setLoading(false);
+      });
     }
   }, [userId]);
 

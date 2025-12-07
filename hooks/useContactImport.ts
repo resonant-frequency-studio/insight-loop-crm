@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { OverwriteMode, ImportResult, BatchImportProgress } from "@/lib/contact-import";
+import { OverwriteMode, BatchImportProgress } from "@/lib/contact-import";
 import {
   countExistingContacts,
   testWritePermissions,
   importContactsBatch,
 } from "@/lib/contact-import";
-import { normalizeContactId } from "@/util/csv-utils";
 
 export interface ImportState {
   isImporting: boolean;

@@ -9,13 +9,13 @@ import { FieldValue } from "firebase-admin/firestore";
  * 
  * ⚠️ This is a cleanup script - run once and then delete this file
  */
-export async function POST(req: Request) {
+export async function POST() {
   try {
     const userId = await getUserId();
     
     // Optional: Add a confirmation token to prevent accidental runs
-    const body = await req.json().catch(() => ({}));
-    const confirmToken = body.confirmToken;
+    // const body = await req.json().catch(() => ({}));
+    // const confirmToken = body.confirmToken;
     
     // Uncomment this if you want extra safety (set an env var)
     // if (confirmToken !== process.env.CLEANUP_CONFIRM_TOKEN) {
