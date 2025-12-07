@@ -153,7 +153,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       {/* Mobile Menu Overlay Backdrop */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -163,11 +163,11 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - Fixed on desktop, overlay on mobile */}
       <nav
-        className={`w-full lg:w-64 bg-[#212B36] p-6 border-r border-gray-700 flex flex-col h-screen fixed left-0 top-0 z-50 transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`w-full lg:w-64 bg-white lg:bg-[#212B36] p-6 border-r border-gray-200 lg:border-gray-700 flex flex-col h-screen fixed right-0 lg:left-0 top-0 z-50 transition-transform duration-500 ease-in-out ${
+          isMobileMenuOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
-        <h2 className="text-xl font-semibold mb-8 text-white">{appConfig.crmName}</h2>
+        <h2 className="text-xl font-semibold mb-8 text-gray-900 lg:text-white">{appConfig.crmName}</h2>
 
         <ul className="space-y-2 flex-1">
           <li>
@@ -176,8 +176,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -202,8 +202,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/contacts") && !pathname?.startsWith("/contacts/import")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -228,8 +228,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/contacts/import")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -254,8 +254,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/action-items")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -280,8 +280,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/sync")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -306,8 +306,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               onClick={handleLinkClick}
               className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium ${
                 isActive("/faq")
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                  ? "bg-gray-200 lg:bg-gray-700 text-gray-900 lg:text-white"
+                  : "text-gray-700 lg:text-gray-300 hover:bg-gray-100 lg:hover:bg-gray-700 hover:text-gray-900 lg:hover:text-white"
               }`}
             >
               <svg
@@ -332,18 +332,18 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         {showUserElements && (
           <div className="mt-auto space-y-3">
             {/* User Info Card */}
-            <div className="px-4 py-3 bg-gray-700 rounded-lg">
+            <div className="px-4 py-3 bg-gray-100 lg:bg-gray-700 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white font-semibold text-sm">
+                <div className="w-10 h-10 bg-gray-300 lg:bg-gray-600 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-gray-900 lg:text-white font-semibold text-sm">
                     {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm truncate">
+                  <p className="text-gray-900 lg:text-white font-medium text-sm truncate">
                     {user?.displayName || "User"}
                   </p>
-                  <p className="text-gray-400 text-xs truncate">
+                  <p className="text-gray-600 lg:text-gray-400 text-xs truncate">
                     {user?.email}
                   </p>
                 </div>
@@ -357,7 +357,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               variant="secondary"
               size="sm"
               fullWidth
-              className="bg-gray-700 hover:bg-gray-600 text-white"
+              className="bg-gray-200 lg:bg-gray-700 hover:bg-gray-300 lg:hover:bg-gray-600 text-gray-900 lg:text-white"
               icon={
                 <svg
                   className="w-4 h-4"

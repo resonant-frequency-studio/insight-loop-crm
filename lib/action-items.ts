@@ -25,25 +25,78 @@ export async function getActionItemsForContact(
   contactId: string
 ): Promise<ActionItem[]> {
   try {
+    // Try with orderBy first (requires index)
     const snapshot = await adminDb
       .collection(actionItemsPath(userId, contactId))
       .orderBy("createdAt", "desc")
       .get();
 
-    return snapshot.docs.map((doc) => ({
+    const items = snapshot.docs.map((doc) => ({
       ...(doc.data() as ActionItem),
       actionItemId: doc.id,
     }));
+
+    return items;
   } catch (error) {
-    // Let the error propagate - API route will handle quota errors appropriately
+    // If orderBy fails (likely due to missing index), try without orderBy
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("index") || errorMessage.includes("requires an index")) {
+      try {
+        // Fallback: query without orderBy and sort in memory
+        const snapshot = await adminDb
+          .collection(actionItemsPath(userId, contactId))
+          .get();
+
+        const items = snapshot.docs.map((doc) => ({
+          ...(doc.data() as ActionItem),
+          actionItemId: doc.id,
+        }));
+
+        // Sort by createdAt in memory (newest first)
+        return items.sort((a, b) => {
+          const aTime =
+            a.createdAt && typeof a.createdAt === "object" && "toMillis" in a.createdAt
+              ? (a.createdAt as { toMillis: () => number }).toMillis()
+              : a.createdAt && typeof a.createdAt === "number"
+              ? a.createdAt
+              : 0;
+          const bTime =
+            b.createdAt && typeof b.createdAt === "object" && "toMillis" in b.createdAt
+              ? (b.createdAt as { toMillis: () => number }).toMillis()
+              : b.createdAt && typeof b.createdAt === "number"
+              ? b.createdAt
+              : 0;
+        return bTime - aTime;
+      });
+    } catch {
+      // If fallback also fails, throw the original error
+      throw error;
+    }
+    }
+    // For other errors, propagate them
     throw error;
   }
 }
 
 /**
+ * Convert Firestore Timestamp to ISO string for JSON serialization
+ */
+function convertTimestamp(value: unknown): unknown {
+  if (value && typeof value === "object" && "toDate" in value) {
+    const timestamp = value as { toDate: () => Date };
+    return timestamp.toDate().toISOString();
+  }
+  if (value && typeof value === "object" && "toMillis" in value) {
+    const timestamp = value as { toMillis: () => number };
+    return new Date(timestamp.toMillis()).toISOString();
+  }
+  return value;
+}
+
+/**
  * Get all action items for a user (across all contacts)
- * Returns action items with contactId included
- * Processes in batches to avoid quota issues
+ * OPTIMIZED: Uses parallel queries without delays for better performance
+ * Returns action items with contactId included and timestamps converted to ISO strings
  */
 export async function getAllActionItemsForUser(
   userId: string
@@ -57,56 +110,46 @@ export async function getAllActionItemsForUser(
     return [];
   }
 
-  const allActionItems: Array<ActionItem & { contactId: string }> = [];
   const contactDocs = contactsSnapshot.docs;
   
-  // Process contacts in batches to avoid quota issues
-  const batchSize = 10;
-  const delayBetweenBatches = 50; // 50ms delay between batches
-
-  for (let i = 0; i < contactDocs.length; i += batchSize) {
-    const batch = contactDocs.slice(i, i + batchSize);
-    
-    // Process batch in parallel
-    const batchPromises = batch.map(async (contactDoc) => {
-      const contactId = contactDoc.id;
-      try {
-        const actionItems = await getActionItemsForContact(userId, contactId);
-        // Add contactId to each action item
-        return actionItems.map((item) => ({ ...item, contactId }));
-      } catch (error) {
-        reportException(error, {
-          context: "Fetching action items for contact",
-          tags: { component: "action-items", contactId },
-        });
-        return []; // Return empty array on error
-      }
-    });
-
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach((items) => {
-      allActionItems.push(...items);
-    });
-
-    // Add delay between batches to avoid quota issues (except for last batch)
-    if (i + batchSize < contactDocs.length) {
-      await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+  // Process all contacts in parallel (removed batching delays for performance)
+  const allPromises = contactDocs.map(async (contactDoc) => {
+    const contactId = contactDoc.id;
+    try {
+      const actionItems = await getActionItemsForContact(userId, contactId);
+      // Add contactId and convert timestamps to ISO strings for each action item
+      return actionItems.map((item) => ({
+        ...item,
+        contactId,
+        createdAt: convertTimestamp(item.createdAt),
+        updatedAt: convertTimestamp(item.updatedAt),
+        completedAt: item.completedAt ? convertTimestamp(item.completedAt) : null,
+        dueDate: item.dueDate ? convertTimestamp(item.dueDate) : null,
+      }));
+    } catch (error) {
+      reportException(error, {
+        context: "Fetching action items for contact",
+        tags: { component: "action-items", contactId },
+      });
+      return []; // Return empty array on error
     }
-  }
+  });
 
+  const allResults = await Promise.all(allPromises);
+  const allActionItems = allResults.flat();
+
+  // Sort by createdAt (newest first)
   return allActionItems.sort((a, b) => {
-    const aTime =
-      a.createdAt && typeof a.createdAt === "object" && "toMillis" in a.createdAt
-        ? (a.createdAt as { toMillis: () => number }).toMillis()
-        : a.createdAt && typeof a.createdAt === "number"
-        ? a.createdAt
-        : 0;
-    const bTime =
-      b.createdAt && typeof b.createdAt === "object" && "toMillis" in b.createdAt
-        ? (b.createdAt as { toMillis: () => number }).toMillis()
-        : b.createdAt && typeof b.createdAt === "number"
-        ? b.createdAt
-        : 0;
+    const aTime = a.createdAt && typeof a.createdAt === "string"
+      ? new Date(a.createdAt).getTime()
+      : a.createdAt && typeof a.createdAt === "number"
+      ? a.createdAt
+      : 0;
+    const bTime = b.createdAt && typeof b.createdAt === "string"
+      ? new Date(b.createdAt).getTime()
+      : b.createdAt && typeof b.createdAt === "number"
+      ? b.createdAt
+      : 0;
     return bTime - aTime;
   });
 }

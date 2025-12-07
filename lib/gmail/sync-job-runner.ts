@@ -9,7 +9,7 @@ import {
   type SyncResult,
 } from "./incremental-sync";
 import { SyncJob } from "@/types/firestore";
-import { serverTimestamp } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 import { reportException } from "@/lib/error-reporting";
 
 export interface SyncJobOptions {
@@ -45,7 +45,7 @@ async function createSyncJob(
       userId,
       type,
       status: "running",
-      startedAt: serverTimestamp(),
+      startedAt: FieldValue.serverTimestamp(),
       processedThreads: 0,
       processedMessages: 0,
     });
@@ -59,14 +59,19 @@ async function updateSyncJob(
   syncJobId: string,
   updates: Partial<SyncJob>
 ): Promise<void> {
+  // Filter out undefined values - Firestore doesn't allow undefined
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, value]) => value !== undefined)
+  );
+  
   await adminDb
     .collection("users")
     .doc(userId)
     .collection("syncJobs")
     .doc(syncJobId)
     .update({
-      ...updates,
-      updatedAt: serverTimestamp(),
+      ...cleanUpdates,
+      updatedAt: FieldValue.serverTimestamp(),
     });
 }
 
@@ -162,7 +167,7 @@ export async function runSyncJob(
     // Update sync job as complete
     await updateSyncJob(userId, jobId, {
       status: "complete",
-      finishedAt: serverTimestamp(),
+      finishedAt: FieldValue.serverTimestamp(),
       processedThreads: syncResult.processedThreads,
       processedMessages: syncResult.processedMessages,
       errorMessage:
@@ -186,7 +191,7 @@ export async function runSyncJob(
     try {
       await updateSyncJob(userId, jobId, {
         status: "error",
-        finishedAt: serverTimestamp(),
+        finishedAt: FieldValue.serverTimestamp(),
         errorMessage,
       });
     } catch (updateError) {

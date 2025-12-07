@@ -476,7 +476,7 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
             onClick={saveChanges}
             disabled={saving}
             loading={saving}
-            variant="primary"
+            variant="gradient-blue"
             error={saveError}
             icon={
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -644,6 +644,10 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
               <ActionItemsList
                 userId={userId}
                 contactId={contactDocumentId}
+                contactName={contact.firstName || contact.lastName ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim() : contact.primaryEmail.split("@")[0]}
+                contactEmail={contact.primaryEmail}
+                contactFirstName={contact.firstName || undefined}
+                contactLastName={contact.lastName || undefined}
                 onActionItemUpdate={() => {
                   // Trigger a refresh if needed
                 }}
@@ -928,7 +932,7 @@ function OutreachDraftEditor({
           {outreachDraft.trim() && contact.primaryEmail && (
             <Button
               onClick={openGmailCompose}
-              variant="primary"
+              variant="gradient-blue"
               size="sm"
               title="Open this draft in Gmail"
               icon={

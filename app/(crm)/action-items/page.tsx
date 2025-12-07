@@ -7,12 +7,10 @@ import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
-import { Button } from "@/components/Button";
 import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components/ErrorMessage";
 import { ActionItem } from "@/types/firestore";
-import { formatContactDate } from "@/util/contact-utils";
-import Link from "next/link";
 import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
+import ActionItemCard from "@/components/ActionItemCard";
 
 type FilterStatus = "all" | "pending" | "completed";
 type FilterDate = "all" | "overdue" | "today" | "thisWeek" | "upcoming";
@@ -78,12 +76,18 @@ export default function ActionItemsPage() {
     }
 
     // Don't fetch if quota is already exceeded - prevents repeated failed requests
+    // But allow one retry attempt to check if quota has been reset
     if (quotaExceeded) {
-      setLoading(false);
-      return;
+      // Clear the quota flag to allow one retry attempt
+      setQuotaExceeded(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("firestoreQuotaExceeded");
+      }
+      // Continue with the fetch to check if quota is still exceeded
     }
 
     try {
+      console.log("Fetching action items from /api/action-items/all");
       const response = await fetch("/api/action-items/all");
       
       // Check for quota errors BEFORE trying to parse response
@@ -169,13 +173,80 @@ export default function ActionItemsPage() {
   const handleComplete = async (item: ActionItem & { contactId: string }) => {
     setCompleting(item.actionItemId);
     setCompleteError(null);
+    
+    // Optimistic update: immediately update the UI
+    const newStatus = item.status === "completed" ? "pending" : "completed";
+    const previousStatus = item.status;
+    const now = Date.now();
+    
+    setActionItems((prevItems) =>
+      prevItems.map((prevItem) =>
+        prevItem.actionItemId === item.actionItemId
+          ? {
+              ...prevItem,
+              status: newStatus,
+              completedAt: newStatus === "completed" ? now : null,
+            }
+          : prevItem
+      )
+    );
+
     try {
       const response = await fetch(
         `/api/action-items?contactId=${item.contactId}&actionItemId=${item.actionItemId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "completed" }),
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
+      }
+      setCompleteError(null);
+      // Clear quota flag to allow refresh attempt after successful operation
+      setQuotaExceeded(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("firestoreQuotaExceeded");
+      }
+      // Refresh action items to get server state (including proper timestamps)
+      fetchAllActionItems();
+    } catch (error) {
+      // Revert optimistic update on error
+      setActionItems((prevItems) =>
+        prevItems.map((prevItem) =>
+          prevItem.actionItemId === item.actionItemId
+            ? {
+                ...prevItem,
+                status: previousStatus,
+                completedAt: previousStatus === "completed" ? item.completedAt : null,
+              }
+            : prevItem
+        )
+      );
+      
+      reportException(error, {
+        context: "Completing action item",
+        tags: { component: "ActionItemsPage", actionItemId: item.actionItemId },
+      });
+      setCompleteError(extractErrorMessage(error));
+    } finally {
+      setCompleting(null);
+    }
+  };
+
+  const handleEdit = async (item: ActionItem & { contactId: string }, text: string, dueDate?: string | null) => {
+    setCompleting(item.actionItemId);
+    setCompleteError(null);
+    try {
+      const response = await fetch(
+        `/api/action-items?contactId=${item.contactId}&actionItemId=${item.actionItemId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, dueDate }),
         }
       );
 
@@ -193,7 +264,7 @@ export default function ActionItemsPage() {
       fetchAllActionItems();
     } catch (error) {
       reportException(error, {
-        context: "Completing action item",
+        context: "Editing action item",
         tags: { component: "ActionItemsPage", actionItemId: item.actionItemId },
       });
       setCompleteError(extractErrorMessage(error));
@@ -207,8 +278,12 @@ export default function ActionItemsPage() {
       return;
     }
 
+    // Optimistic update: immediately remove from UI
+    const itemToDelete = item;
+    setActionItems((prevItems) => prevItems.filter(prevItem => prevItem.actionItemId !== item.actionItemId));
     setDeleting(item.actionItemId);
     setDeleteError(null);
+
     try {
       const response = await fetch(
         `/api/action-items?contactId=${item.contactId}&actionItemId=${item.actionItemId}`,
@@ -227,9 +302,12 @@ export default function ActionItemsPage() {
       if (typeof window !== "undefined") {
         localStorage.removeItem("firestoreQuotaExceeded");
       }
-      // Refresh action items
+      // Refresh action items to get server state
       fetchAllActionItems();
     } catch (error) {
+      // Revert optimistic update on error - restore the deleted item
+      setActionItems((prevItems) => [...prevItems, itemToDelete]);
+      
       reportException(error, {
         context: "Deleting action item",
         tags: { component: "ActionItemsPage", actionItemId: item.actionItemId },
@@ -311,29 +389,6 @@ export default function ActionItemsPage() {
   const overdueItems = pendingItems.filter((i) => isOverdue(i.dueDate));
   const overdueCount = overdueItems.length;
   const todayCount = pendingItems.filter((i) => getDateCategory(i.dueDate) === "today").length;
-
-  // Debug: Log overdue items for troubleshooting
-  useEffect(() => {
-    if (actionItems.length > 0 && !loading) {
-      console.log("Action Items Debug:", {
-        total: actionItems.length,
-        pending: pendingItems.length,
-        overdue: overdueCount,
-        overdueItems: overdueItems.map((i) => ({
-          text: i.text.substring(0, 30),
-          dueDate: i.dueDate,
-          status: i.status,
-          category: getDateCategory(i.dueDate),
-        })),
-        itemsWithDueDates: actionItems.filter((i) => i.dueDate).length,
-        samplePendingItem: pendingItems[0] ? {
-          text: pendingItems[0].text.substring(0, 30),
-          dueDate: pendingItems[0].dueDate,
-          dueDateType: typeof pendingItems[0].dueDate,
-        } : null,
-      });
-    }
-  }, [actionItems, pendingItems, overdueCount, overdueItems, loading]);
 
   if (authLoading || loading) {
     return <Loading />;
@@ -452,125 +507,21 @@ export default function ActionItemsPage() {
                 ? [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
                   contact.primaryEmail
                 : "Unknown Contact";
-              const overdue = isOverdue(item.dueDate);
 
               return (
-                <div
+                <ActionItemCard
                   key={`${item.contactId}_${item.actionItemId}`}
-                  className={`p-4 rounded-lg border ${
-                    item.status === "completed"
-                      ? "bg-gray-50 border-gray-200"
-                      : overdue
-                      ? "bg-red-50 border-red-200"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <Button
-                      onClick={() => handleComplete(item)}
-                      disabled={
-                        item.status === "completed" ||
-                        completing === item.actionItemId
-                      }
-                      loading={completing === item.actionItemId}
-                      variant="ghost"
-                      size="sm"
-                      className={`mt-0.5 w-5 h-5 p-0 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        item.status === "completed"
-                          ? "bg-green-500 border-green-500 hover:bg-green-500"
-                          : "border-gray-300 hover:border-green-500 bg-transparent"
-                      }`}
-                      title={item.status === "completed" ? "Mark as pending" : "Mark as completed"}
-                      icon={
-                        item.status === "completed" ? (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        ) : undefined
-                      }
-                    >
-                      <span className="sr-only">
-                        {item.status === "completed" ? "Mark as pending" : "Mark as completed"}
-                      </span>
-                    </Button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <p
-                          className={`text-sm font-medium ${
-                            item.status === "completed"
-                              ? "text-gray-500 line-through"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {item.text}
-                        </p>
-                        {item.status === "pending" && (
-                          <Button
-                            onClick={() => handleDelete(item)}
-                            disabled={deleting === item.actionItemId}
-                            loading={deleting === item.actionItemId}
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 text-gray-400 hover:text-red-600 shrink-0"
-                            title="Delete"
-                            icon={
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                            }
-                          >
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <Link
-                          href={`/contacts/${encodeURIComponent(item.contactId)}`}
-                          className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
-                        >
-                          {contactName}
-                        </Link>
-                        {item.dueDate ? (
-                          <span
-                            className={
-                              overdue && item.status === "pending"
-                                ? "text-red-600 font-medium"
-                                : ""
-                            }
-                          >
-                            Due: {String(formatContactDate(item.dueDate, { relative: true }))}
-                            {overdue && item.status === "pending" && " (Overdue)"}
-                          </span>
-                        ) : null}
-                        {item.status === "completed" && item.completedAt ? (
-                          <span>
-                            Completed: {String(formatContactDate(item.completedAt, { relative: true }))}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  actionItem={item}
+                  contactId={item.contactId}
+                  contactName={contactName}
+                  contactEmail={contact?.primaryEmail}
+                  contactFirstName={contact?.firstName}
+                  contactLastName={contact?.lastName}
+                  onComplete={() => handleComplete(item)}
+                  onDelete={() => handleDelete(item)}
+                  onEdit={(text, dueDate) => handleEdit(item, text, dueDate)}
+                  disabled={completing === item.actionItemId || deleting === item.actionItemId}
+                />
               );
             })}
           </div>

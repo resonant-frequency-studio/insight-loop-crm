@@ -203,24 +203,30 @@ export default function ContactsPage() {
         {/* Buttons - Mobile: below header, Desktop: right side */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:shrink-0 w-full sm:w-auto">
           <ExportContactsButton contacts={filteredContacts} />
-          <Link
-            href="/contacts/new"
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium active:scale-95"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <Link href="/contacts/new" className="w-full sm:w-auto">
+            <Button
+              variant="gradient-blue"
+              size="md"
+              fullWidth
+              className="whitespace-nowrap"
+              icon={
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+              }
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Add Contact
+              Add Contact
+            </Button>
           </Link>
         </div>
       </div>

@@ -76,11 +76,15 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const baseStyles =
-    "inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    "cursor-pointer inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
   const variantStyle = variantStyles[variant];
   const sizeStyle = sizeStyles[size];
-  const widthStyle = fullWidth ? "w-full" : "";
+  
+  // Check if className includes w-full to determine if button should be full width
+  const hasFullWidthClass = className.includes("w-full");
+  const shouldBeFullWidth = fullWidth || hasFullWidthClass;
+  const widthStyle = shouldBeFullWidth ? "w-full" : "";
   
   // Add active scale effect for interactive buttons (can be overridden with className)
   const activeScale = className.includes("active:scale") ? "" : "active:scale-95";
@@ -117,7 +121,7 @@ export function Button({
   };
 
   return (
-    <div className={fullWidth ? "w-full" : "inline-block"}>
+    <div className={shouldBeFullWidth ? "w-full" : "inline-block"}>
       <button
         type={props.type || "button"}
         disabled={isDisabled}

@@ -106,7 +106,7 @@ export default function SyncStatusPage() {
           disabled={syncing}
           loading={syncing}
           variant="gradient-blue"
-          size="lg"
+          size="md"
           icon={
             <svg
               className="w-5 h-5"
@@ -197,7 +197,7 @@ export default function SyncStatusPage() {
           {lastSync.errorMessage && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">
-                <strong>Error:</strong> {lastSync.errorMessage}
+                <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
               </p>
             </div>
           )}

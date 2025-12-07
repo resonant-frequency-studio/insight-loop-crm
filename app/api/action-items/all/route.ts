@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { getAllActionItemsForUser } from "@/lib/action-items";
 import { reportException } from "@/lib/error-reporting";
+import { ActionItem } from "@/types/firestore";
 
 /**
  * GET /api/action-items/all
@@ -11,7 +12,20 @@ export async function GET() {
   try {
     const userId = await getUserId();
     const actionItems = await getAllActionItemsForUser(userId);
-    return NextResponse.json({ actionItems });
+    
+    // Include debug info in development
+    const response: { actionItems: Array<ActionItem & { contactId: string }>; debug?: { count: number; userId: string } } = { 
+      actionItems 
+    };
+    
+    if (process.env.NODE_ENV === "development") {
+      response.debug = {
+        count: actionItems.length,
+        userId,
+      };
+    }
+    
+    return NextResponse.json(response);
   } catch (error) {
     reportException(error, {
       context: "Fetching all action items",

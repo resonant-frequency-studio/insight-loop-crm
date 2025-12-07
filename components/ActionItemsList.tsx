@@ -10,6 +10,10 @@ import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reportin
 interface ActionItemsListProps {
   userId: string;
   contactId: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
   onActionItemUpdate?: () => void;
 }
 
@@ -18,6 +22,10 @@ type FilterStatus = "all" | "pending" | "completed";
 export default function ActionItemsList({
   userId,
   contactId,
+  contactName,
+  contactEmail,
+  contactFirstName,
+  contactLastName,
   onActionItemUpdate,
 }: ActionItemsListProps) {
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
@@ -168,13 +176,35 @@ export default function ActionItemsList({
   const handleComplete = async (actionItemId: string) => {
     setUpdating(actionItemId);
     setUpdateError(null);
+    
+    // Find the current item to toggle its status
+    const currentItem = actionItems.find(item => item.actionItemId === actionItemId);
+    if (!currentItem) return;
+    
+    // Optimistic update: immediately update the UI
+    const newStatus = currentItem.status === "completed" ? "pending" : "completed";
+    const previousStatus = currentItem.status;
+    const now = Date.now();
+    
+    setActionItems((prevItems) =>
+      prevItems.map((prevItem) =>
+        prevItem.actionItemId === actionItemId
+          ? {
+              ...prevItem,
+              status: newStatus,
+              completedAt: newStatus === "completed" ? now : null,
+            }
+          : prevItem
+      )
+    );
+
     try {
       const response = await fetch(
         `/api/action-items?contactId=${contactId}&actionItemId=${actionItemId}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "completed" }),
+          body: JSON.stringify({ status: newStatus }),
         }
       );
 
@@ -184,8 +214,22 @@ export default function ActionItemsList({
       }
 
       setUpdateError(null);
+      // Trigger callback to refresh from server (for proper timestamps)
       onActionItemUpdate?.();
     } catch (error) {
+      // Revert optimistic update on error
+      setActionItems((prevItems) =>
+        prevItems.map((prevItem) =>
+          prevItem.actionItemId === actionItemId
+            ? {
+                ...prevItem,
+                status: previousStatus,
+                completedAt: previousStatus === "completed" ? currentItem.completedAt : null,
+              }
+            : prevItem
+        )
+      );
+      
       reportException(error, {
         context: "Completing action item",
         tags: { component: "ActionItemsList", contactId, actionItemId },
@@ -201,8 +245,14 @@ export default function ActionItemsList({
       return;
     }
 
+    // Optimistic update: immediately remove from UI
+    const itemToDelete = actionItems.find(item => item.actionItemId === actionItemId);
+    if (!itemToDelete) return;
+
+    setActionItems((prevItems) => prevItems.filter(item => item.actionItemId !== actionItemId));
     setUpdating(actionItemId);
     setUpdateError(null);
+
     try {
       const response = await fetch(
         `/api/action-items?contactId=${contactId}&actionItemId=${actionItemId}`,
@@ -217,8 +267,12 @@ export default function ActionItemsList({
       }
 
       setUpdateError(null);
+      // Trigger callback to refresh from server (for proper state sync)
       onActionItemUpdate?.();
     } catch (error) {
+      // Revert optimistic update on error - restore the deleted item
+      setActionItems((prevItems) => [...prevItems, itemToDelete]);
+      
       reportException(error, {
         context: "Deleting action item",
         tags: { component: "ActionItemsList", contactId, actionItemId },
@@ -299,54 +353,66 @@ export default function ActionItemsList({
   return (
     <div className="space-y-4">
       {/* Header with filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
             Action Items
           </h3>
-          {pendingCount > 0 && (
-            <span className="px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
-              {pendingCount} pending
-            </span>
-          )}
         </div>
-        <div className="flex gap-1">
-          <Button
+        
+        {/* Filter tabs - segmented control style */}
+        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1" role="tablist">
+          <button
             onClick={() => setFilterStatus("all")}
-            variant={filterStatus === "all" ? "primary" : "ghost"}
-            size="sm"
-            className={`text-xs ${
+            role="tab"
+            aria-selected={filterStatus === "all"}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filterStatus === "all"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            All ({actionItems.length})
-          </Button>
-          <Button
+            All
+            <span className={`ml-1.5 ${
+              filterStatus === "all" ? "text-gray-600" : "text-gray-400"
+            }`}>
+              ({actionItems.length})
+            </span>
+          </button>
+          <button
             onClick={() => setFilterStatus("pending")}
-            variant={filterStatus === "pending" ? "primary" : "ghost"}
-            size="sm"
-            className={`text-xs ${
+            role="tab"
+            aria-selected={filterStatus === "pending"}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filterStatus === "pending"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Pending ({pendingCount})
-          </Button>
-          <Button
+            Pending
+            <span className={`ml-1.5 ${
+              filterStatus === "pending" ? "text-gray-600" : "text-gray-400"
+            }`}>
+              ({pendingCount})
+            </span>
+          </button>
+          <button
             onClick={() => setFilterStatus("completed")}
-            variant={filterStatus === "completed" ? "primary" : "ghost"}
-            size="sm"
-            className={`text-xs ${
+            role="tab"
+            aria-selected={filterStatus === "completed"}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filterStatus === "completed"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            Done ({completedCount})
-          </Button>
+            Completed
+            <span className={`ml-1.5 ${
+              filterStatus === "completed" ? "text-gray-600" : "text-gray-400"
+            }`}>
+              ({completedCount})
+            </span>
+          </button>
         </div>
       </div>
 
@@ -375,7 +441,7 @@ export default function ActionItemsList({
                 onClick={handleAdd}
                 disabled={saving || !newText.trim()}
                 loading={saving}
-                variant="primary"
+                variant="gradient-blue"
                 size="sm"
                 error={addError}
               >
@@ -389,7 +455,7 @@ export default function ActionItemsList({
                   setAddError(null);
                 }}
                 disabled={saving}
-                variant="outline"
+                variant="gradient-gray"
                 size="sm"
               >
                 Cancel
@@ -400,7 +466,7 @@ export default function ActionItemsList({
       ) : (
         <Button
           onClick={() => setIsAdding(true)}
-          variant="outline"
+          variant="gradient-blue"
           size="sm"
           fullWidth
           icon={
@@ -441,12 +507,18 @@ export default function ActionItemsList({
             <ActionItemCard
               key={item.actionItemId}
               actionItem={item}
+              contactId={contactId}
+              contactName={contactName}
+              contactEmail={contactEmail}
+              contactFirstName={contactFirstName}
+              contactLastName={contactLastName}
               onComplete={() => handleComplete(item.actionItemId)}
               onDelete={() => handleDelete(item.actionItemId)}
               onEdit={(text, dueDate) =>
                 handleEdit(item.actionItemId, text, dueDate ?? null)
               }
               disabled={updating === item.actionItemId}
+              compact={true}
             />
           ))}
         </div>

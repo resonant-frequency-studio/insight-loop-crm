@@ -52,16 +52,33 @@ export function formatContactDate(
 
   let dateObj: Date | null = null;
 
+  // Handle ISO date strings (from API - timestamps converted to ISO strings)
+  if (typeof date === "string") {
+    dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return "N/A";
+    }
+  }
   // Handle Firestore Timestamp
-  if (date instanceof Timestamp || (typeof date === "object" && date !== null && "toDate" in date)) {
+  else if (date instanceof Timestamp || (typeof date === "object" && date !== null && "toDate" in date)) {
     dateObj = (date as { toDate: () => Date }).toDate();
+  }
+  // Handle Firestore Timestamp serialized format (from API - legacy format)
+  else if (typeof date === "object" && date !== null && "seconds" in date && "nanoseconds" in date) {
+    const timestamp = date as { seconds: number; nanoseconds: number };
+    dateObj = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+  }
+  // Handle Firestore Timestamp with underscores (alternative serialization)
+  else if (typeof date === "object" && date !== null && "_seconds" in date && "_nanoseconds" in date) {
+    const timestamp = date as { _seconds: number; _nanoseconds: number };
+    dateObj = new Date(timestamp._seconds * 1000 + timestamp._nanoseconds / 1000000);
   }
   // Handle JavaScript Date
   else if (date instanceof Date) {
     dateObj = date;
   }
-  // Handle date string
-  else if (typeof date === "string") {
+  // Handle number (timestamp in milliseconds)
+  else if (typeof date === "number") {
     dateObj = new Date(date);
     if (isNaN(dateObj.getTime())) {
       return "N/A";
