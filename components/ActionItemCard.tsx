@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ActionItem } from "@/types/firestore";
 import { formatContactDate } from "@/util/contact-utils";
+import { Button } from "./Button";
 
 interface ActionItemCardProps {
   actionItem: ActionItem;
@@ -89,52 +90,61 @@ export default function ActionItemCard({
             disabled={disabled}
           />
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={handleSaveEdit}
               disabled={disabled || !editText.trim()}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              variant="primary"
+              size="sm"
             >
               Save
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleCancelEdit}
               disabled={disabled}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              variant="secondary"
+              size="sm"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <div className="flex items-start gap-3">
-          <button
+          <Button
             onClick={onComplete}
             disabled={disabled || actionItem.status === "completed"}
-            className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed ${
+            variant="ghost"
+            size="sm"
+            className={`mt-0.5 w-5 h-5 p-0 rounded border-2 flex items-center justify-center shrink-0 ${
               actionItem.status === "completed"
-                ? "bg-green-500 border-green-500"
-                : "border-gray-300 hover:border-green-500"
+                ? "bg-green-500 border-green-500 hover:bg-green-500"
+                : "border-gray-300 hover:border-green-500 bg-transparent"
             }`}
             title={
               actionItem.status === "completed" ? "Completed" : "Mark as complete"
             }
+            icon={
+              actionItem.status === "completed" ? (
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              ) : undefined
+            }
           >
-            {actionItem.status === "completed" && (
-              <svg
-                className="w-3 h-3 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            )}
-          </button>
+            <span className="sr-only">
+              {actionItem.status === "completed" ? "Completed" : "Mark as complete"}
+            </span>
+          </Button>
           <div className="flex-1 min-w-0">
             <p
               className={`text-sm ${
@@ -145,64 +155,74 @@ export default function ActionItemCard({
             >
               {actionItem.text}
             </p>
-            {actionItem.dueDate && (
+            {actionItem.dueDate ? (
               <p
                 className={`text-xs mt-1 ${
                   isOverdue ? "text-red-600 font-medium" : "text-gray-500"
                 }`}
               >
-                Due: {formatContactDate(actionItem.dueDate, { relative: true })}
-                {isOverdue && " (Overdue)"}
+                Due: {String(formatContactDate(actionItem.dueDate, { relative: true }))}
+                {isOverdue ? " (Overdue)" : null}
               </p>
-            )}
-            {actionItem.status === "completed" && actionItem.completedAt && (
+            ) : null}
+            {actionItem.status === "completed" && actionItem.completedAt ? (
               <p className="text-xs text-gray-500 mt-1">
-                Completed: {formatContactDate(actionItem.completedAt, { relative: true })}
+                Completed: {String(formatContactDate(actionItem.completedAt, { relative: true }))}
               </p>
-            )}
+            ) : null}
           </div>
           {actionItem.status === "pending" && (
-            <div className="flex gap-1 flex-shrink-0">
-              <button
+            <div className="flex gap-1 shrink-0">
+              <Button
                 onClick={() => setIsEditing(true)}
                 disabled={disabled}
-                className="p-1 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="ghost"
+                size="sm"
+                className="p-1 text-gray-400 hover:text-blue-600"
                 title="Edit"
+                icon={
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                }
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </button>
-              <button
+                <span className="sr-only">Edit</span>
+              </Button>
+              <Button
                 onClick={onDelete}
                 disabled={disabled}
-                className="p-1 text-gray-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="ghost"
+                size="sm"
+                className="p-1 text-gray-400 hover:text-red-600"
                 title="Delete"
+                icon={
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                }
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+                <span className="sr-only">Delete</span>
+              </Button>
             </div>
           )}
         </div>

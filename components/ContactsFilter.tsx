@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Contact } from "@/types/firestore";
 import Card from "@/components/Card";
+import { Button } from "./Button";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -69,12 +70,14 @@ export default function ContactsFilter({
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Filters & Search</h2>
         {hasActiveFilters && (
-          <button
+          <Button
             onClick={onClearFilters}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            variant="link"
+            size="sm"
+            className="text-sm"
           >
             Clear all filters
-          </button>
+          </Button>
         )}
       </div>
 
@@ -176,15 +179,20 @@ export default function ContactsFilter({
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
                   >
                     {tag}
-                    <button
+                    <Button
                       onClick={() => toggleTag(tag)}
-                      className="hover:text-blue-900 transition-colors"
-                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="p-0 w-auto h-auto hover:text-blue-900"
+                      title="Remove tag"
+                      icon={
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      }
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                      <span className="sr-only">Remove {tag}</span>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -219,17 +227,18 @@ export default function ContactsFilter({
                       )
                       .slice(0, 20)
                       .map(tag => (
-                        <button
+                        <Button
                           key={tag}
                           onClick={() => {
                             toggleTag(tag);
                             setTagSearch("");
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm text-gray-700"
-                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 justify-start"
                         >
                           {tag}
-                        </button>
+                        </Button>
                       ))}
                     {uniqueTags.filter(tag => 
                       !selectedTags.includes(tag) &&

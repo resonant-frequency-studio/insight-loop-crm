@@ -15,25 +15,34 @@ export const actionItemDoc = (
 
 /**
  * Get all action items for a contact
+ * 
+ * NOTE: This function makes Firestore reads. Use sparingly to avoid quota exhaustion.
+ * Consider caching results or using real-time listeners for frequently accessed data.
  */
 export async function getActionItemsForContact(
   userId: string,
   contactId: string
 ): Promise<ActionItem[]> {
-  const snapshot = await adminDb
-    .collection(actionItemsPath(userId, contactId))
-    .orderBy("createdAt", "desc")
-    .get();
+  try {
+    const snapshot = await adminDb
+      .collection(actionItemsPath(userId, contactId))
+      .orderBy("createdAt", "desc")
+      .get();
 
-  return snapshot.docs.map((doc) => ({
-    ...(doc.data() as ActionItem),
-    actionItemId: doc.id,
-  }));
+    return snapshot.docs.map((doc) => ({
+      ...(doc.data() as ActionItem),
+      actionItemId: doc.id,
+    }));
+  } catch (error) {
+    // Let the error propagate - API route will handle quota errors appropriately
+    throw error;
+  }
 }
 
 /**
  * Get all action items for a user (across all contacts)
  * Returns action items with contactId included
+ * Processes in batches to avoid quota issues
  */
 export async function getAllActionItemsForUser(
   userId: string
@@ -43,16 +52,42 @@ export async function getAllActionItemsForUser(
     .collection(`users/${userId}/contacts`)
     .get();
 
-  const allActionItems: Array<ActionItem & { contactId: string }> = [];
+  if (contactsSnapshot.empty) {
+    return [];
+  }
 
-  // Fetch action items for each contact
-  for (const contactDoc of contactsSnapshot.docs) {
-    const contactId = contactDoc.id;
-    const actionItems = await getActionItemsForContact(userId, contactId);
-    // Add contactId to each action item
-    actionItems.forEach((item) => {
-      allActionItems.push({ ...item, contactId });
+  const allActionItems: Array<ActionItem & { contactId: string }> = [];
+  const contactDocs = contactsSnapshot.docs;
+  
+  // Process contacts in batches to avoid quota issues
+  const batchSize = 10;
+  const delayBetweenBatches = 50; // 50ms delay between batches
+
+  for (let i = 0; i < contactDocs.length; i += batchSize) {
+    const batch = contactDocs.slice(i, i + batchSize);
+    
+    // Process batch in parallel
+    const batchPromises = batch.map(async (contactDoc) => {
+      const contactId = contactDoc.id;
+      try {
+        const actionItems = await getActionItemsForContact(userId, contactId);
+        // Add contactId to each action item
+        return actionItems.map((item) => ({ ...item, contactId }));
+      } catch (error) {
+        console.error(`Error fetching action items for contact ${contactId}:`, error);
+        return []; // Return empty array on error
+      }
     });
+
+    const batchResults = await Promise.all(batchPromises);
+    batchResults.forEach((items) => {
+      allActionItems.push(...items);
+    });
+
+    // Add delay between batches to avoid quota issues (except for last batch)
+    if (i + batchSize < contactDocs.length) {
+      await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+    }
   }
 
   return allActionItems.sort((a, b) => {

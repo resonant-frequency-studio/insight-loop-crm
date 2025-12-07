@@ -100,6 +100,10 @@ export async function importContact(
   const contactId = normalizeContactId(email);
   const docRef = doc(db, `users/${userId}/contacts/${contactId}`);
   
+  // Extract actionItems text before converting row to contact
+  // This will be converted to subcollection format after contact is saved
+  const actionItemsText = row.ActionItems?.trim() || null;
+  
   // Check if contact exists
   const docSnap = await getDoc(docRef);
   const exists = docSnap.exists();
@@ -109,7 +113,7 @@ export async function importContact(
     return { success: true, skipped: true };
   }
   
-  // Prepare contact data
+  // Prepare contact data (actionItems field is excluded by csvRowToContact)
   const contactData = csvRowToContact(row, contactId);
   
   // Handle createdAt and archived status based on overwrite mode
@@ -143,6 +147,38 @@ export async function importContact(
   
   try {
     await Promise.race([writePromise, timeoutPromise]);
+    
+    // After successfully saving the contact, convert actionItems to subcollection format
+    if (actionItemsText && actionItemsText.length > 0) {
+      try {
+        const response = await fetch("/api/action-items/import-from-text", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contactId,
+            actionItemsText,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(
+            `Failed to import action items for contact ${contactId}:`,
+            errorData.error || "Unknown error"
+          );
+          // Don't fail the contact import if action items conversion fails
+        }
+      } catch (error) {
+        console.error(
+          `Error importing action items for contact ${contactId}:`,
+          error instanceof Error ? error.message : "Unknown error"
+        );
+        // Don't fail the contact import if action items conversion fails
+      }
+    }
+    
     return { success: true };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
+import { Button } from "@/components/Button";
+import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components/ErrorMessage";
 import { ActionItem } from "@/types/firestore";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
@@ -29,6 +31,15 @@ export default function ActionItemsPage() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [completing, setCompleting] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(() => {
+    // Check localStorage for persisted quota status
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("firestoreQuotaExceeded") === "true";
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -58,53 +69,102 @@ export default function ActionItemsPage() {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  // Load action items via API
-  useEffect(() => {
+  // Fetch action items function (memoized so it can be called manually)
+  const fetchAllActionItems = useCallback(async () => {
     if (!user?.uid) {
       setLoading(false);
       return;
     }
 
-    const fetchAllActionItems = async () => {
-      try {
-        const response = await fetch("/api/action-items/all");
-        if (!response.ok) {
-          throw new Error("Failed to fetch action items");
+    // Don't fetch if quota is already exceeded - prevents repeated failed requests
+    if (quotaExceeded) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/action-items/all");
+      
+      // Check for quota errors BEFORE trying to parse response
+      if (response.status === 429) {
+        setQuotaExceeded(true);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("firestoreQuotaExceeded", "true");
         }
-        const data = await response.json();
-        const items = data.actionItems || [];
-
-        // Get contact names for each action item
-        const itemsWithContactNames = await Promise.all(
-          items.map(async (item: ActionItem & { contactId: string }) => {
-            const contact = contacts.get(item.contactId);
-            const contactName = contact
-              ? [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
-                contact.primaryEmail
-              : "Unknown Contact";
-            return { ...item, contactName };
-          })
-        );
-
-        setActionItems(itemsWithContactNames);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching action items:", error);
+        setCompleteError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
         setActionItems([]);
         setLoading(false);
+        return; // Stop here, don't throw
       }
-    };
+      
+      if (!response.ok) {
+        const errorMessage = await extractApiError(response);
+        // Check if it's a quota error
+        if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+          setQuotaExceeded(true);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("firestoreQuotaExceeded", "true");
+          }
+          setCompleteError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
+          setActionItems([]);
+          setLoading(false);
+          return; // Stop here, don't throw
+        }
+        throw new Error(errorMessage);
+      }
+      const data = await response.json();
+      const items = data.actionItems || [];
 
-    fetchAllActionItems();
+      // Get contact names for each action item
+      const itemsWithContactNames = await Promise.all(
+        items.map(async (item: ActionItem & { contactId: string }) => {
+          const contact = contacts.get(item.contactId);
+          const contactName = contact
+            ? [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
+              contact.primaryEmail
+            : "Unknown Contact";
+          return { ...item, contactName };
+        })
+      );
 
-    // Poll for updates every 10 seconds
-    const interval = setInterval(fetchAllActionItems, 10000);
-
-    return () => clearInterval(interval);
+      setActionItems(itemsWithContactNames);
+      setLoading(false);
+      // Reset quota status if successful
+      setQuotaExceeded(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("firestoreQuotaExceeded");
+      }
+    } catch (error) {
+      console.error("Error fetching action items:", error);
+      const errorMessage = extractErrorMessage(error);
+      // Check for quota errors in catch block too
+      if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+        setQuotaExceeded(true);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("firestoreQuotaExceeded", "true");
+        }
+        setCompleteError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
+        setActionItems([]);
+        setLoading(false);
+        return; // Stop here
+      }
+      setActionItems([]);
+      setLoading(false);
+    }
+    // Note: quotaExceeded is NOT in dependencies to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, contacts]);
+
+  // Load action items on mount and when dependencies change
+  useEffect(() => {
+    fetchAllActionItems();
+    // No polling - only fetch on mount or when user/contacts change
+    // Updates will be triggered manually after create/update/delete operations
+  }, [fetchAllActionItems]);
 
   const handleComplete = async (item: ActionItem & { contactId: string }) => {
     setCompleting(item.actionItemId);
+    setCompleteError(null);
     try {
       const response = await fetch(
         `/api/action-items?contactId=${item.contactId}&actionItemId=${item.actionItemId}`,
@@ -116,11 +176,20 @@ export default function ActionItemsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to complete action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
+      setCompleteError(null);
+      // Clear quota flag to allow refresh attempt after successful operation
+      setQuotaExceeded(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("firestoreQuotaExceeded");
+      }
+      // Refresh action items
+      fetchAllActionItems();
     } catch (error) {
       console.error("Error completing action item:", error);
-      alert("Failed to complete action item. Please try again.");
+      setCompleteError(extractErrorMessage(error));
     } finally {
       setCompleting(null);
     }
@@ -132,6 +201,7 @@ export default function ActionItemsPage() {
     }
 
     setDeleting(item.actionItemId);
+    setDeleteError(null);
     try {
       const response = await fetch(
         `/api/action-items?contactId=${item.contactId}&actionItemId=${item.actionItemId}`,
@@ -141,11 +211,20 @@ export default function ActionItemsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to delete action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
+      setDeleteError(null);
+      // Clear quota flag to allow refresh attempt after successful operation
+      setQuotaExceeded(false);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("firestoreQuotaExceeded");
+      }
+      // Refresh action items
+      fetchAllActionItems();
     } catch (error) {
       console.error("Error deleting action item:", error);
-      alert("Failed to delete action item. Please try again.");
+      setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(null);
     }
@@ -374,34 +453,43 @@ export default function ActionItemsPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <button
+                    <Button
                       onClick={() => handleComplete(item)}
                       disabled={
                         item.status === "completed" ||
                         completing === item.actionItemId
                       }
-                      className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                      loading={completing === item.actionItemId}
+                      variant="ghost"
+                      size="sm"
+                      className={`mt-0.5 w-5 h-5 p-0 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
                         item.status === "completed"
-                          ? "bg-green-500 border-green-500"
-                          : "border-gray-300 hover:border-green-500"
+                          ? "bg-green-500 border-green-500 hover:bg-green-500"
+                          : "border-gray-300 hover:border-green-500 bg-transparent"
                       }`}
+                      title={item.status === "completed" ? "Mark as pending" : "Mark as completed"}
+                      icon={
+                        item.status === "completed" ? (
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : undefined
+                      }
                     >
-                      {item.status === "completed" && (
-                        <svg
-                          className="w-3 h-3 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      )}
-                    </button>
+                      <span className="sr-only">
+                        {item.status === "completed" ? "Mark as pending" : "Mark as completed"}
+                      </span>
+                    </Button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <p
@@ -414,26 +502,32 @@ export default function ActionItemsPage() {
                           {item.text}
                         </p>
                         {item.status === "pending" && (
-                          <button
+                          <Button
                             onClick={() => handleDelete(item)}
                             disabled={deleting === item.actionItemId}
-                            className="p-1 text-gray-400 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0"
+                            loading={deleting === item.actionItemId}
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 text-gray-400 hover:text-red-600 shrink-0"
                             title="Delete"
+                            icon={
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            }
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
+                            <span className="sr-only">Delete</span>
+                          </Button>
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
@@ -443,7 +537,7 @@ export default function ActionItemsPage() {
                         >
                           {contactName}
                         </Link>
-                        {item.dueDate && (
+                        {item.dueDate ? (
                           <span
                             className={
                               overdue && item.status === "pending"
@@ -451,21 +545,39 @@ export default function ActionItemsPage() {
                                 : ""
                             }
                           >
-                            Due: {formatContactDate(item.dueDate, { relative: true })}
+                            Due: {String(formatContactDate(item.dueDate, { relative: true }))}
                             {overdue && item.status === "pending" && " (Overdue)"}
                           </span>
-                        )}
-                        {item.status === "completed" && item.completedAt && (
+                        ) : null}
+                        {item.status === "completed" && item.completedAt ? (
                           <span>
-                            Completed: {formatContactDate(item.completedAt, { relative: true })}
+                            Completed: {String(formatContactDate(item.completedAt, { relative: true }))}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+        {(completeError || deleteError) && (
+          <div className="mt-4 space-y-2">
+            {completeError && (
+              <ErrorMessage
+                message={completeError}
+                dismissible
+                onDismiss={() => setCompleteError(null)}
+              />
+            )}
+            {deleteError && (
+              <ErrorMessage
+                message={deleteError}
+                dismissible
+                onDismiss={() => setDeleteError(null)}
+              />
+            )}
           </div>
         )}
       </Card>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
+import { Button } from "@/components/Button";
 
 interface TouchpointStatusActionsProps {
   contactId: string;
@@ -123,23 +124,26 @@ export default function TouchpointStatusActions({
             disabled={updating}
           />
           <div className="flex gap-3 justify-end">
-            <button
+            <Button
               onClick={() => {
                 setShowCompleteModal(false);
                 setReason("");
               }}
               disabled={updating}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              variant="secondary"
+              size="sm"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleUpdateStatus("completed", reason)}
               disabled={updating}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+              loading={updating}
+              variant="success"
+              size="sm"
             >
-              {updating ? "Updating..." : "Mark as Contacted"}
-            </button>
+              Mark as Contacted
+            </Button>
           </div>
         </Modal>
         <Modal
@@ -165,23 +169,26 @@ export default function TouchpointStatusActions({
             disabled={updating}
           />
           <div className="flex gap-3 justify-end">
-            <button
+            <Button
               onClick={() => {
                 setShowCancelModal(false);
                 setReason("");
               }}
               disabled={updating}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+              variant="secondary"
+              size="sm"
             >
               Keep Touchpoint
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleUpdateStatus("cancelled", reason)}
               disabled={updating}
-              className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              loading={updating}
+              variant="secondary"
+              size="sm"
             >
-              {updating ? "Skipping..." : "Skip Touchpoint"}
-            </button>
+              Skip Touchpoint
+            </Button>
           </div>
         </Modal>
       </div>
@@ -209,33 +216,37 @@ export default function TouchpointStatusActions({
         )}
       </div>
       
-      {(!currentStatus || currentStatus === "pending") && (
+        {(!currentStatus || currentStatus === "pending") && (
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => setShowCompleteModal(true)}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="success"
+            size="sm"
           >
             Mark as Contacted
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setShowCancelModal(true)}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="secondary"
+            size="sm"
           >
             Skip Touchpoint
-          </button>
+          </Button>
         </div>
       )}
 
       {(currentStatus === "completed" || currentStatus === "cancelled") && (
-        <button
+        <Button
           onClick={() => handleUpdateStatus(null)}
           disabled={updating}
-          className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          variant="outline"
+          size="sm"
+          className="text-blue-700 bg-blue-50 hover:bg-blue-100"
         >
           Restore to Pending
-        </button>
+        </Button>
       )}
 
       {/* Modals */}

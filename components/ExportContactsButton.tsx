@@ -2,6 +2,7 @@
 
 import { Contact } from "@/types/firestore";
 import Papa from "papaparse";
+import { Button } from "./Button";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -80,26 +81,30 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
   };
 
   return (
-    <button
+    <Button
       onClick={exportToCSV}
       disabled={disabled || contacts.length === 0}
-      className="flex items-center cursor-pointer justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium w-full sm:w-auto active:scale-95"
+      variant="gradient-emerald"
+      size="md"
+      icon={
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      }
+      className="w-full sm:w-auto"
     >
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
       Export {contacts.length > 0 ? `(${contacts.length})` : ""}
-    </button>
+    </Button>
   );
 }
 

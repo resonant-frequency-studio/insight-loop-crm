@@ -25,7 +25,7 @@ export function csvRowToContact(row: Record<string, string>, contactId: string):
 
     // Imported CRM fields
     summary: row.Summary?.trim() || null,
-    actionItems: row.ActionItems?.trim() || null,
+    // Note: actionItems is handled separately and converted to subcollection format
     sentiment: row.Sentiment?.trim() || null,
     relationshipInsights: row.RelationshipInsights?.trim() || null,
     painPoints: row.PainPoints?.trim() || null,

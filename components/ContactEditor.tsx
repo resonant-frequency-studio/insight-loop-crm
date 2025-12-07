@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
 import Card from "@/components/Card";
+import { Button } from "./Button";
+import { ErrorMessage, extractApiError, extractErrorMessage } from "./ErrorMessage";
 import { formatContactDate } from "@/util/contact-utils";
 import SegmentSelect from "@/components/SegmentSelect";
 import ActionItemsList from "@/components/ActionItemsList";
@@ -17,15 +19,17 @@ function InfoPopover({ content, children }: { content: string; children: React.R
 
   return (
     <div className="relative inline-block">
-      <button
+      <Button
         type="button"
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors"
+        variant="ghost"
+        size="sm"
+        className="inline-flex items-center justify-center w-4 h-4 p-0 text-gray-400 hover:text-gray-600"
       >
         {children}
-      </button>
+      </Button>
       {isOpen && (
         <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-white border border-gray-200 text-gray-900 text-[14px] rounded-lg shadow-xl z-50">
           <p className="leading-relaxed lowercase">{content}</p>
@@ -49,6 +53,9 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
   const [deleting, setDeleting] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const router = useRouter();
 
@@ -74,14 +81,16 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
 
   const saveChanges = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       await updateDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`), {
         ...form,
         updatedAt: new Date(),
       });
+      setSaveError(null);
     } catch (error) {
       console.error("Error updating contact:", error);
-      alert("Failed to save changes. Please try again.");
+      setSaveError(extractErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -89,18 +98,20 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
 
   const deleteContact = async () => {
     setDeleting(true);
+    setDeleteError(null);
     try {
       await deleteDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`));
       router.push("/contacts");
     } catch (error) {
       console.error("Error deleting contact:", error);
-      alert("Failed to delete contact. Please try again.");
+      setDeleteError(extractErrorMessage(error));
       setDeleting(false);
     }
   };
 
   const archiveContact = async (archived: boolean) => {
     setArchiving(true);
+    setArchiveError(null);
     try {
       const response = await fetch(`/api/contacts/${encodeURIComponent(contactDocumentId)}/archive`, {
         method: "PATCH",
@@ -109,15 +120,15 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to archive contact");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
 
       // Redirect to contacts page after archiving
       router.push("/contacts");
     } catch (error) {
       console.error("Error archiving contact:", error);
-      alert(`Failed to ${archived ? "archive" : "unarchive"} contact. Please try again.`);
+      setArchiveError(extractErrorMessage(error));
       setArchiving(false);
     }
   };
@@ -135,30 +146,24 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
           Are you sure? Deleting this contact is final and cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             onClick={() => setShowDeleteConfirm(false)}
             disabled={deleting}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            variant="secondary"
+            size="sm"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={deleteContact}
             disabled={deleting}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+            loading={deleting}
+            variant="danger"
+            size="sm"
+            error={deleteError}
           >
-            {deleting ? (
-              <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Deleting...
-              </>
-            ) : (
-              "Delete"
-            )}
-          </button>
+            Delete
+          </Button>
         </div>
       </Modal>
 
@@ -457,29 +462,22 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
 
         {/* Save Changes Button - Bottom Left */}
         <div className="flex justify-start">
-          <button
+          <Button
             onClick={saveChanges}
             disabled={saving}
-            className="px-6 py-2.5 bg-gray-100 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2 shadow-lg"
+            loading={saving}
+            variant="primary"
+            error={saveError}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            }
             title="Save all changes to this contact (excluding draft)"
+            className="shadow-lg"
           >
-            {saving ? (
-              <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Save All Changes
-              </>
-            )}
-          </button>
+            Save All Changes
+          </Button>
         </div>
 
       </div>
@@ -707,54 +705,76 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
 
         {/* Archive Contact Button - Right Sidebar */}
         <Card padding="md">
-          <button
+          <Button
             onClick={() => archiveContact(!contact.archived)}
             disabled={archiving || deleting}
-            className="w-full px-6 py-2.5 bg-gray-100 border-2 border-gray-600 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2 mb-3"
-          >
-            {archiving ? (
-              <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            loading={archiving}
+            variant="outline"
+            fullWidth
+            error={archiveError}
+            icon={
+              contact.archived ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                {contact.archived ? "Unarchiving..." : "Archiving..."}
-              </>
-            ) : (
-              <>
-                {contact.archived ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Unarchive Contact
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                    Archive Contact
-                  </>
-                )}
-              </>
-            )}
-          </button>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+              )
+            }
+            className="mb-3"
+          >
+            {contact.archived ? "Unarchive Contact" : "Archive Contact"}
+          </Button>
         </Card>
 
         {/* Delete Contact Button - Right Sidebar */}
         <Card padding="md">
-          <button
+          <Button
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deleting || showDeleteConfirm || archiving}
-            className="w-full px-6 py-2.5 bg-gray-100 border-2 border-red-600 text-red-600 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2"
+            variant="danger"
+            fullWidth
+            error={deleteError}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            }
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
             Delete Contact
-          </button>
+          </Button>
         </Card>
+        
+        {/* Error Messages */}
+        {(saveError || deleteError || archiveError) && (
+          <Card padding="md">
+            <div className="space-y-2">
+              {saveError && (
+                <ErrorMessage
+                  message={saveError}
+                  dismissible
+                  onDismiss={() => setSaveError(null)}
+                />
+              )}
+              {deleteError && (
+                <ErrorMessage
+                  message={deleteError}
+                  dismissible
+                  onDismiss={() => setDeleteError(null)}
+                />
+              )}
+              {archiveError && (
+                <ErrorMessage
+                  message={archiveError}
+                  dismissible
+                  onDismiss={() => setArchiveError(null)}
+                />
+              )}
+            </div>
+          </Card>
+        )}
       </div>
       </div>
     </div>
@@ -862,77 +882,57 @@ function OutreachDraftEditor({
         </h2>
         <div className="flex items-center gap-2">
           {draftHasChanges && (
-            <button
+            <Button
               onClick={saveOutreachDraft}
               disabled={savingDraft}
-              className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
+              loading={savingDraft}
+              variant="outline"
+              size="sm"
+              className="text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
               title="Save only this draft"
+              icon={
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              }
             >
-              {savingDraft ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Save Draft
-                </>
-              )}
-            </button>
+              Save Draft
+            </Button>
           )}
           {outreachDraft.trim() && contact.primaryEmail && (
-            <button
+            <Button
               onClick={openGmailCompose}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-2"
+              variant="primary"
+              size="sm"
               title="Open this draft in Gmail"
+              icon={
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              }
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
               Continue in Gmail
-            </button>
+            </Button>
           )}
         </div>
       </div>

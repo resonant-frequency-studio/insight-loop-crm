@@ -6,6 +6,11 @@ import { getUserId } from "@/lib/auth-utils";
  * GET /api/gmail/sync
  * Manual sync endpoint - uses the sync job runner
  * Supports query params: ?type=initial|incremental|auto
+ * 
+ * OPTIMIZATIONS:
+ * - Uses blind upserts (no existence checks) to reduce Firestore reads by ~50%
+ * - See lib/gmail/incremental-sync.ts for detailed optimization notes
+ * - Estimated reads: ~1 per message (for contact lookup) vs ~2 before optimization
  */
 export async function GET(req: Request) {
   try {

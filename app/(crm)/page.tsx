@@ -7,6 +7,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import Link from "next/link";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
+import { Button } from "@/components/Button";
 import SegmentChart from "@/components/charts/SegmentChart";
 import LeadSourceChart from "@/components/charts/LeadSourceChart";
 import EngagementChart from "@/components/charts/EngagementChart";
@@ -335,46 +336,54 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={() => handleBulkStatusUpdate("completed")}
                       disabled={bulkUpdating}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      loading={bulkUpdating}
+                      variant="gradient-green"
+                      size="sm"
+                      icon={
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      }
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
                       Mark as Contacted ({Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length})
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleBulkStatusUpdate("cancelled")}
                       disabled={bulkUpdating}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      loading={bulkUpdating}
+                      variant="gradient-gray"
+                      size="sm"
+                      icon={
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      }
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
                       Skip Touchpoint ({Array.from(selectedTouchpointIds).filter(id => contactsWithUpcomingTouchpoints.some(c => c.id === id)).length})
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -466,46 +475,54 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={() => handleBulkStatusUpdate("completed")}
                       disabled={bulkUpdating}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      loading={bulkUpdating}
+                      variant="gradient-green"
+                      size="sm"
+                      icon={
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      }
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
                       Mark as Contacted ({Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length})
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleBulkStatusUpdate("cancelled")}
                       disabled={bulkUpdating}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      loading={bulkUpdating}
+                      variant="gradient-gray"
+                      size="sm"
+                      icon={
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      }
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
                       Skip Touchpoint ({Array.from(selectedTouchpointIds).filter(id => contactsWithOverdueTouchpoints.some(c => c.id === id)).length})
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </Card>

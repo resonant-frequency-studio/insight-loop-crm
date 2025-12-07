@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
+import { Button } from "@/components/Button";
 
 export default function MigrateActionItemsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -21,6 +22,15 @@ export default function MigrateActionItemsPage() {
     migrated: number;
     skipped: number;
     errors: number;
+    quotaLimitReached?: boolean;
+    contactsProcessedSoFar?: number;
+    summary?: {
+      totalContactsFetched?: number;
+      totalContacts?: number;
+      contactsWithActionItemsField: number;
+      contactsWithNonEmptyActionItems: number;
+      contactsProcessed: number;
+    };
     details?: Array<{
       contactId: string;
       email: string;
@@ -63,7 +73,18 @@ export default function MigrateActionItemsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Migration failed");
+        // If it's a quota error, set it as result so we can show the special UI
+        if (response.status === 429 || data.quotaLimitReached) {
+          setResult({
+            ...data,
+            processed: data.processed || 0,
+            migrated: data.migrated || 0,
+            skipped: data.skipped || 0,
+            errors: data.errors || 0,
+          });
+          return;
+        }
+        throw new Error(data.error || data.message || "Migration failed");
       }
 
       setResult(data);
@@ -154,51 +175,24 @@ export default function MigrateActionItemsPage() {
             </label>
           </div>
 
-          <button
+          <Button
             onClick={handleMigrate}
             disabled={running}
-            className={`w-full px-6 py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-              dryRun
-                ? "bg-blue-500 hover:bg-blue-600 text-white"
-                : "bg-linear-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white"
-            }`}
+            loading={running}
+            variant={dryRun ? "primary" : "danger"}
+            size="lg"
+            fullWidth
           >
-            {running ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                {dryRun ? "Running preview..." : "Migrating..."}
-              </span>
-            ) : (
-              dryRun ? "Preview Migration" : "Run Migration"
-            )}
-          </button>
+            {dryRun ? "Preview Migration" : "Run Migration"}
+          </Button>
         </div>
       </Card>
 
       {error && (
         <Card padding="md" className="bg-red-50 border-red-200">
-          <div className="flex items-center gap-3">
+          <div className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 text-red-600"
+              className="w-5 h-5 text-red-600 shrink-0 mt-0.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -210,7 +204,63 @@ export default function MigrateActionItemsPage() {
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-red-800 font-medium">{error}</p>
+            <div>
+              <p className="text-red-800 font-medium mb-2">{error}</p>
+              {error.includes("quota") || error.includes("Quota") ? (
+                <div className="text-sm text-red-700 space-y-1">
+                  <p>Firestore free tier limits:</p>
+                  <ul className="list-disc list-inside ml-2">
+                    <li>50,000 reads per day</li>
+                    <li>20,000 writes per day</li>
+                  </ul>
+                  <p className="mt-2">Quotas reset daily. You can:</p>
+                  <ul className="list-disc list-inside ml-2">
+                    <li>Wait a few hours for the quota to reset</li>
+                    <li>Upgrade your Firebase plan for higher limits</li>
+                    <li>Run the migration in smaller chunks (it now processes max 200 contacts per run)</li>
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {result?.quotaLimitReached && (
+        <Card padding="md" className="bg-orange-50 border-orange-200">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-5 h-5 text-orange-600 shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <h3 className="text-orange-900 font-semibold mb-2">Firestore Quota Exceeded</h3>
+              <p className="text-sm text-orange-800 mb-2">
+                {result.message}
+              </p>
+              {result.contactsProcessedSoFar !== undefined && (
+                <p className="text-sm text-orange-700">
+                  Processed {result.contactsProcessedSoFar} contacts before hitting the limit.
+                </p>
+              )}
+              <div className="mt-3 text-sm text-orange-800">
+                <p className="font-medium mb-1">Your options:</p>
+                <ul className="list-disc list-inside ml-2 space-y-1">
+                  <li>Wait a few hours for daily quota to reset (resets at midnight Pacific Time)</li>
+                  <li>Upgrade to Firebase Blaze plan for higher limits</li>
+                  <li>Run migration again later - it will continue from where it left off</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </Card>
       )}
@@ -238,6 +288,25 @@ export default function MigrateActionItemsPage() {
             </div>
 
             <div className="bg-white rounded-lg p-4 space-y-2">
+              {result.summary && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs font-medium text-blue-900 mb-2">Database Summary:</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <span className="text-blue-700">Total Contacts:</span>{" "}
+                      <span className="font-semibold">{result.summary.totalContacts}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">With actionItems Field:</span>{" "}
+                      <span className="font-semibold">{result.summary.contactsWithActionItemsField}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">With Non-Empty Action Items:</span>{" "}
+                      <span className="font-semibold">{result.summary.contactsWithNonEmptyActionItems}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Processed</p>

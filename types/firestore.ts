@@ -20,6 +20,9 @@ export interface Contact {
     // Next touchpoint
     nextTouchpointDate?: unknown | null;
     nextTouchpointMessage?: string | null;
+    touchpointStatus?: "pending" | "completed" | "cancelled" | null;
+    touchpointStatusUpdatedAt?: unknown | null;
+    touchpointStatusReason?: string | null;
   
     // AI fields
     summary?: string | null;
@@ -33,6 +36,7 @@ export interface Contact {
     // Meta
     summaryUpdatedAt?: unknown | null;
     needsSummaryRefresh?: boolean;
+    archived?: boolean; // If true, contact is archived (hidden from main view but still exists for duplicate checking)
   
     createdAt: unknown;
     updatedAt: unknown;
@@ -93,5 +97,20 @@ export interface Contact {
   
     gmailQuery?: string | null;
     errorMessage?: string | null;
+  }
+
+  export interface ActionItem {
+    actionItemId: string;
+    contactId: string;
+    userId: string;
+    
+    text: string;
+    status: "pending" | "completed";
+    
+    dueDate?: unknown | null; // Firestore timestamp or date string
+    completedAt?: unknown | null; // Firestore timestamp
+    
+    createdAt: unknown;
+    updatedAt: unknown;
   }
   

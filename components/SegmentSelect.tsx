@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 
 interface SegmentSelectProps {
   value: string | null;
@@ -22,11 +22,44 @@ export default function SegmentSelect({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isUserTypingRef = useRef(false);
+  const previousValueRef = useRef<string | null>(value);
+  const inputValueRef = useRef(inputValue);
 
-  // Update input value when prop value changes
+  // Keep ref in sync with state
   useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
+    inputValueRef.current = inputValue;
+  }, [inputValue]);
+
+  // Function to sync input value from prop changes (called from effect)
+  // This follows React's recommendation to call a function instead of setState directly
+  const syncInputFromProp = useCallback((newValue: string | null) => {
+    const valueToSet = newValue || "";
+    // Use ref to check current value without causing re-renders
+    if (inputValueRef.current !== valueToSet) {
+      setInputValue(valueToSet);
+    }
+  }, []);
+
+  // Update input value when prop value changes (only if changed externally, not from user input)
+  // This is necessary to sync controlled input state with prop changes while allowing user typing
+  // We defer the state update by calling the sync function asynchronously to avoid cascading renders
+  useEffect(() => {
+    if (previousValueRef.current !== value && !isUserTypingRef.current) {
+      previousValueRef.current = value;
+      // Defer the function call to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        syncInputFromProp(value);
+      });
+    }
+    // Reset typing flag after a short delay
+    if (isUserTypingRef.current) {
+      const timer = setTimeout(() => {
+        isUserTypingRef.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [value, syncInputFromProp]);
 
   // Filter segments based on input
   const filteredSegments = useMemo(() => {
@@ -46,6 +79,7 @@ export default function SegmentSelect({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    isUserTypingRef.current = true;
     setInputValue(newValue);
     setHighlightedIndex(-1);
     setIsOpen(true);
@@ -57,7 +91,7 @@ export default function SegmentSelect({
     setIsOpen(true);
   };
 
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleInputBlur = () => {
     // Delay closing to allow clicking on dropdown items
     setTimeout(() => {
       if (!dropdownRef.current?.contains(document.activeElement)) {

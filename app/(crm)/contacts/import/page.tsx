@@ -4,6 +4,7 @@ import { useContactImportPage } from "@/hooks/useContactImportPage";
 import Modal from "@/components/Modal";
 import Card from "@/components/Card";
 import Loading from "@/components/Loading";
+import { Button } from "@/components/Button";
 
 export default function ImportContactsPage() {
   const {
@@ -234,12 +235,13 @@ export default function ImportContactsPage() {
             {/* Cancel button if importing */}
         {isImporting && (
           <div className="mt-4 text-center">
-            <button
-                  onClick={cancel}
-              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            <Button
+              onClick={cancel}
+              variant="link"
+              size="sm"
             >
               Cancel Import
-            </button>
+            </Button>
           </div>
         )}
       </Card>
@@ -293,15 +295,16 @@ export default function ImportContactsPage() {
           </div>
         </div>
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             type="button"
             onClick={handleCancelModal}
             disabled={isImporting}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            variant="secondary"
+            size="md"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={(e) => {
               e.preventDefault();
@@ -310,10 +313,11 @@ export default function ImportContactsPage() {
               }
             }}
             disabled={!overwriteMode || isImporting}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            variant="primary"
+            size="md"
           >
             Continue Import
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

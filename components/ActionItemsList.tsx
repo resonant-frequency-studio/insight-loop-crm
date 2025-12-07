@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { ActionItem } from "@/types/firestore";
 import ActionItemCard from "./ActionItemCard";
+import { Button } from "./Button";
+import { ErrorMessage, extractApiError, extractErrorMessage } from "./ErrorMessage";
 
 interface ActionItemsListProps {
   userId: string;
@@ -25,9 +27,24 @@ export default function ActionItemsList({
   const [newDueDate, setNewDueDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(() => {
+    // Check localStorage for persisted quota status
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("firestoreQuotaExceeded") === "true";
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!userId || !contactId) {
+      setLoading(false);
+      return;
+    }
+
+    // Don't fetch if quota is already exceeded - prevents repeated failed requests
+    if (quotaExceeded) {
       setLoading(false);
       return;
     }
@@ -38,17 +55,58 @@ export default function ActionItemsList({
         const response = await fetch(
           `/api/action-items?contactId=${encodeURIComponent(contactId)}`
         );
+        
+        // Check for quota errors BEFORE trying to parse response
+        if (response.status === 429) {
+          setQuotaExceeded(true);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("firestoreQuotaExceeded", "true");
+          }
+          setUpdateError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
+          setActionItems([]);
+          setLoading(false);
+          return; // Stop here, don't throw
+        }
+        
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch action items");
+          const errorMessage = await extractApiError(response);
+          // Check if it's a quota error
+          if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+            setQuotaExceeded(true);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("firestoreQuotaExceeded", "true");
+            }
+            setUpdateError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
+            setActionItems([]);
+            setLoading(false);
+            return; // Stop here, don't throw
+          }
+          throw new Error(errorMessage);
         }
         const data = await response.json();
         setActionItems(data.actionItems || []);
         setLoading(false);
+        // Reset quota status if successful
+        setQuotaExceeded(false);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("firestoreQuotaExceeded");
+        }
       } catch (error) {
         console.error("Error fetching action items:", error);
+        const errorMessage = extractErrorMessage(error);
+        // Check for quota errors in catch block too
+        if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
+          setQuotaExceeded(true);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("firestoreQuotaExceeded", "true");
+          }
+          setUpdateError("Database quota exceeded. Please wait a few hours or upgrade your plan.");
+          setActionItems([]);
+          setLoading(false);
+          return; // Stop here
+        }
         // Don't show error if it's a permissions issue - just show empty list
-        if (error instanceof Error && error.message.includes("permission")) {
+        if (errorMessage.includes("Permission") || errorMessage.includes("Authentication")) {
           console.warn("Action items require proper authentication. Please ensure you're logged in.");
         }
         setActionItems([]);
@@ -58,17 +116,16 @@ export default function ActionItemsList({
 
     fetchActionItems();
 
-    // Refresh action items after create/update/delete operations
-    // Poll for updates every 10 seconds (less frequent than before)
-    const interval = setInterval(fetchActionItems, 10000);
-
-    return () => clearInterval(interval);
+    // No polling - only fetch on mount and when contactId changes
+    // Updates will be triggered manually via onActionItemUpdate callback
+    // Note: quotaExceeded is NOT in dependencies to prevent infinite loops
   }, [userId, contactId]);
 
   const handleAdd = async () => {
     if (!newText.trim()) return;
 
     setSaving(true);
+    setAddError(null);
     try {
       const response = await fetch("/api/action-items", {
         method: "POST",
@@ -81,16 +138,18 @@ export default function ActionItemsList({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
 
       setNewText("");
       setNewDueDate("");
       setIsAdding(false);
+      setAddError(null);
       onActionItemUpdate?.();
     } catch (error) {
       console.error("Error adding action item:", error);
-      alert("Failed to add action item. Please try again.");
+      setAddError(extractErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -98,6 +157,7 @@ export default function ActionItemsList({
 
   const handleComplete = async (actionItemId: string) => {
     setUpdating(actionItemId);
+    setUpdateError(null);
     try {
       const response = await fetch(
         `/api/action-items?contactId=${contactId}&actionItemId=${actionItemId}`,
@@ -109,13 +169,15 @@ export default function ActionItemsList({
       );
 
       if (!response.ok) {
-        throw new Error("Failed to complete action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
 
+      setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
       console.error("Error completing action item:", error);
-      alert("Failed to complete action item. Please try again.");
+      setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);
     }
@@ -127,6 +189,7 @@ export default function ActionItemsList({
     }
 
     setUpdating(actionItemId);
+    setUpdateError(null);
     try {
       const response = await fetch(
         `/api/action-items?contactId=${contactId}&actionItemId=${actionItemId}`,
@@ -136,13 +199,15 @@ export default function ActionItemsList({
       );
 
       if (!response.ok) {
-        throw new Error("Failed to delete action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
 
+      setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
       console.error("Error deleting action item:", error);
-      alert("Failed to delete action item. Please try again.");
+      setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);
     }
@@ -154,6 +219,7 @@ export default function ActionItemsList({
     dueDate: string | null
   ) => {
     setUpdating(actionItemId);
+    setUpdateError(null);
     try {
       const response = await fetch(
         `/api/action-items?contactId=${contactId}&actionItemId=${actionItemId}`,
@@ -168,13 +234,15 @@ export default function ActionItemsList({
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update action item");
+        const errorMessage = await extractApiError(response);
+        throw new Error(errorMessage);
       }
 
+      setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
       console.error("Error updating action item:", error);
-      alert("Failed to update action item. Please try again.");
+      setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);
     }
@@ -198,6 +266,17 @@ export default function ActionItemsList({
     );
   }
 
+  if (quotaExceeded) {
+    return (
+      <div className="text-center py-4">
+        <ErrorMessage
+          message="Database quota exceeded. Action items cannot be loaded. Please wait a few hours or upgrade your plan."
+          dismissible={false}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header with filters */}
@@ -213,36 +292,42 @@ export default function ActionItemsList({
           )}
         </div>
         <div className="flex gap-1">
-          <button
+          <Button
             onClick={() => setFilterStatus("all")}
-            className={`px-2 py-1 text-xs font-medium rounded ${
+            variant={filterStatus === "all" ? "primary" : "ghost"}
+            size="sm"
+            className={`text-xs ${
               filterStatus === "all"
                 ? "bg-blue-100 text-blue-700"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             All ({actionItems.length})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setFilterStatus("pending")}
-            className={`px-2 py-1 text-xs font-medium rounded ${
+            variant={filterStatus === "pending" ? "primary" : "ghost"}
+            size="sm"
+            className={`text-xs ${
               filterStatus === "pending"
                 ? "bg-blue-100 text-blue-700"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             Pending ({pendingCount})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setFilterStatus("completed")}
-            className={`px-2 py-1 text-xs font-medium rounded ${
+            variant={filterStatus === "completed" ? "primary" : "ghost"}
+            size="sm"
+            className={`text-xs ${
               filterStatus === "completed"
                 ? "bg-blue-100 text-blue-700"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             Done ({completedCount})
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -265,73 +350,63 @@ export default function ActionItemsList({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             disabled={saving}
           />
-          <div className="flex gap-2">
-            <button
-              onClick={handleAdd}
-              disabled={saving || !newText.trim()}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Adding...
-                </>
-              ) : (
-                "Add"
-              )}
-            </button>
-            <button
-              onClick={() => {
-                setIsAdding(false);
-                setNewText("");
-                setNewDueDate("");
-              }}
-              disabled={saving}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAdd}
+                disabled={saving || !newText.trim()}
+                loading={saving}
+                variant="primary"
+                size="sm"
+                error={addError}
+              >
+                Add
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewText("");
+                  setNewDueDate("");
+                  setAddError(null);
+                }}
+                disabled={saving}
+                variant="outline"
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       ) : (
-        <button
+        <Button
           onClick={() => setIsAdding(true)}
-          className="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer flex items-center justify-center gap-2"
+          variant="outline"
+          size="sm"
+          fullWidth
+          icon={
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          }
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
           Add Action Item
-        </button>
+        </Button>
+      )}
+      {updateError && (
+        <div className="mt-2">
+          <ErrorMessage message={updateError} dismissible onDismiss={() => setUpdateError(null)} />
+        </div>
       )}
 
       {/* Action items list */}

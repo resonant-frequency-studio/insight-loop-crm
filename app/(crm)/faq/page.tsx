@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Card from "@/components/Card";
+import { Button } from "@/components/Button";
 
 interface FAQItem {
   question: string;
@@ -159,38 +160,32 @@ export default function FAQPage() {
       {/* Category Filters */}
       <Card padding="md">
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
             onClick={() => setSelectedCategory(null)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-              selectedCategory === null
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            variant={selectedCategory === null ? "primary" : "secondary"}
+            size="sm"
           >
             All Categories
-          </button>
+          </Button>
           {categories.map((category) => (
-            <button
+            <Button
               key={category}
               onClick={() => {
                 setSelectedCategory(category);
                 setOpenIndex(null);
               }}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                selectedCategory === category
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              variant={selectedCategory === category ? "primary" : "secondary"}
+              size="sm"
             >
               {category}
-            </button>
+            </Button>
           ))}
         </div>
       </Card>
 
       {/* FAQ List */}
       <div className="space-y-4">
-        {filteredFAQs.map((faq, index) => {
+        {filteredFAQs.map((faq) => {
           const actualIndex = faqData.indexOf(faq);
           const isOpen = openIndex === actualIndex;
 
@@ -200,9 +195,10 @@ export default function FAQPage() {
               padding="none"
               className="overflow-hidden"
             >
-              <button
+              <Button
                 onClick={() => toggleFAQ(actualIndex)}
-                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 transition-colors group"
+                variant="ghost"
+                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 group"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -231,7 +227,7 @@ export default function FAQPage() {
                     />
                   </svg>
                 </div>
-              </button>
+              </Button>
               <div
                 className={`transition-all duration-300 ease-in-out ${
                   isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
@@ -273,7 +269,7 @@ export default function FAQPage() {
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Still have questions?</h3>
             <p className="text-gray-700 mb-4">
-              Can't find what you're looking for? Our support team is here to help you get the most out of your CRM.
+              Can&apos;t find what you&apos;re looking for? Our support team is here to help you get the most out of your CRM.
             </p>
             <p className="text-sm text-gray-600">
               Reach out through your normal support channels or check your account documentation for additional resources.
