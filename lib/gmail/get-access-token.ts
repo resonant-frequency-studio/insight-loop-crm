@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebase-admin";
+import { reportException } from "@/lib/error-reporting";
 
 export async function getAccessToken(userId: string) {
   const doc = await adminDb.collection("googleAccounts").doc(userId).get();
@@ -28,7 +29,11 @@ export async function getAccessToken(userId: string) {
   const tokens = await res.json();
 
   if (!tokens.access_token) {
-    console.error(tokens);
+    reportException(new Error("Could not refresh access token"), {
+      context: "Token refresh failed",
+      tags: { component: "get-access-token", userId },
+      extra: { tokenResponse: tokens },
+    });
     throw new Error("Could not refresh access token.");
   }
 

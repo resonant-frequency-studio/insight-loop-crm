@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
+import { reportException } from "@/lib/error-reporting";
 
 export default function MigrateActionItemsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -91,7 +92,10 @@ export default function MigrateActionItemsPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
-      console.error("Migration error:", err);
+      reportException(err, {
+        context: "Migrating action items",
+        tags: { component: "MigrateActionItemsPage" },
+      });
     } finally {
       setRunning(false);
     }

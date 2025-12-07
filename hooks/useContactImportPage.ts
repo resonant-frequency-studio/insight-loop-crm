@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCsvParser } from "@/hooks/useCsvParser";
 import { useContactImport } from "@/hooks/useContactImport";
 import { OverwriteMode } from "@/lib/contact-import";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * Hook for managing the contact import page state and logic
@@ -52,7 +53,10 @@ export function useContactImportPage() {
       setParsedRows(rows);
       setShowOverwriteModal(true);
     } catch (error) {
-      console.error("Error parsing CSV:", error);
+      reportException(error, {
+        context: "Parsing CSV file",
+        tags: { component: "useContactImportPage" },
+      });
       setCsvStatus(parseError || "Error parsing CSV file");
     }
   };

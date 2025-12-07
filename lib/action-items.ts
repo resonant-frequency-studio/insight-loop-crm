@@ -1,6 +1,7 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { ActionItem } from "@/types/firestore";
 import { FieldValue } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * Get action items path for a contact
@@ -74,7 +75,10 @@ export async function getAllActionItemsForUser(
         // Add contactId to each action item
         return actionItems.map((item) => ({ ...item, contactId }));
       } catch (error) {
-        console.error(`Error fetching action items for contact ${contactId}:`, error);
+        reportException(error, {
+          context: "Fetching action items for contact",
+          tags: { component: "action-items", contactId },
+        });
         return []; // Return empty array on error
       }
     });

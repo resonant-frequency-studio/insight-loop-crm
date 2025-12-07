@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { THREAD_SUMMARY_PROMPT } from "@/lib/gemini/prompts";
 import { getUserId } from "@/lib/auth-utils";
 import { importActionItemsFromArray } from "@/lib/action-items";
+import { reportException } from "@/lib/error-reporting";
 
 interface ThreadSummary {
   summary: string;
@@ -95,10 +96,10 @@ export async function GET() {
             parsed.actionItems
           );
         } catch (error) {
-          console.error(
-            `Error importing action items for contact ${contactId}:`,
-            error
-          );
+          reportException(error, {
+            context: "Importing action items for contact during thread summarization",
+            tags: { component: "summarize", contactId, threadId },
+          });
           // Don't fail the summary if action item import fails
         }
       }
@@ -117,7 +118,10 @@ export async function GET() {
       summaries,
     });
   } catch (err) {
-    console.error("SUMMARY ERROR:", err);
+    reportException(err, {
+      context: "Thread summarization",
+      tags: { component: "summarize" },
+    });
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
   }

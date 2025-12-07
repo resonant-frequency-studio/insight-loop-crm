@@ -6,6 +6,7 @@ import { importActionItemsFromText } from "@/lib/action-items";
 import { Contact } from "@/types/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import type { QueryDocumentSnapshot, Query } from "firebase-admin/firestore";
+import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 
 /**
  * POST /api/admin/migrate-action-items
@@ -180,7 +181,10 @@ export async function POST(request: NextRequest) {
               }
             } catch (checkError) {
               // If we can't check, log but continue (might be permission issue)
-              console.warn(`Could not check existing action items for ${contact.id}:`, checkError);
+              reportMessage(`Could not check existing action items for contact`, ErrorLevel.WARNING, {
+                tags: { component: "migrate-action-items", contactId: contact.id },
+                extra: { error: checkError instanceof Error ? checkError.message : String(checkError) },
+              });
             }
           }
 
@@ -241,7 +245,11 @@ export async function POST(request: NextRequest) {
           results.errors++;
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
           const errorStack = error instanceof Error ? error.stack : undefined;
-          console.error(`Error processing contact ${contact.id}:`, error);
+          reportException(error, {
+            context: "Processing contact during migration",
+            tags: { component: "migrate-action-items", contactId: contact.id },
+            extra: { email: contact.primaryEmail || "no email" },
+          });
           results.details.push({
             contactId: contact.id,
             email: contact.primaryEmail || "no email",
@@ -273,7 +281,10 @@ export async function POST(request: NextRequest) {
       ...results,
     });
   } catch (error) {
-    console.error("Error migrating action items:", error);
+    reportException(error, {
+      context: "Migrating action items",
+      tags: { component: "migrate-action-items" },
+    });
     return NextResponse.json(
       {
         error: "Failed to migrate action items",

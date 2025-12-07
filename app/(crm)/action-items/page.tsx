@@ -12,6 +12,7 @@ import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components
 import { ActionItem } from "@/types/firestore";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
+import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 
 type FilterStatus = "all" | "pending" | "completed";
 type FilterDate = "all" | "overdue" | "today" | "thisWeek" | "upcoming";
@@ -135,7 +136,10 @@ export default function ActionItemsPage() {
         localStorage.removeItem("firestoreQuotaExceeded");
       }
     } catch (error) {
-      console.error("Error fetching action items:", error);
+      reportException(error, {
+        context: "Fetching all action items",
+        tags: { component: "ActionItemsPage" },
+      });
       const errorMessage = extractErrorMessage(error);
       // Check for quota errors in catch block too
       if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
@@ -188,7 +192,10 @@ export default function ActionItemsPage() {
       // Refresh action items
       fetchAllActionItems();
     } catch (error) {
-      console.error("Error completing action item:", error);
+      reportException(error, {
+        context: "Completing action item",
+        tags: { component: "ActionItemsPage", actionItemId: item.actionItemId },
+      });
       setCompleteError(extractErrorMessage(error));
     } finally {
       setCompleting(null);
@@ -223,7 +230,10 @@ export default function ActionItemsPage() {
       // Refresh action items
       fetchAllActionItems();
     } catch (error) {
-      console.error("Error deleting action item:", error);
+      reportException(error, {
+        context: "Deleting action item",
+        tags: { component: "ActionItemsPage", actionItemId: item.actionItemId },
+      });
       setDeleteError(extractErrorMessage(error));
     } finally {
       setDeleting(null);
@@ -241,7 +251,10 @@ export default function ActionItemsPage() {
       const dateStr = dueDate.split("T")[0]; // Get just the date part
       date = new Date(dateStr + "T00:00:00"); // Add time to avoid timezone issues
       if (isNaN(date.getTime())) {
-        console.warn("Invalid date string:", dueDate);
+        reportMessage("Invalid date string in action item", ErrorLevel.WARNING, {
+          tags: { component: "ActionItemsPage" },
+          extra: { dueDate: String(dueDate) },
+        });
         return "upcoming";
       }
     } else if (typeof dueDate === "object" && "toDate" in dueDate) {

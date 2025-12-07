@@ -17,6 +17,7 @@ import Modal from "@/components/Modal";
 import SegmentSelect from "@/components/SegmentSelect";
 import ContactCard from "@/components/ContactCard";
 import { Button } from "@/components/Button";
+import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -92,14 +93,20 @@ export default function ContactsPage() {
       
       if (result.errors > 0) {
         alert(`Updated ${result.success} contact(s), but ${result.errors} failed. Check console for details.`);
-        console.error("Bulk update errors:", result.errorDetails);
+        reportMessage("Bulk update errors occurred", ErrorLevel.WARNING, {
+          tags: { component: "ContactsPage" },
+          extra: { errorDetails: result.errorDetails },
+        });
       } else {
         // Success - clear selection and close modal
         setSelectedContactIds(new Set());
         setShowBulkSegmentModal(false);
       }
     } catch (error) {
-      console.error("Error updating contacts:", error);
+      reportException(error, {
+        context: "Bulk updating contacts",
+        tags: { component: "ContactsPage" },
+      });
       alert("Failed to update contacts. Please try again.");
     } finally {
       setBulkUpdating(false);
@@ -133,13 +140,20 @@ export default function ContactsPage() {
       
       if (result.errors > 0) {
         alert(`${archived ? "Archived" : "Unarchived"} ${result.success} contact(s), but ${result.errors} failed. Check console for details.`);
-        console.error("Bulk archive errors:", result.errorDetails);
+        reportMessage("Bulk archive errors occurred", ErrorLevel.WARNING, {
+          tags: { component: "ContactsPage" },
+          extra: { errorDetails: result.errorDetails },
+        });
       } else {
         // Success - clear selection
         setSelectedContactIds(new Set());
       }
     } catch (error) {
-      console.error("Error archiving contacts:", error);
+      reportException(error, {
+        context: "Bulk archiving contacts",
+        tags: { component: "ContactsPage" },
+        extra: { archived },
+      });
       alert(`Failed to ${archived ? "archive" : "unarchive"} contacts. Please try again.`);
     } finally {
       setBulkUpdating(false);

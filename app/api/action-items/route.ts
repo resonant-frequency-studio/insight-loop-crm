@@ -6,6 +6,7 @@ import {
   deleteActionItem,
   getActionItemsForContact,
 } from "@/lib/action-items";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * GET /api/action-items?contactId=xxx
@@ -27,7 +28,10 @@ export async function GET(req: Request) {
     const actionItems = await getActionItemsForContact(userId, contactId);
     return NextResponse.json({ actionItems });
   } catch (error) {
-    console.error("Error fetching action items:", error);
+    reportException(error, {
+      context: "Fetching action items",
+      tags: { component: "action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     
@@ -76,7 +80,10 @@ export async function POST(req: Request) {
       actionItemId,
     });
   } catch (error) {
-    console.error("Error creating action item:", error);
+    reportException(error, {
+      context: "Creating action item",
+      tags: { component: "action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
@@ -115,7 +122,10 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating action item:", error);
+    reportException(error, {
+      context: "Updating action item",
+      tags: { component: "action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
@@ -147,7 +157,10 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting action item:", error);
+    reportException(error, {
+      context: "Deleting action item",
+      tags: { component: "action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

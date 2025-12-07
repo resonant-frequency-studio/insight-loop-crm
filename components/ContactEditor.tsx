@@ -13,6 +13,7 @@ import { formatContactDate } from "@/util/contact-utils";
 import SegmentSelect from "@/components/SegmentSelect";
 import ActionItemsList from "@/components/ActionItemsList";
 import TouchpointStatusActions from "@/components/TouchpointStatusActions";
+import { reportException } from "@/lib/error-reporting";
 
 function InfoPopover({ content, children }: { content: string; children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -89,7 +90,10 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
       });
       setSaveError(null);
     } catch (error) {
-      console.error("Error updating contact:", error);
+      reportException(error, {
+        context: "Updating contact",
+        tags: { component: "ContactEditor", contactId: contactDocumentId },
+      });
       setSaveError(extractErrorMessage(error));
     } finally {
       setSaving(false);
@@ -103,7 +107,10 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
       await deleteDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`));
       router.push("/contacts");
     } catch (error) {
-      console.error("Error deleting contact:", error);
+      reportException(error, {
+        context: "Deleting contact",
+        tags: { component: "ContactEditor", contactId: contactDocumentId },
+      });
       setDeleteError(extractErrorMessage(error));
       setDeleting(false);
     }
@@ -127,7 +134,10 @@ export default function ContactEditor({ contact, contactDocumentId, userId }: Co
       // Redirect to contacts page after archiving
       router.push("/contacts");
     } catch (error) {
-      console.error("Error archiving contact:", error);
+      reportException(error, {
+        context: "Archiving contact",
+        tags: { component: "ContactEditor", contactId: contactDocumentId },
+      });
       setArchiveError(extractErrorMessage(error));
       setArchiving(false);
     }
@@ -820,7 +830,10 @@ function OutreachDraftEditor({
       });
       setDraftHasChanges(false);
     } catch (error) {
-      console.error("Error saving outreach draft:", error);
+      reportException(error, {
+        context: "Saving outreach draft",
+        tags: { component: "ContactEditor", contactId: contactDocumentId },
+      });
       alert("Failed to save outreach draft. Please try again.");
     } finally {
       setSavingDraft(false);
@@ -847,7 +860,10 @@ function OutreachDraftEditor({
         });
         setDraftHasChanges(false);
       } catch (error) {
-        console.error("Error auto-saving draft:", error);
+        reportException(error, {
+          context: "Auto-saving outreach draft",
+          tags: { component: "ContactEditor", contactId: contactDocumentId },
+        });
         // Continue anyway - don't block user from opening Gmail
       }
     }

@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
+import { reportException } from "@/lib/error-reporting";
 
 export default function CleanupTouchpointsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -60,7 +61,10 @@ export default function CleanupTouchpointsPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
-      console.error("Cleanup error:", err);
+      reportException(err, {
+        context: "Cleaning up old touchpoints",
+        tags: { component: "CleanupTouchpointsPage" },
+      });
     } finally {
       setRunning(false);
     }

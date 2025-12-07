@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { getUserId } from "@/lib/auth-utils";
+import { reportException } from "@/lib/error-reporting";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -35,7 +36,11 @@ export async function GET(req: Request) {
   const tokens = await tokenRes.json();
 
   if (!tokens.refresh_token) {
-    console.error("NO REFRESH TOKEN", tokens);
+    reportException(new Error("Refresh token missing from OAuth response"), {
+      context: "OAuth callback - no refresh token",
+      tags: { component: "oauth-callback" },
+      extra: { tokenResponse: tokens },
+    });
     return NextResponse.json({ error: "Refresh token missing" });
   }
 

@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
 import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
+import { reportException } from "@/lib/error-reporting";
 
 export default function SyncStatusPage() {
   const { user, loading: authLoading } = useAuth();
@@ -40,7 +41,10 @@ export default function SyncStatusPage() {
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       setSyncError(errorMessage);
-      console.error("Manual sync error:", error);
+      reportException(error, {
+        context: "Manual sync error",
+        tags: { component: "SyncStatusPage" },
+      });
     } finally {
       setSyncing(false);
     }

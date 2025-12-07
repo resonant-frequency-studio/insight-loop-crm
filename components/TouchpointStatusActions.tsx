@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
+import { reportException } from "@/lib/error-reporting";
 
 interface TouchpointStatusActionsProps {
   contactId: string;
@@ -44,7 +45,11 @@ export default function TouchpointStatusActions({
       setReason("");
       onStatusUpdate?.();
     } catch (error) {
-      console.error("Error updating touchpoint status:", error);
+      reportException(error, {
+        context: "Updating touchpoint status",
+        tags: { component: "TouchpointStatusActions", contactId },
+        extra: { status: newStatus },
+      });
       alert(error instanceof Error ? error.message : "Failed to update touchpoint status");
     } finally {
       setUpdating(false);

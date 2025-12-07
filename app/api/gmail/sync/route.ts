@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runSyncJob } from "@/lib/gmail/sync-job-runner";
 import { getUserId } from "@/lib/auth-utils";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * GET /api/gmail/sync
@@ -46,7 +47,10 @@ export async function GET(req: Request) {
       errors: result.errors,
     });
   } catch (err) {
-    console.error("SYNC ERROR:", err);
+    reportException(err, {
+      context: "Gmail sync error",
+      tags: { component: "gmail-sync-api" },
+    });
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
       { ok: false, error: errorMessage },

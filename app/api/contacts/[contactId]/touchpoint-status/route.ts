@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * PATCH /api/contacts/[contactId]/touchpoint-status
@@ -53,7 +54,10 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating touchpoint status:", error);
+    reportException(error, {
+      context: "Updating touchpoint status",
+      tags: { component: "touchpoint-status-api", contactId: contactIdParam },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

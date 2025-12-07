@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { Contact } from "@/types/firestore";
 import { normalizeContactId, csvRowToContact } from "@/util/csv-utils";
+import { reportException } from "@/lib/error-reporting";
 
 export type OverwriteMode = "overwrite" | "skip";
 
@@ -164,17 +165,17 @@ export async function importContact(
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.error(
-            `Failed to import action items for contact ${contactId}:`,
-            errorData.error || "Unknown error"
-          );
+          reportException(new Error(errorData.error || "Unknown error"), {
+            context: "Failed to import action items for contact",
+            tags: { component: "contact-import", contactId },
+          });
           // Don't fail the contact import if action items conversion fails
         }
       } catch (error) {
-        console.error(
-          `Error importing action items for contact ${contactId}:`,
-          error instanceof Error ? error.message : "Unknown error"
-        );
+        reportException(error, {
+          context: "Error importing action items for contact",
+          tags: { component: "contact-import", contactId },
+        });
         // Don't fail the contact import if action items conversion fails
       }
     }

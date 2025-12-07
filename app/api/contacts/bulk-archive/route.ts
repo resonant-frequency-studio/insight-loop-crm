@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * POST /api/contacts/bulk-archive
@@ -72,7 +73,10 @@ export async function POST(req: Request) {
       errorDetails,
     });
   } catch (error) {
-    console.error("Error bulk archiving contacts:", error);
+    reportException(error, {
+      context: "Bulk archiving contacts",
+      tags: { component: "bulk-archive-api" },
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to archive contacts" },
       { status: 500 }

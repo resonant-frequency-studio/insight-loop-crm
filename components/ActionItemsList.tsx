@@ -5,6 +5,7 @@ import { ActionItem } from "@/types/firestore";
 import ActionItemCard from "./ActionItemCard";
 import { Button } from "./Button";
 import { ErrorMessage, extractApiError, extractErrorMessage } from "./ErrorMessage";
+import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 
 interface ActionItemsListProps {
   userId: string;
@@ -92,7 +93,10 @@ export default function ActionItemsList({
           localStorage.removeItem("firestoreQuotaExceeded");
         }
       } catch (error) {
-        console.error("Error fetching action items:", error);
+        reportException(error, {
+          context: "Fetching action items",
+          tags: { component: "ActionItemsList", contactId },
+        });
         const errorMessage = extractErrorMessage(error);
         // Check for quota errors in catch block too
         if (errorMessage.includes("Quota exceeded") || errorMessage.includes("RESOURCE_EXHAUSTED")) {
@@ -107,7 +111,9 @@ export default function ActionItemsList({
         }
         // Don't show error if it's a permissions issue - just show empty list
         if (errorMessage.includes("Permission") || errorMessage.includes("Authentication")) {
-          console.warn("Action items require proper authentication. Please ensure you're logged in.");
+          reportMessage("Action items require proper authentication. Please ensure you're logged in.", ErrorLevel.WARNING, {
+            tags: { component: "ActionItemsList" },
+          });
         }
         setActionItems([]);
         setLoading(false);
@@ -149,7 +155,10 @@ export default function ActionItemsList({
       setAddError(null);
       onActionItemUpdate?.();
     } catch (error) {
-      console.error("Error adding action item:", error);
+      reportException(error, {
+        context: "Adding action item",
+        tags: { component: "ActionItemsList", contactId },
+      });
       setAddError(extractErrorMessage(error));
     } finally {
       setSaving(false);
@@ -177,7 +186,10 @@ export default function ActionItemsList({
       setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
-      console.error("Error completing action item:", error);
+      reportException(error, {
+        context: "Completing action item",
+        tags: { component: "ActionItemsList", contactId, actionItemId },
+      });
       setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);
@@ -207,7 +219,10 @@ export default function ActionItemsList({
       setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
-      console.error("Error deleting action item:", error);
+      reportException(error, {
+        context: "Deleting action item",
+        tags: { component: "ActionItemsList", contactId, actionItemId },
+      });
       setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);
@@ -242,7 +257,10 @@ export default function ActionItemsList({
       setUpdateError(null);
       onActionItemUpdate?.();
     } catch (error) {
-      console.error("Error updating action item:", error);
+      reportException(error, {
+        context: "Updating action item",
+        tags: { component: "ActionItemsList", contactId, actionItemId },
+      });
       setUpdateError(extractErrorMessage(error));
     } finally {
       setUpdating(null);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * PATCH /api/contacts/[contactId]/archive
@@ -37,7 +38,10 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error archiving contact:", error);
+    reportException(error, {
+      context: "Archiving contact",
+      tags: { component: "archive-contact-api", contactId: contactIdParam },
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to archive contact" },
       { status: 500 }

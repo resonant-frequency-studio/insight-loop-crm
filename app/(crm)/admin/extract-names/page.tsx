@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import Loading from "@/components/Loading";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
+import { reportException } from "@/lib/error-reporting";
 
 export default function ExtractNamesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -75,7 +76,10 @@ export default function ExtractNamesPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
       setError(errorMessage);
-      console.error("Extraction error:", err);
+      reportException(err, {
+        context: "Extracting names from emails",
+        tags: { component: "ExtractNamesPage" },
+      });
     } finally {
       setRunning(false);
     }

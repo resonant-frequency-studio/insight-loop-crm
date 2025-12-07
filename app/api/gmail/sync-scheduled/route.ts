@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { runSyncForAllUsers, runSyncJob } from "@/lib/gmail/sync-job-runner";
 import { getUserId } from "@/lib/auth-utils";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * POST /api/gmail/sync-scheduled
@@ -63,7 +64,10 @@ export async function POST(req: Request) {
       })),
     });
   } catch (error) {
-    console.error("Scheduled sync error:", error);
+    reportException(error, {
+      context: "Scheduled sync error",
+      tags: { component: "sync-scheduled-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

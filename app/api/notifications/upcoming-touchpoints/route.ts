@@ -5,6 +5,7 @@ import {
   getTouchpointsNeedingReminders,
   getUpcomingTouchpoints,
 } from "@/lib/touchpoint-reminders";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * GET /api/notifications/upcoming-touchpoints
@@ -33,7 +34,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ touchpoints });
     }
   } catch (error) {
-    console.error("Error fetching touchpoint reminders:", error);
+    reportException(error, {
+      context: "Fetching touchpoint reminders",
+      tags: { component: "upcoming-touchpoints-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

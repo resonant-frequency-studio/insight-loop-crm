@@ -14,6 +14,7 @@ import EngagementChart from "@/components/charts/EngagementChart";
 import TopTagsChart from "@/components/charts/TopTagsChart";
 import SentimentChart from "@/components/charts/SentimentChart";
 import ContactCard from "@/components/ContactCard";
+import { reportException } from "@/lib/error-reporting";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -152,7 +153,11 @@ export default function DashboardPage() {
         // The touchpoints will disappear from the list via real-time listener
       }
     } catch (error) {
-      console.error("Error updating touchpoints:", error);
+      reportException(error, {
+        context: "Bulk updating touchpoint status",
+        tags: { component: "DashboardPage" },
+        extra: { status, selectedCount: selectedIds.length },
+      });
       alert("Failed to update touchpoints. Please try again.");
     } finally {
       setBulkUpdating(false);

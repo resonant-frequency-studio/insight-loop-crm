@@ -10,6 +10,7 @@ import HamburgerMenu from "@/components/HamburgerMenu";
 import Loading from "@/components/Loading";
 import { Button } from "@/components/Button";
 import { appConfig } from "@/lib/app-config";
+import { reportException } from "@/lib/error-reporting";
 
 export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -77,7 +78,10 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
           failureCount = 0;
         }
       } catch (error) {
-        console.error("Session check failed:", error);
+        reportException(error, {
+          context: "Session check failed",
+          tags: { component: "CrmLayoutWrapper" },
+        });
         // Don't increment failure count on network errors
       }
     };
@@ -109,7 +113,10 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       // Redirect to login
       router.push("/login");
     } catch (error) {
-      console.error("Sign out error:", error);
+      reportException(error, {
+        context: "Sign out error",
+        tags: { component: "CrmLayoutWrapper" },
+      });
       // Still redirect even if cleanup fails
       router.push("/login");
     }

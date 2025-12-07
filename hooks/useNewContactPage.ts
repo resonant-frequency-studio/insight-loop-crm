@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { upsertContact } from "@/lib/firestore-crud";
 import { Contact } from "@/types/firestore";
 import { normalizeContactId } from "@/util/csv-utils";
+import { reportException } from "@/lib/error-reporting";
 
 export interface NewContactForm {
   primaryEmail: string;
@@ -114,7 +115,10 @@ export function useNewContactPage() {
 
       router.push(`/contacts/${contactId}`);
     } catch (err) {
-      console.error("Error creating contact:", err);
+      reportException(err, {
+        context: "Creating contact",
+        tags: { component: "useNewContactPage" },
+      });
       const errorMessage = err instanceof Error ? err.message : "Failed to create contact. Please try again.";
       setError(errorMessage);
       setSaving(false);

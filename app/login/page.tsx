@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/Button";
 import { appConfig } from "@/lib/app-config";
+import { reportException } from "@/lib/error-reporting";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -44,7 +45,10 @@ export default function LoginPage() {
       // Use router.push instead of window.location.href for smoother navigation
       window.location.href = "/";
     } catch (e) {
-      console.error(e);
+      reportException(e, {
+        context: "Login failed",
+        tags: { component: "LoginPage" },
+      });
       setError(
         e instanceof Error ? e.message : "Login failed. Please try again."
       );

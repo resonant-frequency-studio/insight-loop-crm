@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { importActionItemsFromText } from "@/lib/action-items";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * POST /api/action-items/import-from-text
@@ -38,7 +39,10 @@ export async function POST(req: Request) {
       actionItemIds: createdIds,
     });
   } catch (error) {
-    console.error("Error importing action items from text:", error);
+    reportException(error, {
+      context: "Importing action items from text",
+      tags: { component: "import-action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

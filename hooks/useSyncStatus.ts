@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { SyncJob } from "@/types/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 interface UseSyncStatusReturn {
   lastSync: SyncJob | null;
@@ -47,7 +48,10 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
           setLoading(false);
         },
         (err) => {
-          console.error("Error fetching last sync:", err);
+          reportException(err, {
+            context: "Fetching last sync",
+            tags: { component: "useSyncStatus" },
+          });
           setError("Failed to load sync status");
           setLoading(false);
         }
@@ -70,7 +74,10 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
           setSyncHistory(history);
         },
         (err) => {
-          console.error("Error fetching sync history:", err);
+          reportException(err, {
+            context: "Fetching sync history",
+            tags: { component: "useSyncStatus" },
+          });
         }
       );
 
@@ -79,7 +86,10 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
         unsubscribeHistory();
       };
     } catch (err) {
-      console.error("Error setting up sync status:", err);
+      reportException(err, {
+        context: "Setting up sync status",
+        tags: { component: "useSyncStatus" },
+      });
       // Defer setState to avoid cascading renders
       queueMicrotask(() => {
         setError("Failed to initialize sync status");

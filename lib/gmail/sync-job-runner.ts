@@ -10,6 +10,7 @@ import {
 } from "./incremental-sync";
 import { SyncJob } from "@/types/firestore";
 import { serverTimestamp } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 export interface SyncJobOptions {
   userId: string;
@@ -189,7 +190,10 @@ export async function runSyncJob(
         errorMessage,
       });
     } catch (updateError) {
-      console.error("Failed to update sync job status:", updateError);
+      reportException(updateError, {
+        context: "Failed to update sync job status",
+        tags: { component: "sync-job-runner", userId, jobId },
+      });
     }
 
     return {
@@ -220,7 +224,10 @@ export async function runSyncForAllUsers(): Promise<
       const result = await runSyncJob({ userId, type: "auto" });
       results.push({ userId, result });
     } catch (error) {
-      console.error(`Failed to sync for user ${userId}:`, error);
+      reportException(error, {
+        context: "Failed to sync for user",
+        tags: { component: "sync-job-runner", userId },
+      });
       results.push({
         userId,
         result: {

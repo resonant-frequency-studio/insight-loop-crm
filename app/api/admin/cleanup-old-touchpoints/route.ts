@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { ErrorLevel, reportException, reportMessage } from "@/lib/error-reporting";
 
 /**
  * POST /api/admin/cleanup-old-touchpoints
@@ -29,8 +30,7 @@ export async function POST() {
     const cutoffDate = new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000); // 120 days ago
     const cutoffTimestamp = cutoffDate.getTime();
 
-    console.log(`Cleaning up touchpoints overdue by more than 120 days (older than ${cutoffDate.toISOString()})`);
-
+    reportMessage(`Cleaning up touchpoints overdue by more than 120 days (older than ${cutoffDate.toISOString()})`, ErrorLevel.INFO);
     // Get all contacts with touchpoints
     const contactsSnapshot = await adminDb
       .collection(`users/${userId}/contacts`)
@@ -75,8 +75,8 @@ export async function POST() {
       }
     }
 
-    console.log(`Found ${contactsToUpdate.length} contacts to update`);
-
+    reportMessage(`Found ${contactsToUpdate.length} contacts to update`, ErrorLevel.INFO);
+    
     // Update all matching contacts
     let successCount = 0;
     let errorCount = 0;
@@ -100,7 +100,10 @@ export async function POST() {
         errorCount++;
         const errorMsg = error instanceof Error ? error.message : "Unknown error";
         errors.push(`Contact ${contact.id}: ${errorMsg}`);
-        console.error(`Error updating contact ${contact.id}:`, error);
+        reportException(error, {
+          context: "Updating contact during cleanup",
+          tags: { component: "cleanup-old-touchpoints", contactId: contact.id },
+        });
       }
     }
 
@@ -116,7 +119,10 @@ export async function POST() {
       },
     });
   } catch (error) {
-    console.error("Cleanup script error:", error);
+    reportException(error, {
+      context: "Cleanup script error",
+      tags: { component: "cleanup-old-touchpoints" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(

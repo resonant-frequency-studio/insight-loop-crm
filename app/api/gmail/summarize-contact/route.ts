@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { aggregateContactSummaries } from "@/lib/gmail/aggregate-contact";
 import { getUserId } from "@/lib/auth-utils";
 import { importActionItemsFromArray } from "@/lib/action-items";
+import { reportException } from "@/lib/error-reporting";
 
 export async function GET() {
   const userId = await getUserId();
@@ -32,10 +33,10 @@ export async function GET() {
           aggregated.actionItems
         );
       } catch (error) {
-        console.error(
-          `Error importing action items for contact ${contactId}:`,
-          error
-        );
+        reportException(error, {
+          context: "Importing action items for contact during summarization",
+          tags: { component: "summarize-contact", contactId },
+        });
         // Don't fail the aggregation if action item import fails
       }
     }

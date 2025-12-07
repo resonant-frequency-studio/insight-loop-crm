@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { getAllActionItemsForUser } from "@/lib/action-items";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * GET /api/action-items/all
@@ -12,7 +13,10 @@ export async function GET() {
     const actionItems = await getAllActionItemsForUser(userId);
     return NextResponse.json({ actionItems });
   } catch (error) {
-    console.error("Error fetching all action items:", error);
+    reportException(error, {
+      context: "Fetching all action items",
+      tags: { component: "action-items-api" },
+    });
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     

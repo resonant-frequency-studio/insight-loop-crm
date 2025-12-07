@@ -3,6 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { contactsPath } from "@/lib/firestore-paths";
 import { Contact } from "@/types/firestore";
 import { FieldValue } from "firebase-admin/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * Extract first and last name from email address
@@ -278,7 +279,10 @@ export async function POST(request: NextRequest) {
       ...results,
     });
   } catch (error) {
-    console.error("Error extracting names from emails:", error);
+    reportException(error, {
+      context: "Extracting names from emails",
+      tags: { component: "extract-names-api" },
+    });
     return NextResponse.json(
       {
         error: "Failed to extract names from emails",
