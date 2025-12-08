@@ -2,11 +2,11 @@
 
 import { Suspense } from "react";
 import ChartCard from "./ChartCard";
-import SegmentChart from "@/components/charts/SegmentChart";
-import LeadSourceChart from "@/components/charts/LeadSourceChart";
-import EngagementChart from "@/components/charts/EngagementChart";
-import TopTagsChart from "@/components/charts/TopTagsChart";
-import SentimentChart from "@/components/charts/SentimentChart";
+import SegmentChart from "./charts/SegmentChart";
+import LeadSourceChart from "./charts/LeadSourceChart";
+import EngagementChart from "./charts/EngagementChart";
+import TopTagsChart from "./charts/TopTagsChart";
+import SentimentChart from "./charts/SentimentChart";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 function DashboardChartsContent({ userId }: { userId: string }) {

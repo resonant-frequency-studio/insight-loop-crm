@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Contact } from "@/types/firestore";
 import { getInitials, getDisplayName, formatContactDate } from "@/util/contact-utils";
-import TouchpointStatusActions from "@/components/TouchpointStatusActions";
+import TouchpointStatusActions from "./TouchpointStatusActions";
 
 interface ContactWithId extends Contact {
   id: string;

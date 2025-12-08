@@ -53,3 +53,29 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock Next.js Link component
+jest.mock('next/link', () => {
+  return function MockLink({ children, href, ...props }) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  };
+});
+
+// Mock Recharts components
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
+  PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
+  Pie: ({ children }) => <div data-testid="pie">{children}</div>,
+  Cell: () => <div data-testid="cell" />,
+  Legend: () => <div data-testid="legend" />,
+  Tooltip: () => <div data-testid="tooltip" />,
+  BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
+  Bar: () => <div data-testid="bar" />,
+  XAxis: () => <div data-testid="x-axis" />,
+  YAxis: () => <div data-testid="y-axis" />,
+  CartesianGrid: () => <div data-testid="cartesian-grid" />,
+}));
+

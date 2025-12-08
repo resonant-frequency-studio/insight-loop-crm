@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { ActionItem } from "@/types/firestore";
 import ActionItemCard from "./ActionItemCard";
-import { Button } from "./Button";
-import { ErrorMessage, extractApiError, extractErrorMessage } from "./ErrorMessage";
+import { Button } from "@/components/Button";
+import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components/ErrorMessage";
 import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { Contact } from "@/types/firestore";

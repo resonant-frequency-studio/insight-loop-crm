@@ -278,23 +278,26 @@ export default function TouchpointStatusActions({
           disabled={updating}
         />
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             onClick={() => {
               setShowCompleteModal(false);
               setReason("");
             }}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+            variant="secondary"
+            size="sm"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleUpdateStatus("completed", reason)}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+            loading={updating}
+            variant="success"
+            size="sm"
           >
-            {updating ? "Updating..." : "Mark Completed"}
-          </button>
+            Mark Completed
+          </Button>
         </div>
       </Modal>
 
@@ -321,23 +324,26 @@ export default function TouchpointStatusActions({
           disabled={updating}
         />
         <div className="flex gap-3 justify-end">
-          <button
+          <Button
             onClick={() => {
               setShowCancelModal(false);
               setReason("");
             }}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+            variant="secondary"
+            size="sm"
           >
             Keep Touchpoint
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => handleUpdateStatus("cancelled", reason)}
             disabled={updating}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+            loading={updating}
+            variant="secondary"
+            size="sm"
           >
-            {updating ? "Skipping..." : "Skip Touchpoint"}
-          </button>
+            Skip Touchpoint
+          </Button>
         </div>
       </Modal>
     </div>

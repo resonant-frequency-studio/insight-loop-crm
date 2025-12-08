@@ -9,12 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
 import Card from "@/components/Card";
-import { Button } from "./Button";
-import { ErrorMessage, extractApiError, extractErrorMessage } from "./ErrorMessage";
+import { Button } from "@/components/Button";
+import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components/ErrorMessage";
 import { formatContactDate } from "@/util/contact-utils";
-import SegmentSelect from "@/components/SegmentSelect";
-import ActionItemsList from "@/components/ActionItemsList";
-import TouchpointStatusActions from "@/components/TouchpointStatusActions";
+import SegmentSelect from "./SegmentSelect";
+import ActionItemsList from "./ActionItemsList";
+import TouchpointStatusActions from "./TouchpointStatusActions";
 import { reportException } from "@/lib/error-reporting";
 
 function InfoPopover({ content, children }: { content: string; children: React.ReactNode }) {

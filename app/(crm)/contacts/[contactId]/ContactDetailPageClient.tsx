@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import ContactEditor from "@/components/ContactEditor";
-import ContactsLink from "@/components/ContactsLink";
+import ContactEditor from "../../_components/ContactEditor";
+import ContactsLink from "../../_components/ContactsLink";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { Contact, ActionItem } from "@/types/firestore";
 import { useContact } from "@/hooks/useContact";

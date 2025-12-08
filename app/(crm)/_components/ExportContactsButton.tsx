@@ -2,7 +2,7 @@
 
 import { Contact } from "@/types/firestore";
 import Papa from "papaparse";
-import { Button } from "./Button";
+import { Button } from "@/components/Button";
 
 interface ContactWithId extends Contact {
   id: string;

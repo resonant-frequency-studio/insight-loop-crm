@@ -3,13 +3,13 @@
 import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Contact } from "@/types/firestore";
-import ExportContactsButton from "@/components/ExportContactsButton";
-import ContactsFilter from "@/components/ContactsFilter";
+import ExportContactsButton from "../_components/ExportContactsButton";
+import ContactsFilter from "../_components/ContactsFilter";
 import Card from "@/components/Card";
 import { useFilterContacts } from "@/hooks/useFilterContacts";
 import Modal from "@/components/Modal";
-import SegmentSelect from "@/components/SegmentSelect";
-import ContactCard from "@/components/ContactCard";
+import SegmentSelect from "../_components/SegmentSelect";
+import ContactCard from "../_components/ContactCard";
 import { Button } from "@/components/Button";
 import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 import { bulkUpdateContactSegments } from "@/lib/firestore-crud";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ActionItem, Contact } from "@/types/firestore";
 import { formatContactDate } from "@/util/contact-utils";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
-import { Button } from "./Button";
+import { Button } from "@/components/Button";
 
 interface ActionItemCardProps {
   actionItem: ActionItem;

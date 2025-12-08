@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Card from "@/components/Card";
-import ContactCard from "@/components/ContactCard";
+import ContactCard from "./ContactCard";
 import { useContacts } from "@/hooks/useContacts";
 import { getDaysUntilTouchpoint } from "@/util/date-utils-server";
 import { Contact } from "@/types/firestore";

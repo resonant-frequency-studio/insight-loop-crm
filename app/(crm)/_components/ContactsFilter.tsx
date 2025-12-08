@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Contact } from "@/types/firestore";
 import Card from "@/components/Card";
-import { Button } from "./Button";
+import { Button } from "@/components/Button";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -147,15 +147,13 @@ export default function ContactsFilter({
 
         {/* Show Archived Toggle */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            View Archived
-          </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={showArchived}
               onChange={(e) => onShowArchivedChange(e.target.checked)}
               className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              aria-label="View Archived"
             />
             <span className="text-sm text-gray-700">
               {showArchived ? "Showing archived contacts" : "Show archived contacts"}

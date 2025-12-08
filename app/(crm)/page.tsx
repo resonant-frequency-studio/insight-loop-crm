@@ -1,9 +1,7 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
 import DashboardData from "./_components/DashboardData";
-import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 
 export const metadata: Metadata = {
   title: "Dashboard | Insight Loop CRM",

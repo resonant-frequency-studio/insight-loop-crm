@@ -5,7 +5,7 @@ import Card from "@/components/Card";
 import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
 import { ActionItem, Contact } from "@/types/firestore";
 import { reportException } from "@/lib/error-reporting";
-import ActionItemCard from "@/components/ActionItemCard";
+import ActionItemCard from "../_components/ActionItemCard";
 import { useUpdateActionItem, useDeleteActionItem } from "@/hooks/useActionItemMutations";
 import { useAuth } from "@/hooks/useAuth";
 
