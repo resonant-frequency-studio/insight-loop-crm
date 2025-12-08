@@ -20,10 +20,6 @@ export function useActionItems(
     ? ["action-items", userId, contactId]
     : ["action-items", userId];
 
-  // Check if data exists in cache first (from previous navigation or prefetch)
-  const cachedData = queryClient.getQueryData<ActionItem[] | Array<ActionItem & { contactId: string }>>(queryKey);
-  const dataToUse = initialData || cachedData;
-
   return useQuery({
     queryKey,
     queryFn: async () => {
@@ -47,10 +43,11 @@ export function useActionItems(
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     enabled: !!userId,
-    initialData: dataToUse,
-    // If fetching single contact's action items, check if all action items are cached
+    initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
+    // If fetching single contact's action items, use all action items cache as placeholder
+    // This is a valid optimization: show filtered items while fetching
     placeholderData: () => {
-      if (contactId && !dataToUse) {
+      if (contactId) {
         const allActionItems = queryClient.getQueryData<Array<ActionItem & { contactId: string }>>([
           "action-items",
           userId,
@@ -61,8 +58,6 @@ export function useActionItems(
       }
       return undefined;
     },
-    // Don't refetch if we have cached data
-    refetchOnMount: !dataToUse,
     refetchOnWindowFocus: false,
   });
 }

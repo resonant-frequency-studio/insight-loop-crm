@@ -28,7 +28,7 @@ export default function ImportContactsPage() {
   if (loading) {
     return <Loading />;
   }
-  
+
   if (!user) return null;
 
   // Determine the status message to display

@@ -3,7 +3,7 @@ import { getAllContactsForUser } from "@/lib/contacts-server";
 import { getDashboardStats } from "@/lib/dashboard-stats-server";
 import { getQueryClient } from "@/lib/query-client";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import DashboardPageClientWrapper from "./DashboardPageClientWrapper";
+import DashboardPageClient from "../DashboardPageClient";
 
 export default async function DashboardData() {
   const userId = await getUserId();
@@ -23,7 +23,7 @@ export default async function DashboardData() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardPageClientWrapper userId={userId} />
+      <DashboardPageClient userId={userId} />
     </HydrationBoundary>
   );
 }

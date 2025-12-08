@@ -5,6 +5,7 @@ import { SyncJob } from "@/types/firestore";
 
 /**
  * Hook to fetch the most recent sync job for a user
+ * React Query automatically handles prefetched data from HydrationBoundary
  */
 export function useSyncJobs(
   userId: string,
@@ -29,8 +30,7 @@ export function useSyncJobs(
     },
     staleTime: 1 * 60 * 1000, // 1 minute (sync jobs change more frequently)
     enabled: !!userId,
-    initialData,
-    refetchOnMount: !initialData, // Don't refetch if we have initial data
+    initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
   });
 }
 

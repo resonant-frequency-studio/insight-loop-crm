@@ -4,7 +4,6 @@ import { useContacts } from "@/hooks/useContacts";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { Contact } from "@/types/firestore";
 import ContactsPageClient from "../ContactsPageClient";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -13,12 +12,8 @@ interface ContactWithId extends Contact {
 }
 
 export default function ContactsPageClientWrapper({ userId }: { userId: string }) {
-  const queryClient = useQueryClient();
-  
-  // Get prefetched data from React Query cache (from server prefetch)
-  const prefetchedContacts = queryClient.getQueryData<Contact[]>(["contacts", userId]);
-  
-  const { data: contacts = prefetchedContacts || [] } = useContacts(userId, prefetchedContacts);
+  // React Query automatically uses prefetched data from HydrationBoundary
+  const { data: contacts = [] } = useContacts(userId);
 
   // Pre-compute displayName and initials for each contact
   const contactsWithComputed: ContactWithId[] = contacts.map((contact) => {

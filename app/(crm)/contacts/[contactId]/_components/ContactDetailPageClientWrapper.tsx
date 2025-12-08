@@ -3,7 +3,7 @@
 import { notFound } from "next/navigation";
 import { useContact } from "@/hooks/useContact";
 import { useActionItems } from "@/hooks/useActionItems";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { convertTimestampToISO } from "@/util/timestamp-utils-server";
 import ContactDetailPageClient from "../ContactDetailPageClient";
 import { ActionItem, Contact } from "@/types/firestore";
@@ -17,18 +17,9 @@ export default function ContactDetailPageClientWrapper({
   contactId,
   userId,
 }: ContactDetailPageClientWrapperProps) {
-  const queryClient = useQueryClient();
-  
-  // Get prefetched data from React Query cache (from server prefetch)
-  const prefetchedContact = queryClient.getQueryData<Contact>(["contact", userId, contactId]);
-  const prefetchedActionItems = queryClient.getQueryData<ActionItem[]>(["action-items", userId, contactId]);
-  
-  const { data: contact } = useContact(userId, contactId, prefetchedContact);
-  const { data: actionItems = prefetchedActionItems || [] } = useActionItems(
-    userId,
-    contactId,
-    prefetchedActionItems
-  );
+  // React Query automatically uses prefetched data from HydrationBoundary
+  const { data: contact } = useContact(userId, contactId);
+  const { data: actionItems = [] } = useActionItems(userId, contactId);
   const { data: uniqueSegments = [] } = useQuery({
     queryKey: ["unique-segments", userId],
     queryFn: async () => {

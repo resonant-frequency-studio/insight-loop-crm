@@ -6,7 +6,6 @@ import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { computeIsOverdue, getDateCategory } from "@/util/date-utils-server";
 import { ActionItem, Contact } from "@/types/firestore";
 import ActionItemsPageClient from "../ActionItemsPageClient";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface EnrichedActionItem extends ActionItem {
   contactId: string;
@@ -21,17 +20,9 @@ interface EnrichedActionItem extends ActionItem {
 }
 
 export default function ActionItemsPageClientWrapper({ userId }: { userId: string }) {
-  const queryClient = useQueryClient();
-  
-  // Get prefetched data from React Query cache (from server prefetch)
-  const prefetchedActionItems = queryClient.getQueryData<Array<ActionItem & { contactId: string }>>([
-    "action-items",
-    userId,
-  ]);
-  const prefetchedContacts = queryClient.getQueryData<Contact[]>(["contacts", userId]);
-  
-  const { data: actionItems = prefetchedActionItems || [] } = useActionItems(userId, undefined, prefetchedActionItems);
-  const { data: contacts = prefetchedContacts || [] } = useContacts(userId, prefetchedContacts);
+  // React Query automatically uses prefetched data from HydrationBoundary
+  const { data: actionItems = [] } = useActionItems(userId);
+  const { data: contacts = [] } = useContacts(userId);
 
   // Convert contacts array to Map for efficient lookup
   const contactsMap = new Map<string, Contact>();

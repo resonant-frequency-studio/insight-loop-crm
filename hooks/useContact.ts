@@ -5,26 +5,10 @@ import { Contact } from "@/types/firestore";
 
 /**
  * Hook to fetch a single contact for a user
- * Automatically checks contacts list cache for initial data to avoid loading skeleton
+ * Uses contacts list cache as placeholder data to avoid loading skeleton
  */
 export function useContact(userId: string, contactId: string, initialData?: Contact) {
   const queryClient = useQueryClient();
-
-  // Check for initial data from server prefetch, cache, or contacts list cache
-  const getInitialData = () => {
-    if (initialData) return initialData;
-    // Check if contact is in cache
-    const cachedContact = queryClient.getQueryData<Contact>(["contact", userId, contactId]);
-    if (cachedContact) return cachedContact;
-    // Check if contact is in contacts list cache
-    const contacts = queryClient.getQueryData<Contact[]>(["contacts", userId]);
-    if (contacts) {
-      return contacts.find((c) => c.contactId === contactId) || undefined;
-    }
-    return undefined;
-  };
-
-  const resolvedInitialData = getInitialData();
 
   return useQuery({
     queryKey: ["contact", userId, contactId],
@@ -42,8 +26,9 @@ export function useContact(userId: string, contactId: string, initialData?: Cont
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     enabled: !!userId && !!contactId,
-    initialData: resolvedInitialData,
+    initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
     // Use contacts list cache as placeholder data to avoid loading state
+    // This is a valid optimization: show contact from list while fetching full details
     placeholderData: () => {
       const contacts = queryClient.getQueryData<Contact[]>(["contacts", userId]);
       if (contacts) {
@@ -51,8 +36,6 @@ export function useContact(userId: string, contactId: string, initialData?: Cont
       }
       return undefined;
     },
-    // Don't refetch if we have cached data
-    refetchOnMount: !resolvedInitialData,
     refetchOnWindowFocus: false,
   });
 }
