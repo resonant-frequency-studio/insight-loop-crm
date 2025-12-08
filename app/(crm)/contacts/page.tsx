@@ -1,9 +1,7 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
 import ContactsList from "./_components/ContactsList";
-import ContactsSkeleton from "@/components/skeletons/ContactsSkeleton";
 
 export const metadata: Metadata = {
   title: "Contacts | Insight Loop CRM",
@@ -17,9 +15,5 @@ export default async function ContactsPage() {
     redirect("/login");
   }
 
-  return (
-    <Suspense fallback={<ContactsSkeleton />}>
-      <ContactsList />
-    </Suspense>
-  );
+  return <ContactsList />;
 }

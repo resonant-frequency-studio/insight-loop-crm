@@ -1,9 +1,7 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
 import SyncData from "./_components/SyncData";
-import Card from "@/components/Card";
 
 export const metadata: Metadata = {
   title: "Gmail Sync Status | Insight Loop CRM",
@@ -29,16 +27,8 @@ export default async function SyncStatusPage() {
         </div>
       </div>
 
-      {/* Data-dependent content - streams in */}
-      <Suspense
-        fallback={
-          <Card padding="md" className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded" />
-          </Card>
-        }
-      >
-        <SyncData />
-      </Suspense>
+      {/* Data-dependent content - only dynamic data is suspended */}
+      <SyncData />
     </div>
   );
 }

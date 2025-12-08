@@ -126,13 +126,6 @@ export default function DashboardPageClientWrapper({ userId }: { userId: string 
     }))
     .slice(0, 5);
 
-  return (
-    <DashboardPageClient
-      initialStats={stats}
-      contactsWithUpcomingTouchpoints={contactsWithUpcomingTouchpoints}
-      contactsWithOverdueTouchpoints={contactsWithOverdueTouchpoints}
-      recentContacts={recentContacts}
-    />
-  );
+  return <DashboardPageClient userId={userId} />;
 }
 

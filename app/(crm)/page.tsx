@@ -17,9 +17,5 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return (
-    <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardData />
-    </Suspense>
-  );
+  return <DashboardData />;
 }

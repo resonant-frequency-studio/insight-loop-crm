@@ -1,9 +1,7 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
 import ActionItemsList from "./_components/ActionItemsList";
-import ActionItemsSkeleton from "@/components/skeletons/ActionItemsSkeleton";
 
 export const metadata: Metadata = {
   title: "Action Items | Insight Loop CRM",
@@ -17,9 +15,5 @@ export default async function ActionItemsPage() {
     redirect("/login");
   }
 
-  return (
-    <Suspense fallback={<ActionItemsSkeleton />}>
-      <ActionItemsList />
-    </Suspense>
-  );
+  return <ActionItemsList />;
 }

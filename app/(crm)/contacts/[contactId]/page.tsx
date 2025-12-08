@@ -1,11 +1,9 @@
-import { Suspense } from "react";
 import { redirect, notFound } from "next/navigation";
 import { Metadata } from "next";
 import { getUserId } from "@/lib/auth-utils";
 import { getContactForUser } from "@/lib/contacts-server";
 import { getDisplayName } from "@/util/contact-utils";
 import ContactDetailData from "./_components/ContactDetailData";
-import ContactDetailSkeleton from "@/components/skeletons/ContactDetailSkeleton";
 
 export async function generateMetadata({
   params,
@@ -58,9 +56,5 @@ export default async function ContactDetailPage({ params }: ContactDetailPagePro
     notFound();
   }
 
-  return (
-    <Suspense fallback={<ContactDetailSkeleton />}>
-      <ContactDetailData contactId={contactId} />
-    </Suspense>
-  );
+  return <ContactDetailData contactId={contactId} />;
 }

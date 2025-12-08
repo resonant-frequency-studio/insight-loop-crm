@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Card from "@/components/Card";
 import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
 import { ActionItem, Contact } from "@/types/firestore";
@@ -253,57 +253,73 @@ export default function ActionItemsPageClient({
         </div>
       </Card>
 
-      {/* Action Items List */}
+      {/* Action Items List - Only the list is suspended */}
       <Card padding="md">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          {filteredItems.length} Action Item{filteredItems.length !== 1 ? "s" : ""}
-        </h2>
-        {filteredItems.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            No action items match your filters
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {filteredItems.map((item) => {
-              return (
-                <ActionItemCard
-                  key={`${item.contactId}_${item.actionItemId}`}
-                  actionItem={item}
-                  contactId={item.contactId}
-                  contactName={item.contactName}
-                  contactEmail={item.contactEmail}
-                  contactFirstName={item.contactFirstName}
-                  contactLastName={item.contactLastName}
-                  onComplete={() => handleComplete(item)}
-                  onDelete={() => handleDelete(item)}
-                  onEdit={(text, dueDate) => handleEdit(item, text, dueDate)}
-                  disabled={completing === item.actionItemId || deleting === item.actionItemId}
-                  isOverdue={item.isOverdue}
-                  displayName={item.displayName}
-                  initials={item.initials}
+        <Suspense
+          fallback={
+            <div>
+              <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse" />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
+                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          }
+        >
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {filteredItems.length} Action Item{filteredItems.length !== 1 ? "s" : ""}
+          </h2>
+          {filteredItems.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No action items match your filters
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {filteredItems.map((item) => {
+                return (
+                  <ActionItemCard
+                    key={`${item.contactId}_${item.actionItemId}`}
+                    actionItem={item}
+                    contactId={item.contactId}
+                    contactName={item.contactName}
+                    contactEmail={item.contactEmail}
+                    contactFirstName={item.contactFirstName}
+                    contactLastName={item.contactLastName}
+                    onComplete={() => handleComplete(item)}
+                    onDelete={() => handleDelete(item)}
+                    onEdit={(text, dueDate) => handleEdit(item, text, dueDate)}
+                    disabled={completing === item.actionItemId || deleting === item.actionItemId}
+                    isOverdue={item.isOverdue}
+                    displayName={item.displayName}
+                    initials={item.initials}
+                  />
+                );
+              })}
+            </div>
+          )}
+          {(completeError || deleteError) && (
+            <div className="mt-4 space-y-2">
+              {completeError && (
+                <ErrorMessage
+                  message={completeError}
+                  dismissible
+                  onDismiss={() => setCompleteError(null)}
                 />
-              );
-            })}
-          </div>
-        )}
-        {(completeError || deleteError) && (
-          <div className="mt-4 space-y-2">
-            {completeError && (
-              <ErrorMessage
-                message={completeError}
-                dismissible
-                onDismiss={() => setCompleteError(null)}
-              />
-            )}
-            {deleteError && (
-              <ErrorMessage
-                message={deleteError}
-                dismissible
-                onDismiss={() => setDeleteError(null)}
-              />
-            )}
-          </div>
-        )}
+              )}
+              {deleteError && (
+                <ErrorMessage
+                  message={deleteError}
+                  dismissible
+                  onDismiss={() => setDeleteError(null)}
+                />
+              )}
+            </div>
+          )}
+        </Suspense>
       </Card>
     </div>
   );

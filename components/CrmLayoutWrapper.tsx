@@ -129,16 +129,6 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
     }
   }, [isLoginPage, loading, user, router]);
 
-  // Show loading state while checking auth
-  if (!isLoginPage && loading) {
-    return <Loading />;
-  }
-
-  // Show loading while redirecting
-  if (!isLoginPage && !loading && !user) {
-    return <Loading />;
-  }
-
   // Always show sidebar if not on login page (prevents flash)
   if (isLoginPage) {
     return <>{children}</>;

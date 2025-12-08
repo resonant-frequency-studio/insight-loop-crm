@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
@@ -90,7 +90,7 @@ export default function SyncPageClient({
 
   return (
     <div className="space-y-8">
-      {/* Sync Now Button */}
+      {/* Sync Now Button - Static, renders immediately */}
       <div className="flex justify-end">
         <Button
           onClick={handleManualSync}
@@ -118,6 +118,7 @@ export default function SyncPageClient({
         </Button>
       </div>
 
+      {/* Error Messages - Static, renders immediately */}
       {syncError && (
         <ErrorMessage
           message={syncError}
@@ -147,101 +148,117 @@ export default function SyncPageClient({
         </Card>
       )}
 
-      {/* Last Sync Status */}
-      {lastSync && (
-        <Card padding="md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Last Sync</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
-              <span
-                className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                  lastSync.status
-                )}`}
-              >
-                {lastSync.status.charAt(0).toUpperCase() + lastSync.status.slice(1)}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Started At</p>
-              <p className="text-gray-900">{formatDate(lastSync.startedAt)}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Type</p>
-              <p className="text-gray-900 capitalize">{lastSync.type || "auto"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Threads Processed</p>
-              <p className="text-2xl font-bold text-gray-900">{lastSync.processedThreads || 0}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Messages Processed</p>
-              <p className="text-2xl font-bold text-gray-900">{lastSync.processedMessages || 0}</p>
-            </div>
-            {lastSync.finishedAt != null && (
+      {/* Sync Data - Only dynamic data is suspended */}
+      <Suspense
+        fallback={
+          <div className="space-y-8">
+            <Card padding="md" className="animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4" />
+              <div className="h-32 bg-gray-200 rounded" />
+            </Card>
+            <Card padding="md" className="animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4" />
+              <div className="h-64 bg-gray-200 rounded" />
+            </Card>
+          </div>
+        }
+      >
+        {/* Last Sync Status */}
+        {lastSync && (
+          <Card padding="md">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Last Sync</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Finished At</p>
-                <p className="text-gray-900">{formatDate(lastSync.finishedAt)}</p>
+                <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                    lastSync.status
+                  )}`}
+                >
+                  {lastSync.status.charAt(0).toUpperCase() + lastSync.status.slice(1)}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Started At</p>
+                <p className="text-gray-900">{formatDate(lastSync.startedAt)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Type</p>
+                <p className="text-gray-900 capitalize">{lastSync.type || "auto"}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Threads Processed</p>
+                <p className="text-2xl font-bold text-gray-900">{lastSync.processedThreads || 0}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">Messages Processed</p>
+                <p className="text-2xl font-bold text-gray-900">{lastSync.processedMessages || 0}</p>
+              </div>
+              {lastSync.finishedAt != null && (
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Finished At</p>
+                  <p className="text-gray-900">{formatDate(lastSync.finishedAt)}</p>
+                </div>
+              )}
+            </div>
+            {lastSync.errorMessage && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">
+                  <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
+                </p>
               </div>
             )}
-          </div>
-          {lastSync.errorMessage && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">
-                <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
-              </p>
+          </Card>
+        )}
+
+        {/* Sync History */}
+        <Card padding="md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Sync History</h2>
+          {syncHistory.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No sync history available yet</p>
+          ) : (
+            <div className="space-y-3">
+              {syncHistory.map((job) => (
+                <div
+                  key={job.syncJobId}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Started</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatDate(job.startedAt)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Status</p>
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
+                          job.status
+                        )}`}
+                      >
+                        {job.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Threads</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {job.processedThreads || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Messages</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {job.processedMessages || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </Card>
-      )}
-
-      {/* Sync History */}
-      <Card padding="md">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Sync History</h2>
-        {syncHistory.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No sync history available yet</p>
-        ) : (
-          <div className="space-y-3">
-            {syncHistory.map((job) => (
-              <div
-                key={job.syncJobId}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Started</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatDate(job.startedAt)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Status</p>
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
-                        job.status
-                      )}`}
-                    >
-                      {job.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Threads</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {job.processedThreads || 0}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">Messages</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {job.processedMessages || 0}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      </Suspense>
     </div>
   );
 }

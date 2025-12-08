@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Contact } from "@/types/firestore";
 import ExportContactsButton from "@/components/ExportContactsButton";
@@ -320,99 +320,120 @@ export default function ContactsPageClient({
         </Card>
       )}
 
-      {/* Contacts Grid */}
-      {filteredContacts.length === 0 && initialContacts.length > 0 ? (
-        <Card padding="xl" className="text-center">
-          <svg
-            className="w-16 h-16 mx-auto mb-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <p className="text-lg font-medium text-gray-900 mb-2">No contacts match your filters</p>
-          <p className="text-sm text-gray-500 mb-6">
-            Try adjusting your search criteria or clear filters to see all contacts
-          </p>
-          <Button onClick={onClearFilters} variant="gradient-blue" size="sm">
-            Clear Filters
-          </Button>
-        </Card>
-      ) : filteredContacts.length === 0 ? (
-        <Card padding="xl" className="text-center">
-          <svg
-            className="w-16 h-16 mx-auto mb-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <p className="text-lg font-medium text-gray-900 mb-2">No contacts yet</p>
-          <p className="text-sm text-gray-500 mb-6">Start by importing contacts from a CSV file</p>
-          <Link
-            href="/contacts/import"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Contacts Grid - Only the list is suspended */}
+      <Suspense
+        fallback={
+          <div className="space-y-3">
+            <div className="h-6 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
+            <div className="grid grid-cols-1 gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow p-4 animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 bg-gray-200 rounded w-2/3" />
+                      <div className="h-4 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        {filteredContacts.length === 0 && initialContacts.length > 0 ? (
+          <Card padding="xl" className="text-center">
+            <svg
+              className="w-16 h-16 mx-auto mb-4 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            Import Contacts
-          </Link>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {/* Select All Checkbox */}
-          {filteredContacts.length > 0 && (
-            <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={allFilteredSelected}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            <p className="text-lg font-medium text-gray-900 mb-2">No contacts match your filters</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Try adjusting your search criteria or clear filters to see all contacts
+            </p>
+            <Button onClick={onClearFilters} variant="gradient-blue" size="sm">
+              Clear Filters
+            </Button>
+          </Card>
+        ) : filteredContacts.length === 0 ? (
+          <Card padding="xl" className="text-center">
+            <svg
+              className="w-16 h-16 mx-auto mb-4 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+            <p className="text-lg font-medium text-gray-900 mb-2">No contacts yet</p>
+            <p className="text-sm text-gray-500 mb-6">Start by importing contacts from a CSV file</p>
+            <Link
+              href="/contacts/import"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Select all {filteredContacts.length}{" "}
-                  {filteredContacts.length === 1 ? "contact" : "contacts"}
-                </span>
-              </label>
-            </div>
-          )}
+              </svg>
+              Import Contacts
+            </Link>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {/* Select All Checkbox */}
+            {filteredContacts.length > 0 && (
+              <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Select all {filteredContacts.length}{" "}
+                    {filteredContacts.length === 1 ? "contact" : "contacts"}
+                  </span>
+                </label>
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 gap-3">
-            {filteredContacts.map((contact) => {
-              const isSelected = selectedContactIds.has(contact.id);
-              return (
-                <ContactCard
-                  key={contact.id}
-                  contact={contact}
-                  showCheckbox={true}
-                  isSelected={isSelected}
-                  onSelectChange={toggleContactSelection}
-                  variant={isSelected ? "selected" : "default"}
-                />
-              );
-            })}
+            <div className="grid grid-cols-1 gap-3">
+              {filteredContacts.map((contact) => {
+                const isSelected = selectedContactIds.has(contact.id);
+                return (
+                  <ContactCard
+                    key={contact.id}
+                    contact={contact}
+                    showCheckbox={true}
+                    isSelected={isSelected}
+                    onSelectChange={toggleContactSelection}
+                    variant={isSelected ? "selected" : "default"}
+                  />
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Suspense>
 
       {/* Bulk Segment Reassignment Modal */}
       <Modal
