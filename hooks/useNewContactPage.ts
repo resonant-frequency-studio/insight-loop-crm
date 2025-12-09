@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { upsertContact } from "@/lib/firestore-crud";
+import { useCreateContact } from "@/hooks/useContactMutations";
 import { Contact } from "@/types/firestore";
 import { normalizeContactId } from "@/util/csv-utils";
 import { reportException } from "@/lib/error-reporting";
@@ -42,7 +42,7 @@ const initialFormState: NewContactForm = {
 export function useNewContactPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const createContactMutation = useCreateContact(user?.uid);
   const [form, setForm] = useState<NewContactForm>(initialFormState);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +93,7 @@ export function useNewContactPage() {
     [form]
   );
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!user) {
       setError("You must be logged in to create a contact");
       return;
@@ -103,27 +103,26 @@ export function useNewContactPage() {
       return;
     }
 
-    setSaving(true);
     setError(null);
 
-    try {
-      const email = form.primaryEmail.trim().toLowerCase();
-      const contactId = normalizeContactId(email);
-      const contactData = prepareContactData();
+    const email = form.primaryEmail.trim().toLowerCase();
+    const contactId = normalizeContactId(email);
+    const contactData = prepareContactData();
 
-      await upsertContact(user.uid, contactId, contactData);
-
-      router.push(`/contacts/${contactId}`);
-    } catch (err) {
-      reportException(err, {
-        context: "Creating contact",
-        tags: { component: "useNewContactPage" },
-      });
-      const errorMessage = err instanceof Error ? err.message : "Failed to create contact. Please try again.";
-      setError(errorMessage);
-      setSaving(false);
-    }
-  }, [user, form, validateForm, prepareContactData, router]);
+    createContactMutation.mutate(contactData, {
+      onSuccess: () => {
+        router.push(`/contacts/${contactId}`);
+      },
+      onError: (err) => {
+        reportException(err, {
+          context: "Creating new contact in useNewContactPage",
+          tags: { component: "useNewContactPage", email: form.primaryEmail },
+        });
+        const errorMessage = err instanceof Error ? err.message : "Failed to create contact. Please try again.";
+        setError(errorMessage);
+      },
+    });
+  }, [user, form, validateForm, prepareContactData, router, createContactMutation]);
 
   const resetForm = useCallback(() => {
     setForm(initialFormState);
@@ -140,7 +139,7 @@ export function useNewContactPage() {
     updateField,
     
     // Save state
-    saving,
+    saving: createContactMutation.isPending,
     error,
     handleSave,
     

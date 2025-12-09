@@ -4,12 +4,11 @@ import { Suspense } from "react";
 import ContactEditor from "../../_components/ContactEditor";
 import ContactsLink from "../../_components/ContactsLink";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
-import { Contact, ActionItem } from "@/types/firestore";
+import { ActionItem } from "@/types/firestore";
 import { useContact } from "@/hooks/useContact";
 import { useActionItems } from "@/hooks/useActionItems";
 
 interface ContactDetailPageClientProps {
-  contact: Contact;
   contactDocumentId: string;
   userId: string;
   initialActionItems?: ActionItem[];
@@ -19,17 +18,15 @@ interface ContactDetailPageClientProps {
 function ContactDetailContent({
   contactDocumentId,
   userId,
-  initialContact,
   initialActionItems,
   uniqueSegments,
 }: {
   contactDocumentId: string;
   userId: string;
-  initialContact?: Contact;
   initialActionItems?: ActionItem[];
   uniqueSegments?: string[];
 }) {
-  const { data: contact = initialContact } = useContact(userId, contactDocumentId, initialContact);
+  const { data: contact } = useContact(userId, contactDocumentId);
   const { data: actionItems = initialActionItems || [] } = useActionItems(
     userId,
     contactDocumentId,
@@ -82,11 +79,9 @@ function ContactDetailContent({
 
       {/* Contact Editor */}
       <ContactEditor
-        contact={contact}
         contactDocumentId={contactDocumentId}
         userId={userId}
         initialActionItems={actionItems}
-        initialContact={contact}
         uniqueSegments={uniqueSegments}
       />
     </>
@@ -94,7 +89,6 @@ function ContactDetailContent({
 }
 
 export default function ContactDetailPageClient({
-  contact,
   contactDocumentId,
   userId,
   initialActionItems,
@@ -125,7 +119,6 @@ export default function ContactDetailPageClient({
         <ContactDetailContent
           contactDocumentId={contactDocumentId}
           userId={userId}
-          initialContact={contact}
           initialActionItems={initialActionItems}
           uniqueSegments={uniqueSegments}
         />

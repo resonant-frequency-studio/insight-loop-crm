@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
+import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
+import { useUpdateTouchpointStatus } from "@/hooks/useContactMutations";
+import { useAuth } from "@/hooks/useAuth";
 import { reportException } from "@/lib/error-reporting";
 
 interface TouchpointStatusActionsProps {
@@ -21,101 +24,110 @@ export default function TouchpointStatusActions({
   onStatusUpdate,
   compact = false,
 }: TouchpointStatusActionsProps) {
-  const [updating, setUpdating] = useState(false);
+  const { user } = useAuth();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [reason, setReason] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useUpdateTouchpointStatus(user?.uid);
 
   const handleUpdateStatus = async (status: "completed" | "cancelled" | null, reason?: string) => {
-    setUpdating(true);
-    try {
-      const response = await fetch(`/api/contacts/${encodeURIComponent(contactId)}/touchpoint-status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, reason: reason || null }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to update touchpoint status");
+    setError(null);
+    mutation.mutate(
+      {
+        contactId,
+        status,
+        reason: reason || null,
+      },
+      {
+        onSuccess: () => {
+          setShowCancelModal(false);
+          setShowCompleteModal(false);
+          setReason("");
+          onStatusUpdate?.();
+        },
+        onError: (error) => {
+          reportException(error, {
+            context: "Updating touchpoint status in TouchpointStatusActions",
+            tags: { component: "TouchpointStatusActions", contactId },
+          });
+          setError(extractErrorMessage(error));
+        },
       }
-
-      setShowCancelModal(false);
-      setShowCompleteModal(false);
-      setReason("");
-      onStatusUpdate?.();
-    } catch (error) {
-      reportException(error, {
-        context: "Updating touchpoint status",
-        tags: { component: "TouchpointStatusActions", contactId },
-        extra: { status },
-      });
-      alert(error instanceof Error ? error.message : "Failed to update touchpoint status");
-    } finally {
-      setUpdating(false);
-    }
+    );
   };
 
   if (compact) {
     // Compact view for dashboard cards
     return (
-      <div className="flex items-center gap-2">
-        {currentStatus !== "completed" && (
-          <button
-            onClick={() => setShowCompleteModal(true)}
-            disabled={updating}
-            className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="I've contacted this person"
-          >
-            <svg
-              className="w-3.5 h-3.5 inline mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          {currentStatus !== "completed" && (
+            <button
+              onClick={() => setShowCompleteModal(true)}
+              disabled={mutation.isPending}
+              className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="I've contacted this person"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            Mark as Contacted
-          </button>
-        )}
-        {currentStatus !== "cancelled" && (
-          <button
-            onClick={() => setShowCancelModal(true)}
-            disabled={updating}
-            className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Skip this touchpoint - no action needed"
-          >
-            <svg
-              className="w-3.5 h-3.5 inline mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              <svg
+                className="w-3.5 h-3.5 inline mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Mark as Contacted
+            </button>
+          )}
+          {currentStatus !== "cancelled" && (
+            <button
+              onClick={() => setShowCancelModal(true)}
+              disabled={mutation.isPending}
+              className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Skip this touchpoint - no action needed"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Skip Touchpoint
-          </button>
+              <svg
+                className="w-3.5 h-3.5 inline mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Skip Touchpoint
+            </button>
+          )}
+        </div>
+        {error && (
+          <ErrorMessage
+            message={error}
+            dismissible
+            onDismiss={() => setError(null)}
+          />
         )}
         <Modal
           isOpen={showCompleteModal}
           onClose={() => {
-            if (!updating) {
+            if (!mutation.isPending) {
               setShowCompleteModal(false);
               setReason("");
+              setError(null);
             }
           }}
           title="Mark as Contacted"
-          closeOnBackdropClick={!updating}
+          closeOnBackdropClick={!mutation.isPending}
         >
           <p className="text-sm text-gray-600 mb-4">
             Mark the touchpoint for <strong>{contactName}</strong> as contacted? This indicates you&apos;ve reached out to them.
@@ -126,15 +138,25 @@ export default function TouchpointStatusActions({
             placeholder="Optional note about the contact (e.g., what you discussed)..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 resize-none"
             rows={3}
-            disabled={updating}
+            disabled={mutation.isPending}
           />
+          {error && (
+            <div className="mb-4">
+              <ErrorMessage
+                message={error}
+                dismissible
+                onDismiss={() => setError(null)}
+              />
+            </div>
+          )}
           <div className="flex gap-3 justify-end">
             <Button
               onClick={() => {
                 setShowCompleteModal(false);
                 setReason("");
+                setError(null);
               }}
-              disabled={updating}
+              disabled={mutation.isPending}
               variant="secondary"
               size="sm"
             >
@@ -142,8 +164,8 @@ export default function TouchpointStatusActions({
             </Button>
             <Button
               onClick={() => handleUpdateStatus("completed", reason)}
-              disabled={updating}
-              loading={updating}
+              disabled={mutation.isPending}
+              loading={mutation.isPending}
               variant="success"
               size="sm"
             >
@@ -154,13 +176,14 @@ export default function TouchpointStatusActions({
         <Modal
           isOpen={showCancelModal}
           onClose={() => {
-            if (!updating) {
+            if (!mutation.isPending) {
               setShowCancelModal(false);
               setReason("");
+              setError(null);
             }
           }}
           title="Skip Touchpoint"
-          closeOnBackdropClick={!updating}
+          closeOnBackdropClick={!mutation.isPending}
         >
           <p className="text-sm text-gray-600 mb-4">
             Skip the touchpoint for <strong>{contactName}</strong>? This indicates no action is needed at this time.
@@ -171,15 +194,25 @@ export default function TouchpointStatusActions({
             placeholder="Optional reason for skipping (e.g., not relevant, contact inactive)..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 resize-none"
             rows={3}
-            disabled={updating}
+            disabled={mutation.isPending}
           />
+          {error && (
+            <div className="mb-4">
+              <ErrorMessage
+                message={error}
+                dismissible
+                onDismiss={() => setError(null)}
+              />
+            </div>
+          )}
           <div className="flex gap-3 justify-end">
             <Button
               onClick={() => {
                 setShowCancelModal(false);
                 setReason("");
+                setError(null);
               }}
-              disabled={updating}
+              disabled={mutation.isPending}
               variant="secondary"
               size="sm"
             >
@@ -187,8 +220,8 @@ export default function TouchpointStatusActions({
             </Button>
             <Button
               onClick={() => handleUpdateStatus("cancelled", reason)}
-              disabled={updating}
-              loading={updating}
+              disabled={mutation.isPending}
+              loading={mutation.isPending}
               variant="secondary"
               size="sm"
             >
@@ -225,7 +258,7 @@ export default function TouchpointStatusActions({
         <div className="flex gap-2">
           <Button
             onClick={() => setShowCompleteModal(true)}
-            disabled={updating}
+            disabled={mutation.isPending}
             variant="success"
             size="sm"
           >
@@ -233,7 +266,7 @@ export default function TouchpointStatusActions({
           </Button>
           <Button
             onClick={() => setShowCancelModal(true)}
-            disabled={updating}
+            disabled={mutation.isPending}
             variant="secondary"
             size="sm"
           >
@@ -245,7 +278,8 @@ export default function TouchpointStatusActions({
       {(currentStatus === "completed" || currentStatus === "cancelled") && (
         <Button
           onClick={() => handleUpdateStatus(null)}
-          disabled={updating}
+          disabled={mutation.isPending}
+          loading={mutation.isPending}
           variant="outline"
           size="sm"
           className="text-blue-700 bg-blue-50 hover:bg-blue-100"
@@ -254,17 +288,26 @@ export default function TouchpointStatusActions({
         </Button>
       )}
 
+      {error && (
+        <ErrorMessage
+          message={error}
+          dismissible
+          onDismiss={() => setError(null)}
+        />
+      )}
+
       {/* Modals */}
       <Modal
         isOpen={showCompleteModal}
         onClose={() => {
-          if (!updating) {
+          if (!mutation.isPending) {
             setShowCompleteModal(false);
             setReason("");
+            setError(null);
           }
         }}
         title="Mark as Contacted"
-        closeOnBackdropClick={!updating}
+        closeOnBackdropClick={!mutation.isPending}
       >
         <p className="text-sm text-gray-600 mb-4">
           Mark the touchpoint for <strong>{contactName}</strong> as contacted? This indicates you&apos;ve reached out to them.
@@ -275,15 +318,25 @@ export default function TouchpointStatusActions({
           placeholder="Optional note about the contact (e.g., what you discussed)..."
           className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 resize-none"
           rows={3}
-          disabled={updating}
+          disabled={mutation.isPending}
         />
+        {error && (
+          <div className="mb-4">
+            <ErrorMessage
+              message={error}
+              dismissible
+              onDismiss={() => setError(null)}
+            />
+          </div>
+        )}
         <div className="flex gap-3 justify-end">
           <Button
             onClick={() => {
               setShowCompleteModal(false);
               setReason("");
+              setError(null);
             }}
-            disabled={updating}
+            disabled={mutation.isPending}
             variant="secondary"
             size="sm"
           >
@@ -291,8 +344,8 @@ export default function TouchpointStatusActions({
           </Button>
           <Button
             onClick={() => handleUpdateStatus("completed", reason)}
-            disabled={updating}
-            loading={updating}
+            disabled={mutation.isPending}
+            loading={mutation.isPending}
             variant="success"
             size="sm"
           >
@@ -304,13 +357,14 @@ export default function TouchpointStatusActions({
       <Modal
         isOpen={showCancelModal}
         onClose={() => {
-          if (!updating) {
+          if (!mutation.isPending) {
             setShowCancelModal(false);
             setReason("");
+            setError(null);
           }
         }}
         title="Skip Touchpoint"
-        closeOnBackdropClick={!updating}
+        closeOnBackdropClick={!mutation.isPending}
       >
         <p className="text-sm text-gray-600 mb-4">
           Skip the touchpoint for <strong>{contactName}</strong>? This indicates no action is needed at this time.
@@ -321,15 +375,25 @@ export default function TouchpointStatusActions({
           placeholder="Optional reason for skipping (e.g., not relevant, contact inactive)..."
           className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 resize-none"
           rows={3}
-          disabled={updating}
+          disabled={mutation.isPending}
         />
+        {error && (
+          <div className="mb-4">
+            <ErrorMessage
+              message={error}
+              dismissible
+              onDismiss={() => setError(null)}
+            />
+          </div>
+        )}
         <div className="flex gap-3 justify-end">
           <Button
             onClick={() => {
               setShowCancelModal(false);
               setReason("");
+              setError(null);
             }}
-            disabled={updating}
+            disabled={mutation.isPending}
             variant="secondary"
             size="sm"
           >
@@ -337,8 +401,8 @@ export default function TouchpointStatusActions({
           </Button>
           <Button
             onClick={() => handleUpdateStatus("cancelled", reason)}
-            disabled={updating}
-            loading={updating}
+            disabled={mutation.isPending}
+            loading={mutation.isPending}
             variant="secondary"
             size="sm"
           >

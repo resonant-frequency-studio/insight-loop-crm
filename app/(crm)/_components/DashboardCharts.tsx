@@ -7,12 +7,14 @@ import LeadSourceChart from "./charts/LeadSourceChart";
 import EngagementChart from "./charts/EngagementChart";
 import TopTagsChart from "./charts/TopTagsChart";
 import SentimentChart from "./charts/SentimentChart";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStats, DashboardStats } from "@/hooks/useDashboardStats";
 
-function DashboardChartsContent({ userId }: { userId: string }) {
-  const { data: stats } = useDashboardStats(userId);
+function DashboardChartsContent({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
+  const { data: stats, isLoading } = useDashboardStats(userId, initialStats);
   
-  if (!stats) {
+  // Show loading skeleton only if actually loading, not if data is temporarily undefined
+  // React Query with prefetched data should have data available immediately on hydration
+  if (isLoading && !stats) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -21,6 +23,17 @@ function DashboardChartsContent({ userId }: { userId: string }) {
             <div className="h-64 bg-gray-200 rounded" />
           </div>
         ))}
+      </div>
+    );
+  }
+  
+  // If no stats but not loading, show empty state
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow p-6">
+          <p className="text-gray-500">Loading charts...</p>
+        </div>
       </div>
     );
   }
@@ -52,7 +65,12 @@ function DashboardChartsContent({ userId }: { userId: string }) {
   );
 }
 
-export default function DashboardCharts({ userId }: { userId: string }) {
+export default function DashboardCharts({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
+  // If we have initialStats, render directly without Suspense to avoid loading state
+  if (initialStats) {
+    return <DashboardChartsContent userId={userId} initialStats={initialStats} />;
+  }
+
   return (
     <Suspense
       fallback={

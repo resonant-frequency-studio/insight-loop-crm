@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { getUserId } from "@/lib/auth-utils";
 import { getContactForUser } from "@/lib/contacts-server";
 import { getDisplayName } from "@/util/contact-utils";
+import { isPlaywrightTest } from "@/util/test-utils";
 import ContactDetailData from "./_components/ContactDetailData";
 
 export async function generateMetadata({
@@ -10,6 +11,13 @@ export async function generateMetadata({
 }: {
   params: Promise<{ contactId: string }>;
 }): Promise<Metadata> {
+  // Bypass SSR auth for E2E tests
+  if (isPlaywrightTest()) {
+    return {
+      title: "Contact | Insight Loop CRM",
+    };
+  }
+
   let userId: string;
   try {
     userId = await getUserId();
@@ -44,10 +52,13 @@ interface ContactDetailPageProps {
 }
 
 export default async function ContactDetailPage({ params }: ContactDetailPageProps) {
-  try {
-    await getUserId();
-  } catch {
-    redirect("/login");
+  // Bypass SSR auth redirect for E2E tests - let client-side auth handle it
+  if (!isPlaywrightTest()) {
+    try {
+      await getUserId();
+    } catch {
+      redirect("/login");
+    }
   }
 
   const { contactId } = await params;

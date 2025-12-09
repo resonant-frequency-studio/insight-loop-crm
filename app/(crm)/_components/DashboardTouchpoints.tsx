@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { Button } from "@/components/Button";
 import Link from "next/link";
+import { reportException } from "@/lib/error-reporting";
 
 interface ContactWithTouchpoint extends Contact {
   id: string;
@@ -53,17 +54,36 @@ function TouchpointsContent({ userId }: { userId: string }) {
       );
 
       const results = await Promise.allSettled(updates);
-      const failures = results.filter((r) => r.status === "rejected").length;
-      const successCount = selectedIds.length - failures;
+      const failures = results.filter((r) => r.status === "rejected");
+      const failureCount = failures.length;
+      const successCount = selectedIds.length - failureCount;
+
+      // Report all failures to Sentry
+      failures.forEach((result, index) => {
+        if (result.status === "rejected") {
+          reportException(result.reason, {
+            context: "Bulk updating touchpoint status in DashboardTouchpoints",
+            tags: { 
+              component: "DashboardTouchpoints", 
+              contactId: selectedIds[index],
+              status,
+            },
+          });
+        }
+      });
 
       setSelectedTouchpointIds(new Set());
 
-      if (failures > 0) {
+      if (failureCount > 0) {
         alert(
           `Updated ${successCount} of ${selectedIds.length} touchpoints. Some updates failed.`
         );
       }
     } catch (error) {
+      reportException(error, {
+        context: "Bulk updating touchpoint status in DashboardTouchpoints",
+        tags: { component: "DashboardTouchpoints", status },
+      });
       alert("Failed to update touchpoints. Please try again.");
     } finally {
       setBulkUpdating(false);

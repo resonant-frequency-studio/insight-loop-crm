@@ -162,6 +162,51 @@ npm run dev
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## Testing
+
+### Unit Tests (Jest)
+
+Run unit tests:
+```bash
+npm test
+```
+
+Watch mode:
+```bash
+npm run test:watch
+```
+
+Coverage:
+```bash
+npm run test:coverage
+```
+
+### E2E Tests (Playwright)
+
+**IMPORTANT**: E2E tests require a separate Firebase test project to ensure they never interact with production data.
+
+1. **Install Playwright browsers** (first time only):
+   ```bash
+   npx playwright install
+   ```
+
+2. **Set up test environment**:
+   - Create a separate Firebase project for testing
+   - Copy `env.test.local.example` to `.env.test.local`
+   - Fill in your test Firebase project credentials
+
+3. **Run E2E tests**:
+   ```bash
+   npm run test:e2e
+   ```
+
+4. **Other test commands**:
+   - `npm run test:e2e:ui` - Interactive UI mode
+   - `npm run test:e2e:headed` - Run with visible browser
+   - `npm run test:e2e:debug` - Debug mode
+
+See [tests/e2e/README.md](tests/e2e/README.md) for detailed E2E testing documentation.
+
 ## Usage
 
 ### Adding Contacts

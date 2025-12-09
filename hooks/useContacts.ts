@@ -19,10 +19,9 @@ export function useContacts(userId: string, initialData?: Contact[]) {
       const data = await response.json();
       return data.contacts as Contact[];
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
     enabled: !!userId,
     initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
-    refetchOnWindowFocus: false,
+    // Uses global defaults: staleTime: 0, refetchOnWindowFocus: true, refetchOnMount: true
   });
 }
 

@@ -2,6 +2,7 @@
 
 import { useActionItems } from "@/hooks/useActionItems";
 import { useContacts } from "@/hooks/useContacts";
+import { useAuth } from "@/hooks/useAuth";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { computeIsOverdue, getDateCategory } from "@/util/date-utils-server";
 import { ActionItem, Contact } from "@/types/firestore";
@@ -20,9 +21,14 @@ interface EnrichedActionItem extends ActionItem {
 }
 
 export default function ActionItemsPageClientWrapper({ userId }: { userId: string }) {
+  const { user, loading: authLoading } = useAuth();
+  // Use userId prop if provided (from SSR), otherwise get from client auth (for E2E mode or if SSR didn't have it)
+  // In production, userId prop should always be provided from SSR
+  // In E2E mode, it might be empty, so we wait for auth to load and use user?.uid
+  const effectiveUserId = userId || (authLoading ? "" : user?.uid || "");
   // React Query automatically uses prefetched data from HydrationBoundary
-  const { data: actionItems = [] } = useActionItems(userId);
-  const { data: contacts = [] } = useContacts(userId);
+  const { data: actionItems = [] } = useActionItems(effectiveUserId);
+  const { data: contacts = [] } = useContacts(effectiveUserId);
 
   // Convert contacts array to Map for efficient lookup
   const contactsMap = new Map<string, Contact>();

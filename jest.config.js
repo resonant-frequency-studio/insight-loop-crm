@@ -16,6 +16,13 @@ const customJestConfig = {
     '**/__tests__/**/*.(test|spec).[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  // Exclude Playwright E2E tests - they require browser environment and TransformStream
+  // which Jest's jsdom environment doesn't provide
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.next/',
+    '/tests/e2e/', // Exclude Playwright tests directory
+  ],
   collectCoverageFrom: [
     'lib/**/*.{js,jsx,ts,tsx}',
     'util/**/*.{js,jsx,ts,tsx}',

@@ -3,6 +3,7 @@
 import { notFound } from "next/navigation";
 import { useContact } from "@/hooks/useContact";
 import { useActionItems } from "@/hooks/useActionItems";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { convertTimestampToISO } from "@/util/timestamp-utils-server";
 import ContactDetailPageClient from "../ContactDetailPageClient";
@@ -17,11 +18,16 @@ export default function ContactDetailPageClientWrapper({
   contactId,
   userId,
 }: ContactDetailPageClientWrapperProps) {
+  const { user, loading: authLoading } = useAuth();
+  // Use userId prop if provided (from SSR), otherwise get from client auth (for E2E mode or if SSR didn't have it)
+  // In production, userId prop should always be provided from SSR
+  // In E2E mode, it might be empty, so we wait for auth to load and use user?.uid
+  const effectiveUserId = userId || (authLoading ? "" : user?.uid || "");
   // React Query automatically uses prefetched data from HydrationBoundary
-  const { data: contact } = useContact(userId, contactId);
-  const { data: actionItems = [] } = useActionItems(userId, contactId);
+  const { data: contact } = useContact(effectiveUserId, contactId);
+  const { data: actionItems = [] } = useActionItems(effectiveUserId, contactId);
   const { data: uniqueSegments = [] } = useQuery({
-    queryKey: ["unique-segments", userId],
+    queryKey: ["unique-segments", effectiveUserId],
     queryFn: async () => {
       // For now, we'll fetch all contacts and extract unique segments
       // TODO: Create an API route for this if needed
@@ -58,7 +64,6 @@ export default function ContactDetailPageClientWrapper({
 
   return (
     <ContactDetailPageClient
-      contact={contact}
       contactDocumentId={contactId}
       userId={userId}
       initialActionItems={serializedActionItems}

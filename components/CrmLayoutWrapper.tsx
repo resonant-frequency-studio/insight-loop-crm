@@ -21,6 +21,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const previousPathname = useRef(pathname);
+  const [hasSessionCookie, setHasSessionCookie] = useState<boolean | null>(null);
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -122,12 +123,38 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Redirect to login if not authenticated and not on login page
+  // Check session cookie when there's no Firebase user (for E2E tests that use session cookies only)
   useEffect(() => {
-    if (!isLoginPage && !loading && !user) {
+    if (!user && !loading) {
+      fetch("/api/auth/check", {
+        credentials: "include",
+      })
+        .then((response) => {
+          setHasSessionCookie(response.ok);
+        })
+        .catch(() => {
+          setHasSessionCookie(false);
+        });
+    } else {
+      setHasSessionCookie(user ? true : null);
+    }
+  }, [user, loading]);
+
+  // Redirect to login if not authenticated and not on login page
+  // Allow page to render if session cookie is valid (for E2E tests)
+  useEffect(() => {
+    if (isLoginPage) return;
+    
+    // Wait for auth state and session cookie check to complete
+    if (loading || (hasSessionCookie === null && !user)) {
+      return; // Still checking
+    }
+    
+    // Redirect if not authenticated (no Firebase user and no valid session cookie)
+    if (!user && hasSessionCookie !== true) {
       router.push("/login");
     }
-  }, [isLoginPage, loading, user, router]);
+  }, [isLoginPage, loading, user, router, hasSessionCookie]);
 
   // Always show sidebar if not on login page (prevents flash)
   if (isLoginPage) {

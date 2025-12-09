@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { OverwriteMode, BatchImportProgress } from "@/lib/contact-import";
 import {
   countExistingContacts,
@@ -27,6 +28,7 @@ export interface ImportCallbacks {
  * Hook for managing contact import operations
  */
 export function useContactImport(userId: string | null, callbacks?: ImportCallbacks) {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<ImportState>({
     isImporting: false,
     status: "",
@@ -144,11 +146,18 @@ export function useContactImport(userId: string | null, callbacks?: ImportCallba
       }));
       
       callbacks?.onStatusChange?.(statusMessage);
+      
+      // Invalidate queries - React Query will automatically refetch active queries
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-stats", userId] });
+      }
+      
       callbacks?.onComplete?.(progress);
 
       return progress;
     },
-    [userId, testPermissions, callbacks]
+    [userId, testPermissions, callbacks, queryClient]
   );
 
   const reset = useCallback(() => {

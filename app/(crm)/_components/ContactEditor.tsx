@@ -1,20 +1,25 @@
 "use client";
 
-import { doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase-client";
+import { Timestamp } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useContact } from "@/hooks/useContact";
 import { Contact } from "@/types/firestore";
 import Modal from "@/components/Modal";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
-import { ErrorMessage, extractApiError, extractErrorMessage } from "@/components/ErrorMessage";
+import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
 import { formatContactDate } from "@/util/contact-utils";
 import SegmentSelect from "./SegmentSelect";
 import ActionItemsList from "./ActionItemsList";
 import TouchpointStatusActions from "./TouchpointStatusActions";
+import {
+  useUpdateContact,
+  useUpdateContactDraft,
+  useDeleteContact,
+  useArchiveContact,
+} from "@/hooks/useContactMutations";
 import { reportException } from "@/lib/error-reporting";
 
 function InfoPopover({ content, children }: { content: string; children: React.ReactNode }) {
@@ -45,7 +50,6 @@ function InfoPopover({ content, children }: { content: string; children: React.R
 }
 
 interface ContactEditorProps {
-  contact: Contact;
   contactDocumentId: string;
   userId: string;
   // Pre-fetched data (for SSR)
@@ -54,115 +58,151 @@ interface ContactEditorProps {
   uniqueSegments?: string[];
 }
 
+// Form state type - ONLY editable fields
+// Non-editable fields (archived, createdAt, updatedAt, engagementScore, etc.) come from React Query
+interface ContactFormState {
+  firstName?: string | null;
+  lastName?: string | null;
+  tags?: string[];
+  segment?: string | null;
+  leadSource?: string | null;
+  notes?: string | null;
+  nextTouchpointDate?: unknown | null;
+  nextTouchpointMessage?: string | null;
+}
+
 export default function ContactEditor({
-  contact,
   contactDocumentId,
   userId,
   initialActionItems,
   initialContact,
   uniqueSegments = [],
 }: ContactEditorProps) {
-  const [form, setForm] = useState<Contact>(contact);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [archiving, setArchiving] = useState(false);
+  // Read contact directly from React Query cache for optimistic updates
+  const { data: contact } = useContact(userId, contactDocumentId);
+  
+  // Form state - ONLY editable fields
+  // Non-editable fields (archived, stats, etc.) are read directly from contact (React Query)
+  const [form, setForm] = useState<ContactFormState>(() => ({
+    firstName: contact?.firstName ?? "",
+    lastName: contact?.lastName ?? "",
+    tags: contact?.tags ?? [],
+    segment: contact?.segment ?? "",
+    leadSource: contact?.leadSource ?? "",
+    notes: contact?.notes ?? "",
+    nextTouchpointDate: contact?.nextTouchpointDate ?? null,
+    nextTouchpointMessage: contact?.nextTouchpointMessage ?? "",
+  }));
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [archiveError, setArchiveError] = useState<string | null>(null);
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const updateField = (field: string, value: string | string[] | null) => {
-    setForm({ ...form, [field]: value });
+  // Mutation hooks
+  const updateContactMutation = useUpdateContact(user?.uid);
+  const deleteContactMutation = useDeleteContact(user?.uid);
+  const archiveContactMutation = useArchiveContact(user?.uid);
+
+  // Sync form ONLY when contactDocumentId changes (new contact loaded)
+  // This ensures autofill works but does NOT reset form on optimistic updates
+  useEffect(() => {
+    if (contact) {
+      setForm({
+        firstName: contact.firstName ?? "",
+        lastName: contact.lastName ?? "",
+        tags: contact.tags ?? [],
+        segment: contact.segment ?? "",
+        leadSource: contact.leadSource ?? "",
+        notes: contact.notes ?? "",
+        nextTouchpointDate: contact.nextTouchpointDate ?? null,
+        nextTouchpointMessage: contact.nextTouchpointMessage ?? "",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactDocumentId]); // IMPORTANT: NOT [contact] - only sync when switching contacts
+
+  // Show loading state if contact is not available
+  if (!contact) {
+    return (
+      <div className="space-y-6">
+        <div className="h-96 bg-gray-200 rounded animate-pulse" />
+      </div>
+    );
+  }
+
+  // Note: touchpointStatus is not part of form state since it's managed via TouchpointStatusActions
+  // The contact from React Query is used directly for touchpoint status display
+
+  const updateField = (field: keyof ContactFormState, value: string | string[] | null) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveChanges = async () => {
-    setSaving(true);
+  const saveChanges = () => {
     setSaveError(null);
-    try {
-      await updateDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`), {
-        ...form,
-        updatedAt: new Date(),
-      });
-      setSaveError(null);
-      
-      // Invalidate React Query cache
-      if (user?.uid) {
-        queryClient.invalidateQueries({ queryKey: ["contacts", user.uid] });
-        queryClient.invalidateQueries({ queryKey: ["contact", user.uid, contactDocumentId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-stats", user.uid] });
+    // Merge form (editable fields) with contact (non-editable fields preserved)
+    updateContactMutation.mutate(
+      {
+        contactId: contactDocumentId,
+        updates: {
+          ...form,
+          // Preserve non-editable fields from contact
+          contactId: contact.contactId,
+          primaryEmail: contact.primaryEmail,
+        },
+      },
+      {
+        onSuccess: () => {
+          setSaveError(null);
+        },
+        onError: (error) => {
+          reportException(error, {
+            context: "Updating contact in ContactEditor",
+            tags: { component: "ContactEditor", contactId: contactDocumentId },
+          });
+          setSaveError(extractErrorMessage(error));
+        },
       }
-    } catch (error) {
-      reportException(error, {
-        context: "Updating contact",
-        tags: { component: "ContactEditor", contactId: contactDocumentId },
-      });
-      setSaveError(extractErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
+    );
   };
 
-  const deleteContact = async () => {
-    setDeleting(true);
+  const deleteContact = () => {
     setDeleteError(null);
-    try {
-      await deleteDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`));
-      
-      // Invalidate React Query cache before redirecting
-      if (user?.uid) {
-        queryClient.invalidateQueries({ queryKey: ["contacts", user.uid] });
-        queryClient.invalidateQueries({ queryKey: ["contact", user.uid, contactDocumentId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-stats", user.uid] });
-        queryClient.invalidateQueries({ queryKey: ["action-items", user.uid] });
-      }
-      
-      router.push("/contacts");
-    } catch (error) {
-      reportException(error, {
-        context: "Deleting contact",
-        tags: { component: "ContactEditor", contactId: contactDocumentId },
-      });
-      setDeleteError(extractErrorMessage(error));
-      setDeleting(false);
-    }
+    deleteContactMutation.mutate(contactDocumentId, {
+      onSuccess: () => {
+        router.push("/contacts");
+      },
+      onError: (error) => {
+        reportException(error, {
+          context: "Deleting contact in ContactEditor",
+          tags: { component: "ContactEditor", contactId: contactDocumentId },
+        });
+        setDeleteError(extractErrorMessage(error));
+      },
+    });
   };
 
-  const archiveContact = async (archived: boolean) => {
-    setArchiving(true);
+  const archiveContact = (archived: boolean) => {
     setArchiveError(null);
-    try {
-      const response = await fetch(`/api/contacts/${encodeURIComponent(contactDocumentId)}/archive`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ archived }),
-      });
-
-      if (!response.ok) {
-        const errorMessage = await extractApiError(response);
-        throw new Error(errorMessage);
+    archiveContactMutation.mutate(
+      {
+        contactId: contactDocumentId,
+        archived,
+      },
+      {
+        onSuccess: () => {},
+        onError: (error) => {
+          reportException(error, {
+            context: "Archiving contact in ContactEditor",
+            tags: { component: "ContactEditor", contactId: contactDocumentId },
+          });
+          setArchiveError(extractErrorMessage(error));
+        },
       }
-
-      // Invalidate React Query cache (mutation hook should handle this, but ensure it's done)
-      if (user?.uid) {
-        queryClient.invalidateQueries({ queryKey: ["contacts", user.uid] });
-        queryClient.invalidateQueries({ queryKey: ["contact", user.uid, contactDocumentId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-stats", user.uid] });
-      }
-
-      // Redirect to contacts page after archiving
-      router.push("/contacts");
-    } catch (error) {
-      reportException(error, {
-        context: "Archiving contact",
-        tags: { component: "ContactEditor", contactId: contactDocumentId },
-      });
-      setArchiveError(extractErrorMessage(error));
-      setArchiving(false);
-    }
-  };
+      );
+    };
 
   return (
     <div className="space-y-6">
@@ -171,7 +211,7 @@ export default function ContactEditor({
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         title="Delete Contact"
-        closeOnBackdropClick={!deleting}
+        closeOnBackdropClick={!deleteContactMutation.isPending}
       >
         <p className="text-gray-600 mb-6">
           Are you sure? Deleting this contact is final and cannot be undone.
@@ -179,7 +219,7 @@ export default function ContactEditor({
         <div className="flex gap-3 justify-end">
           <Button
             onClick={() => setShowDeleteConfirm(false)}
-            disabled={deleting}
+            disabled={deleteContactMutation.isPending}
             variant="secondary"
             size="sm"
           >
@@ -187,8 +227,8 @@ export default function ContactEditor({
           </Button>
           <Button
             onClick={deleteContact}
-            disabled={deleting}
-            loading={deleting}
+            disabled={deleteContactMutation.isPending}
+            loading={deleteContactMutation.isPending}
             variant="danger"
             size="sm"
             error={deleteError}
@@ -463,21 +503,21 @@ export default function ContactEditor({
             <div className="mt-4 pt-4 border-t border-gray-200">
               <TouchpointStatusActions
                 contactId={contactDocumentId}
-                contactName={[form.firstName, form.lastName].filter(Boolean).join(" ") || form.primaryEmail}
-                currentStatus={form.touchpointStatus || contact.touchpointStatus}
+                contactName={[form.firstName, form.lastName].filter(Boolean).join(" ") || contact.primaryEmail}
+                currentStatus={contact.touchpointStatus}
                 onStatusUpdate={() => {
-                  // Refresh the contact data
-                  window.location.reload();
+                  // No-op: React Query will automatically update the contact data
+                  // The contact prop will update reactively via React Query cache
                 }}
               />
-              {form.touchpointStatusUpdatedAt ? (
+              {contact.touchpointStatusUpdatedAt ? (
                 <p className="text-xs text-gray-500 mt-2">
-                  Status updated: {formatContactDate(form.touchpointStatusUpdatedAt, { relative: true })}
+                  Status updated: {formatContactDate(contact.touchpointStatusUpdatedAt, { relative: true })}
                 </p>
               ) : null}
-              {form.touchpointStatusReason && (
+              {contact.touchpointStatusReason && (
                 <p className="text-xs text-gray-600 mt-1 italic">
-                  &quot;{form.touchpointStatusReason}&quot;
+                  &quot;{contact.touchpointStatusReason}&quot;
                 </p>
               )}
             </div>
@@ -495,8 +535,8 @@ export default function ContactEditor({
         <div className="flex justify-start">
           <Button
             onClick={saveChanges}
-            disabled={saving}
-            loading={saving}
+            disabled={updateContactMutation.isPending}
+            loading={updateContactMutation.isPending}
             variant="gradient-blue"
             error={saveError}
             icon={
@@ -520,13 +560,13 @@ export default function ContactEditor({
           <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Insights</h2>
           <div className="space-y-6">
             {/* Quick Info Section */}
-            {form.summary && (
+            {contact.summary && (
               <div>
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                   AI Summary
                 </label>
                 <div className="px-3 py-2 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                  {form.summary}
+                  {contact.summary}
                 </div>
               </div>
             )}
@@ -743,14 +783,18 @@ export default function ContactEditor({
         {/* Archive Contact Button - Right Sidebar */}
         <Card padding="md">
           <Button
-            onClick={() => archiveContact(!contact.archived)}
-            disabled={archiving || deleting}
-            loading={archiving}
+            onClick={() => {
+              // Explicitly handle undefined as false (not archived)
+              const currentlyArchived = contact.archived === true;
+              archiveContact(!currentlyArchived);
+            }}
+            disabled={archiveContactMutation.isPending || deleteContactMutation.isPending}
+            loading={archiveContactMutation.isPending}
             variant="outline"
             fullWidth
             error={archiveError}
             icon={
-              contact.archived ? (
+              contact.archived === true ? (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -762,7 +806,7 @@ export default function ContactEditor({
             }
             className="mb-3"
           >
-            {contact.archived ? "Unarchive Contact" : "Archive Contact"}
+            {contact.archived === true ? "Unarchive Contact" : "Archive Contact"}
           </Button>
         </Card>
 
@@ -770,7 +814,7 @@ export default function ContactEditor({
         <Card padding="md">
           <Button
             onClick={() => setShowDeleteConfirm(true)}
-            disabled={deleting || showDeleteConfirm || archiving}
+            disabled={deleteContactMutation.isPending || showDeleteConfirm || archiveContactMutation.isPending}
             variant="danger"
             fullWidth
             error={deleteError}
@@ -830,51 +874,45 @@ function OutreachDraftEditor({
   contactDocumentId: string;
   userId: string;
 }) {
-  const [outreachDraft, setOutreachDraft] = useState(contact.outreachDraft || "");
-  const [savingDraft, setSavingDraft] = useState(false);
+  const [localDraft, setLocalDraft] = useState<string | null>(null);
   const [draftHasChanges, setDraftHasChanges] = useState(false);
-  const queryClient = useQueryClient();
+  const draftMutation = useUpdateContactDraft(userId);
 
-  // Update local state when contact changes (only if we don't have unsaved changes)
-  useEffect(() => {
-    if (!draftHasChanges) {
-      setOutreachDraft(contact.outreachDraft || "");
-    }
-  }, [contact.outreachDraft, draftHasChanges]);
+  // Derive the displayed draft: use local state if there are changes, otherwise use contact prop
+  // This avoids the need for useEffect to sync state
+  const contactDraft = contact.outreachDraft || "";
+  const outreachDraft = draftHasChanges ? (localDraft ?? contactDraft) : contactDraft;
 
   const handleDraftChange = (value: string) => {
-    setOutreachDraft(value);
-    setDraftHasChanges(value !== (contact.outreachDraft || ""));
+    setLocalDraft(value);
+    setDraftHasChanges(value !== contactDraft);
   };
 
-  const saveOutreachDraft = async () => {
+  const saveOutreachDraft = () => {
     if (!draftHasChanges) return;
 
-    setSavingDraft(true);
-    try {
-      await updateDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`), {
+    draftMutation.mutate(
+      {
+        contactId: contactDocumentId,
         outreachDraft: outreachDraft || null,
-        updatedAt: new Date(),
-      });
-      
-      // Invalidate React Query cache
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
-        queryClient.invalidateQueries({ queryKey: ["contact", userId, contactDocumentId] });
+      },
+      {
+        onSuccess: () => {
+          setDraftHasChanges(false);
+          setLocalDraft(null); // Clear local draft after successful save
+        },
+        onError: (error) => {
+          reportException(error, {
+            context: "Saving outreach draft in ContactEditor",
+            tags: { component: "ContactEditor", contactId: contactDocumentId },
+          });
+          alert("Failed to save outreach draft. Please try again.");
+        },
       }
-      setDraftHasChanges(false);
-    } catch (error) {
-      reportException(error, {
-        context: "Saving outreach draft",
-        tags: { component: "ContactEditor", contactId: contactDocumentId },
-      });
-      alert("Failed to save outreach draft. Please try again.");
-    } finally {
-      setSavingDraft(false);
-    }
+    );
   };
 
-  const openGmailCompose = async () => {
+  const openGmailCompose = () => {
     if (!contact.primaryEmail) {
       alert("This contact does not have an email address.");
       return;
@@ -887,28 +925,43 @@ function OutreachDraftEditor({
 
     // Auto-save the draft before opening Gmail (if there are unsaved changes)
     if (draftHasChanges) {
-      try {
-        await updateDoc(doc(db, `users/${userId}/contacts/${contactDocumentId}`), {
+      draftMutation.mutate(
+        {
+          contactId: contactDocumentId,
           outreachDraft: outreachDraft || null,
-          updatedAt: new Date(),
-        });
-        setDraftHasChanges(false);
-      } catch (error) {
-        reportException(error, {
-          context: "Auto-saving outreach draft",
-          tags: { component: "ContactEditor", contactId: contactDocumentId },
-        });
-        // Continue anyway - don't block user from opening Gmail
-      }
+        },
+        {
+          onSuccess: () => {
+            setDraftHasChanges(false);
+            // Open Gmail after save completes
+            const email = encodeURIComponent(contact.primaryEmail);
+            const body = encodeURIComponent(outreachDraft);
+            const subject = encodeURIComponent("Follow up");
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${email}&body=${body}&su=${subject}`;
+            window.open(gmailUrl, "_blank");
+          },
+          onError: (error) => {
+            reportException(error, {
+              context: "Auto-saving outreach draft before opening Gmail in ContactEditor",
+              tags: { component: "ContactEditor", contactId: contactDocumentId },
+            });
+            // Continue anyway - don't block user from opening Gmail
+            const email = encodeURIComponent(contact.primaryEmail);
+            const body = encodeURIComponent(outreachDraft);
+            const subject = encodeURIComponent("Follow up");
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${email}&body=${body}&su=${subject}`;
+            window.open(gmailUrl, "_blank");
+          },
+        }
+      );
+    } else {
+      // No changes, just open Gmail
+      const email = encodeURIComponent(contact.primaryEmail);
+      const body = encodeURIComponent(outreachDraft);
+      const subject = encodeURIComponent("Follow up");
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${email}&body=${body}&su=${subject}`;
+      window.open(gmailUrl, "_blank");
     }
-
-    // Gmail compose URL format: https://mail.google.com/mail/?view=cm&to=EMAIL&body=BODY&su=SUBJECT
-    const email = encodeURIComponent(contact.primaryEmail);
-    const body = encodeURIComponent(outreachDraft);
-    const subject = encodeURIComponent("Follow up");
-    
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${email}&body=${body}&su=${subject}`;
-    window.open(gmailUrl, "_blank");
   };
 
   return (
@@ -934,8 +987,8 @@ function OutreachDraftEditor({
           {draftHasChanges && (
             <Button
               onClick={saveOutreachDraft}
-              disabled={savingDraft}
-              loading={savingDraft}
+              disabled={draftMutation.isPending}
+              loading={draftMutation.isPending}
               variant="outline"
               size="sm"
               className="text-green-700 bg-green-50 border-green-200 hover:bg-green-100"

@@ -2,12 +2,14 @@
 
 import { Suspense } from "react";
 import StatCard from "./StatCard";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStats, DashboardStats } from "@/hooks/useDashboardStats";
 
-function DashboardStatsContent({ userId }: { userId: string }) {
-  const { data: stats } = useDashboardStats(userId);
+function DashboardStatsContent({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
+  const { data: stats, isLoading } = useDashboardStats(userId, initialStats);
   
-  if (!stats) {
+  // Show loading skeleton only if actually loading, not if data is temporarily undefined
+  // React Query with prefetched data should have data available immediately on hydration
+  if (isLoading && !stats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -17,6 +19,18 @@ function DashboardStatsContent({ userId }: { userId: string }) {
             <div className="h-4 bg-gray-200 rounded w-32" />
           </div>
         ))}
+      </div>
+    );
+  }
+  
+  // If no stats but not loading, show empty state or default values
+  if (!stats) {
+    // This shouldn't happen in production with prefetched data, but handle gracefully
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow p-6">
+          <p className="text-gray-500">Loading stats...</p>
+        </div>
       </div>
     );
   }
@@ -78,7 +92,12 @@ function DashboardStatsContent({ userId }: { userId: string }) {
   );
 }
 
-export default function DashboardStatsCards({ userId }: { userId: string }) {
+export default function DashboardStatsCards({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
+  // If we have initialStats, render directly without Suspense to avoid loading state
+  if (initialStats) {
+    return <DashboardStatsContent userId={userId} initialStats={initialStats} />;
+  }
+
   return (
     <Suspense
       fallback={

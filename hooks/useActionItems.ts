@@ -41,7 +41,6 @@ export function useActionItems(
         return data.actionItems as Array<ActionItem & { contactId: string }>;
       }
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
     enabled: !!userId,
     initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
     // If fetching single contact's action items, use all action items cache as placeholder
@@ -58,7 +57,7 @@ export function useActionItems(
       }
       return undefined;
     },
-    refetchOnWindowFocus: false,
+    // Uses global defaults: staleTime: 0, refetchOnWindowFocus: true, refetchOnMount: true
   });
 }
 

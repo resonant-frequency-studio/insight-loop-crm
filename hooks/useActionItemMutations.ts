@@ -32,14 +32,9 @@ export function useCreateActionItem(userId?: string) {
 
       return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidate action items for this contact and all action items
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId, variables.contactId] });
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["action-items"] });
-      }
+    onSuccess: () => {
+      // Invalidate by prefixes → guarantees matching all screen variations
+      queryClient.invalidateQueries({ queryKey: ["action-items"] });
     },
     onError: (error) => {
       reportException(error, {
@@ -87,14 +82,9 @@ export function useUpdateActionItem(userId?: string) {
 
       return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidate action items for this contact and all action items
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId, variables.contactId] });
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["action-items"] });
-      }
+    onSuccess: () => {
+      // Invalidate by prefixes → guarantees matching all screen variations
+      queryClient.invalidateQueries({ queryKey: ["action-items"] });
     },
     onError: (error) => {
       reportException(error, {
@@ -134,14 +124,9 @@ export function useDeleteActionItem(userId?: string) {
 
       return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidate action items for this contact and all action items
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId, variables.contactId] });
-        queryClient.invalidateQueries({ queryKey: ["action-items", userId] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["action-items"] });
-      }
+    onSuccess: () => {
+      // Invalidate by prefixes → guarantees matching all screen variations
+      queryClient.invalidateQueries({ queryKey: ["action-items"] });
     },
     onError: (error) => {
       reportException(error, {

@@ -28,9 +28,10 @@ export function useSyncJobs(
         ? (data.syncHistory as SyncJob[])
         : (data.lastSync as SyncJob | null);
     },
-    staleTime: 1 * 60 * 1000, // 1 minute (sync jobs change more frequently)
+    staleTime: 0, // Sync jobs change frequently - always refetch
     enabled: !!userId,
     initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
+    // Uses global defaults: refetchOnWindowFocus: true, refetchOnMount: true
   });
 }
 

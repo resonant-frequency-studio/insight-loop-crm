@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { reportException } from "@/lib/error-reporting";
 import { convertTimestamp } from "@/util/timestamp-utils-server";
 import { unstable_cache } from "next/cache";
+import { isTestMode } from "@/util/test-utils";
 
 /**
  * Get action items path for a contact
@@ -101,6 +102,11 @@ export async function getActionItemsForContact(
   userId: string,
   contactId: string
 ): Promise<ActionItem[]> {
+  // In test mode, bypass cache to avoid stale data issues
+  if (isTestMode()) {
+    return getActionItemsForContactUncached(userId, contactId);
+  }
+
   return unstable_cache(
     async () => getActionItemsForContactUncached(userId, contactId),
     [`action-items-${userId}-${contactId}`],
