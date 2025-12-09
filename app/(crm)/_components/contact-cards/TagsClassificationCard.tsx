@@ -9,7 +9,6 @@ import InfoPopover from "@/components/InfoPopover";
 import SavingIndicator from "./SavingIndicator";
 import SegmentSelect from "../SegmentSelect";
 import { reportException } from "@/lib/error-reporting";
-import { Contact } from "@/types/firestore";
 import { useSavingState } from "@/contexts/SavingStateContext";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -30,10 +29,11 @@ export default function TagsClassificationCard({
   const { registerSaveStatus, unregisterSaveStatus } = useSavingState();
   const cardId = `tags-classification-${contactId}`;
   
-  const prevContactIdRef = useRef<Contact | null>(null);
+  const prevContactIdRef = useRef<string | null>(null);
   
   // Initialize form state from contact using lazy initialization
-  const [tags, setTags] = useState<string[]>([]);
+  const [tagsInput, setTagsInput] = useState<string>(""); // Raw input string for free typing
+  const [tags, setTags] = useState<string[]>([]); // Parsed tags array
   const [segment, setSegment] = useState<string | null>(null);
   const [leadSource, setLeadSource] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -50,16 +50,18 @@ export default function TagsClassificationCard({
   // Using contactId prop as dependency ensures we only update when switching contacts
   useEffect(() => {
     if (!contact) return;
-    if (prevContactIdRef.current !== contact) {
-      prevContactIdRef.current = contact;
+    if (prevContactIdRef.current !== contact.contactId) {
+      prevContactIdRef.current = contact.contactId;
       // Batch state updates to avoid cascading renders
-      setTags(contact.tags ?? []);
+      const contactTags = contact.tags ?? [];
+      setTags(contactTags);
+      setTagsInput(contactTags.join(", ")); // Initialize input with tags joined by comma
       setSegment(contact.segment ?? null);
       setLeadSource(contact.leadSource ?? "");
       setSaveStatus("idle");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contact?.contactId, contact?.updatedAt]);
+  }, [contact?.contactId]);
 
   // Track changes using useMemo instead of useEffect
   const hasUnsavedChanges = useMemo(() => {
@@ -102,6 +104,27 @@ export default function TagsClassificationCard({
   };
 
   const debouncedSave = useDebouncedSave(saveChanges, 500);
+
+  // Parse tags input string into tags array
+  const parseTags = (input: string): string[] => {
+    return input.split(",").map((s) => s.trim()).filter(Boolean);
+  };
+
+  const handleTagsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTagsInput(value); // Allow free typing
+    const parsedTags = parseTags(value);
+    setTags(parsedTags); // Update tags array for comparison
+  };
+
+  const handleTagsBlur = () => {
+    // Normalize the input on blur (remove extra spaces, etc.)
+    const normalized = tags.join(", ");
+    setTagsInput(normalized);
+    if (hasUnsavedChanges) {
+      debouncedSave();
+    }
+  };
 
   const handleBlur = () => {
     if (hasUnsavedChanges) {
@@ -148,16 +171,17 @@ export default function TagsClassificationCard({
             <InfoPopover content="Tags are labels you can assign to contacts to organize and categorize them. Use tags to group contacts by characteristics like industry, role, project, or any custom classification that helps you manage your relationships." />
           </label>
           <input
+            id="contact-tags"
+            name="contact-tags"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            value={tags.join(", ")}
-            onChange={(e) =>
-              setTags(
-                e.target.value.split(",").map((s) => s.trim()).filter(Boolean)
-              )
-            }
-            onBlur={handleBlur}
+            value={tagsInput}
+            onChange={handleTagsInputChange}
+            onBlur={handleTagsBlur}
             placeholder="tag1, tag2, tag3"
           />
+          <p className="mt-2 text-xs text-gray-600">
+            Enter tags separated by commas. Spaces within tags are allowed (e.g., &quot;School of Hard Knocks, Referral, VIP&quot;).
+          </p>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {tags.map((tag, idx) => (

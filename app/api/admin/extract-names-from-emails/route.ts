@@ -186,6 +186,22 @@ export async function POST(request: NextRequest) {
           results.processed++;
 
           try {
+            // Skip contacts that have a company name
+            if (contact.company && contact.company.trim() !== "") {
+              results.skipped++;
+              results.details.push({
+                contactId: contact.id,
+                email: contact.primaryEmail || "no email",
+                action: "skipped",
+                current: {
+                  firstName: contact.firstName || null,
+                  lastName: contact.lastName || null,
+                },
+                error: "Contact has company name",
+              });
+              return;
+            }
+
             if (!contact.primaryEmail) {
               results.skipped++;
               results.details.push({

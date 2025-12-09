@@ -36,6 +36,7 @@ describe("ContactsFilter", () => {
     onEmailSearchChange: jest.fn(),
     onFirstNameSearchChange: jest.fn(),
     onLastNameSearchChange: jest.fn(),
+    onCompanySearchChange: jest.fn(),
     onShowArchivedChange: jest.fn(),
     onClearFilters: jest.fn(),
   };
@@ -54,6 +55,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -77,6 +79,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -95,6 +98,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -113,6 +117,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -133,6 +138,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -151,6 +157,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -173,6 +180,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -191,6 +199,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={true}
           {...mockHandlers}
         />
@@ -209,6 +218,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -232,6 +242,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -254,6 +265,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -280,6 +292,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -301,6 +314,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -336,6 +350,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -353,6 +368,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -369,6 +385,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -403,6 +420,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -419,6 +437,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -439,6 +458,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />
@@ -459,6 +479,7 @@ describe("ContactsFilter", () => {
           emailSearch=""
           firstNameSearch=""
           lastNameSearch=""
+          companySearch=""
           showArchived={false}
           {...mockHandlers}
         />

@@ -122,6 +122,8 @@ export default function ExtractNamesPage() {
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
               <li><strong>dorothy.adams@yahoo.com</strong> → firstName: &quot;Dorothy&quot;, lastName: &quot;Adams&quot;</li>
               <li><strong>dorothy@gmail.com</strong> → firstName: &quot;Dorothy&quot;, lastName: null</li>
+              <li><strong>Only processes contacts with NO company name</strong></li>
+              <li>Extracts and capitalizes first name and last name from email addresses</li>
               <li>Only updates contacts that are missing firstName or lastName</li>
               <li>Preserves existing names if they already exist</li>
             </ul>
@@ -134,10 +136,12 @@ export default function ExtractNamesPage() {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">What this does:</h2>
             <ul className="list-disc list-inside space-y-1 text-gray-700">
-              <li>Processes all contacts in your database</li>
-              <li>Extracts names from email addresses using common patterns</li>
+              <li>Processes contacts that have <strong>NO company name</strong></li>
+              <li>Extracts first name and last name from email addresses</li>
+              <li>Capitalizes the extracted names (e.g., &quot;dorothy&quot; → &quot;Dorothy&quot;)</li>
               <li>Only updates contacts missing firstName or lastName</li>
               <li>Does not overwrite existing names</li>
+              <li>Skips contacts that already have a company name</li>
             </ul>
           </div>
 

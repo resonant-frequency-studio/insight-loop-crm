@@ -106,7 +106,7 @@ describe("SegmentSelect", () => {
       fireEvent.focus(input);
       
       const enterpriseOption = screen.getByText("Enterprise");
-      fireEvent.click(enterpriseOption);
+      fireEvent.mouseDown(enterpriseOption);
       
       expect(mockOnChange).toHaveBeenCalledWith("Enterprise");
     });

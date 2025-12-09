@@ -658,7 +658,7 @@ export default function ContactsPageClient({
                   value={selectedNewTags}
                   onChange={(e) => setSelectedNewTags(e.target.value)}
                   placeholder="tag1, tag2, tag3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <p className="mt-2 text-xs text-gray-600">
                   Enter tags separated by commas. This will replace all existing tags on the selected contacts.

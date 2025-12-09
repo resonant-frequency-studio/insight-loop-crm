@@ -209,6 +209,8 @@ export default function NewContactPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
                 <input
+                  id="new-contact-tags"
+                  name="new-contact-tags"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                   value={Array.isArray(form.tags) ? form.tags.join(", ") : ""}
                   onChange={(e) =>
@@ -219,6 +221,9 @@ export default function NewContactPage() {
                   }
                   placeholder="tag1, tag2, tag3"
                 />
+                <p className="mt-2 text-xs text-gray-600">
+                  Enter tags separated by commas. Spaces within tags are allowed (e.g., &quot;Project Manager, Marketing Lead,Referral, VIP&quot;).
+                </p>
               </div>
             </div>
           </Card>
