@@ -1,6 +1,15 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+// Mock Response for Firebase (needed for Firebase Auth in tests)
+if (typeof global.Response === 'undefined') {
+  global.Response = class Response {
+    constructor() {}
+    ok = true;
+    status = 200;
+  };
+}
+
 // Polyfill TextEncoder/TextDecoder for Next.js unstable_cache
 if (typeof global.TextEncoder === 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports

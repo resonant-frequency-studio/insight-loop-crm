@@ -153,10 +153,11 @@ export default function NextTouchpointCard({
       </p>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="next-touchpoint-date" className="block text-sm font-medium text-gray-700 mb-2">
             Date
           </label>
           <input
+            id="next-touchpoint-date"
             type="date"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             value={nextTouchpointDate}
@@ -172,7 +173,7 @@ export default function NextTouchpointCard({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="next-touchpoint-message" className="block text-sm font-medium text-gray-700 mb-2">
             Message
           </label>
           <textarea

@@ -30,7 +30,6 @@ export default function OutreachDraftCard({
   
   const prevContactIdRef = useRef<Contact | null>(null);
   
-  // Initialize form state from contact using lazy initialization
   const [localDraft, setLocalDraft] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [modalContent, setModalContent] = useState<"no-email" | "no-draft" | null>(null);

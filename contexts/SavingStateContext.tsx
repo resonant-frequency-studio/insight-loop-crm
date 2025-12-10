@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-interface SavingStateContextType {
+export interface SavingStateContextType {
   isSaving: boolean;
   registerSaveStatus: (id: string, status: SaveStatus) => void;
   unregisterSaveStatus: (id: string) => void;
