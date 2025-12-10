@@ -95,16 +95,16 @@ export default function TouchpointStatusActions({
     // Compact view for dashboard cards
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {currentStatus !== "completed" && (
             <button
               onClick={() => setShowCompleteModal(true)}
               disabled={mutation.isPending}
-              className="px-2 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
               title="I've contacted this person"
             >
               <svg
-                className="w-3.5 h-3.5 inline mr-1"
+                className="w-3.5 h-3.5 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -116,18 +116,18 @@ export default function TouchpointStatusActions({
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Mark as Contacted
+              <span className="whitespace-nowrap">Mark as Contacted</span>
             </button>
           )}
           {currentStatus !== "cancelled" && (
             <button
               onClick={() => setShowCancelModal(true)}
               disabled={mutation.isPending}
-              className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
               title="Skip this touchpoint - no action needed"
             >
               <svg
-                className="w-3.5 h-3.5 inline mr-1"
+                className="w-3.5 h-3.5 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -139,7 +139,7 @@ export default function TouchpointStatusActions({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              Skip Touchpoint
+              <span className="whitespace-nowrap">Skip Touchpoint</span>
             </button>
           )}
         </div>

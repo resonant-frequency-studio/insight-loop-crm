@@ -256,7 +256,7 @@ export default function ActionItemCard({
           {!compact && (
             <Link
               href={`/contacts/${contactId}`}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group border border-gray-300 rounded-lg px-3 py-2 hover:border-gray-400 transition-colors"
             >
               {/* Avatar */}
               <div className="shrink-0">

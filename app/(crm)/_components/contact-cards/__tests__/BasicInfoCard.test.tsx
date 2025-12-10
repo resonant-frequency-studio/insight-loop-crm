@@ -73,13 +73,6 @@ describe("BasicInfoCard", () => {
         company: "Test Company",
       });
 
-      // Ensure the mock returns the same object reference
-      const mockContactData = {
-        data: mockContact,
-        isLoading: false,
-        error: null,
-      };
-
       mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
 
       render(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);

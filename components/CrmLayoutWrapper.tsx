@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
-import HamburgerMenu from "@/components/HamburgerMenu";
+import MobileHeader from "@/components/MobileHeader";
 import { Button } from "@/components/Button";
 import { appConfig } from "@/lib/app-config";
 import { reportException } from "@/lib/error-reporting";
@@ -185,6 +185,9 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* Mobile Header Bar - Only visible on mobile (up to 1024px) */}
+      <MobileHeader isMenuOpen={isMobileMenuOpen} onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+
       {/* Mobile Menu Overlay Backdrop */}
       {isMobileMenuOpen && (
         <div
@@ -193,12 +196,9 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Hamburger Menu Button */}
-      <HamburgerMenu isOpen={isMobileMenuOpen} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
-
       {/* Sidebar - Fixed on desktop, overlay on mobile */}
       <nav
-        className={`w-full lg:w-64 bg-white lg:bg-[#212B36] p-6 border-r border-gray-200 lg:border-gray-700 flex flex-col h-screen fixed right-0 lg:left-0 top-0 z-50 transition-transform duration-500 ease-in-out ${
+        className={`w-full lg:w-64 bg-white lg:bg-[#212B36] p-6 border-r border-gray-200 lg:border-gray-700 flex flex-col h-[calc(100vh-4rem)] lg:h-screen fixed right-0 lg:left-0 top-16 lg:top-0 z-50 transition-transform duration-500 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         }`}
       >
@@ -414,7 +414,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Main content - Scrollable */}
-      <main className="flex-1 lg:ml-64 p-6 lg:p-10 bg-white text-gray-800 overflow-y-auto h-screen">
+      <main className="flex-1 lg:ml-64 pt-20 lg:pt-10 px-6 lg:px-10 pb-6 lg:pb-10 bg-white text-gray-800 overflow-y-auto h-screen">
         {children}
       </main>
     </div>

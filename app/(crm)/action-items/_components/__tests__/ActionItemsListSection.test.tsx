@@ -1,19 +1,20 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, act, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ActionItemsListSection from "../ActionItemsListSection";
-import { ActionItemsFiltersProvider, useActionItemsFilters } from "../ActionItemsFiltersContext";
+import { ActionItemsFiltersProvider, useActionItemsFilters, FilterStatus, FilterDate } from "../ActionItemsFiltersContext";
 import { useUpdateActionItem, useDeleteActionItem } from "@/hooks/useActionItemMutations";
 import { createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import { EnrichedActionItem } from "../../ActionItemsPageClient";
+import type { ActionItem } from "@/types/firestore";
 
 // Test component to set filter values
-function FilterSetter({ filterStatus, filterDate, selectedContactId }: { filterStatus?: string; filterDate?: string; selectedContactId?: string | null }) {
+function FilterSetter({ filterStatus, filterDate, selectedContactId }: { filterStatus?: FilterStatus; filterDate?: FilterDate; selectedContactId?: string | null }) {
   const { setFilterStatus, setFilterDate, setSelectedContactId } = useActionItemsFilters();
   
   React.useEffect(() => {
-    if (filterStatus) setFilterStatus(filterStatus as any);
-    if (filterDate) setFilterDate(filterDate as any);
+    if (filterStatus) setFilterStatus(filterStatus);
+    if (filterDate) setFilterDate(filterDate);
     if (selectedContactId !== undefined) setSelectedContactId(selectedContactId);
   }, [filterStatus, filterDate, selectedContactId, setFilterStatus, setFilterDate, setSelectedContactId]);
   
@@ -33,7 +34,7 @@ jest.mock("../../../_components/ActionItemCard", () => ({
     onEdit,
     disabled,
   }: {
-    actionItem: any;
+    actionItem: ActionItem;
     onComplete: () => void;
     onDelete: () => void;
     onEdit: (text: string, dueDate?: string | null) => void;
@@ -107,7 +108,7 @@ function createMockEnrichedActionItem(
 
 function renderWithProvider(
   actionItems: EnrichedActionItem[],
-  options?: { filterStatus?: string; filterDate?: string; selectedContactId?: string | null }
+  options?: { filterStatus?: FilterStatus; filterDate?: FilterDate; selectedContactId?: string | null }
 ) {
   return render(
     <ActionItemsFiltersProvider>
@@ -127,14 +128,24 @@ describe("ActionItemsListSection", () => {
     mockDeleteMutateAsync.mockResolvedValue({});
 
     mockUseUpdateActionItem.mockReturnValue(
-      createMockUseMutationResult<unknown, Error, any, unknown>(
+      createMockUseMutationResult<
+        unknown,
+        Error,
+        { contactId: string; actionItemId: string; updates: { text?: string; status?: "pending" | "completed"; dueDate?: Date | string | null } },
+        unknown
+      >(
         jest.fn(),
         mockUpdateMutateAsync
       )
     );
 
     mockUseDeleteActionItem.mockReturnValue(
-      createMockUseMutationResult<unknown, Error, any, unknown>(
+      createMockUseMutationResult<
+        unknown,
+        Error,
+        { contactId: string; actionItemId: string },
+        unknown
+      >(
         jest.fn(),
         mockDeleteMutateAsync
       )

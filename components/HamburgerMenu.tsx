@@ -9,7 +9,7 @@ export default function HamburgerMenu({ isOpen, onClick }: HamburgerMenuProps) {
   return (
     <button
       onClick={onClick}
-      className="lg:hidden fixed top-4 right-4 z-60 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 rounded-lg"
+      className="p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 rounded-lg"
       aria-label="Toggle menu"
       aria-expanded={isOpen}
     >

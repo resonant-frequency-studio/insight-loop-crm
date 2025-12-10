@@ -137,20 +137,20 @@ export default function ContactCard({
 
               {/* Contact Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <h3 className={`text-sm font-semibold group-hover:text-gray-700 transition-colors ${getTextColor()}`}>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
+                  <h3 className={`text-sm font-semibold group-hover:text-gray-700 transition-colors ${getTextColor()} break-words`}>
                     {getDisplayName(contact)}
                   </h3>
                   {/* Touchpoint Date Badges */}
                   {isTouchpointVariant && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
                       {variant === "touchpoint-upcoming" && needsReminder && (
-                        <span className="px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md">
+                        <span className="px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md whitespace-nowrap">
                           Due Soon
                         </span>
                       )}
                       {variant === "touchpoint-overdue" && (
-                        <span className="px-2 py-0.5 text-xs font-medium text-red-700 bg-red-100 rounded-md">
+                        <span className="px-2 py-0.5 text-xs font-medium text-red-700 bg-red-100 rounded-md whitespace-nowrap">
                           Overdue
                         </span>
                       )}
@@ -293,7 +293,7 @@ export default function ContactCard({
           {/* Touchpoint Message - Outside Link to span full width */}
           {isTouchpointVariant && contact.nextTouchpointMessage && (
             <div className="w-full mt-2 mb-3">
-              <p className={`text-xs rounded px-2 py-1.5 line-clamp-2 w-full block ${
+              <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block break-words ${
                 variant === "touchpoint-overdue"
                   ? "text-red-900 bg-red-100"
                   : needsReminder
