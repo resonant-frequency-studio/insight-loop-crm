@@ -12,6 +12,7 @@ import { useState } from "react";
 import { reportException } from "@/lib/error-reporting";
 import ViewAllLink from "@/components/ViewAllLink";
 import TouchpointBulkActions from "./TouchpointBulkActions";
+import Checkbox from "@/components/Checkbox";
 
 interface ContactWithTouchpoint extends Contact {
   id: string;
@@ -250,35 +251,29 @@ function TouchpointsContent({ userId }: { userId: string }) {
           {/* Select All Checkbox for Today's Priorities */}
           {(contactsWithTodayTouchpoints.length > 0 || contactsWithOverdueTouchpoints.length > 0) && (
             <div className="flex items-center gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
-              <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                <input
-                  type="checkbox"
-                  checked={
-                    [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].every((c) =>
-                      selectedTouchpointIds.has(c.id)
-                    ) && [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].length > 0
-                  }
-                  onChange={() => {
-                    const allTodayPriorities = [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints];
-                    const allSelected = allTodayPriorities.every((c) => selectedTouchpointIds.has(c.id));
-                    
-                    setSelectedTouchpointIds((prev) => {
-                      const newSet = new Set(prev);
-                      if (allSelected) {
-                        allTodayPriorities.forEach((c) => newSet.delete(c.id));
-                      } else {
-                        allTodayPriorities.forEach((c) => newSet.add(c.id));
-                      }
-                      return newSet;
-                    });
-                  }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-700 break-words">
-                  Select all {contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length} priorit
-                  {contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length === 1 ? "y" : "ies"} for bulk actions
-                </span>
-              </label>
+              <Checkbox
+                checked={
+                  [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].every((c) =>
+                    selectedTouchpointIds.has(c.id)
+                  ) && [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].length > 0
+                }
+                onChange={(e) => {
+                  const allTodayPriorities = [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints];
+                  const allSelected = allTodayPriorities.every((c) => selectedTouchpointIds.has(c.id));
+                  
+                  setSelectedTouchpointIds((prev) => {
+                    const newSet = new Set(prev);
+                    if (allSelected) {
+                      allTodayPriorities.forEach((c) => newSet.delete(c.id));
+                    } else {
+                      allTodayPriorities.forEach((c) => newSet.add(c.id));
+                    }
+                    return newSet;
+                  });
+                }}
+                label={`Select all ${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length} priorit${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length === 1 ? "y" : "ies"} for bulk actions`}
+                labelClassName="text-sm font-medium text-gray-700 break-words flex-1 min-w-0"
+              />
             </div>
           )}
 
@@ -376,32 +371,26 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
           {contactsWithUpcomingTouchpoints.length > 0 && (
             <div className="flex items-center gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
-              <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                <input
-                  type="checkbox"
-                  checked={contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))}
-                  onChange={() => {
-                    if (contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))) {
-                      setSelectedTouchpointIds((prev) => {
-                        const newSet = new Set(prev);
-                        contactsWithUpcomingTouchpoints.forEach((c) => newSet.delete(c.id));
-                        return newSet;
-                      });
-                    } else {
-                      setSelectedTouchpointIds((prev) => {
-                        const newSet = new Set(prev);
-                        contactsWithUpcomingTouchpoints.forEach((c) => newSet.add(c.id));
-                        return newSet;
-                      });
-                    }
-                  }}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 shrink-0"
-                />
-                <span className="text-sm font-medium text-gray-700 break-words">
-                  Select all {contactsWithUpcomingTouchpoints.length} upcoming touchpoint
-                  {contactsWithUpcomingTouchpoints.length !== 1 ? "s" : ""}
-                </span>
-              </label>
+              <Checkbox
+                checked={contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))}
+                onChange={(e) => {
+                  if (contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))) {
+                    setSelectedTouchpointIds((prev) => {
+                      const newSet = new Set(prev);
+                      contactsWithUpcomingTouchpoints.forEach((c) => newSet.delete(c.id));
+                      return newSet;
+                    });
+                  } else {
+                    setSelectedTouchpointIds((prev) => {
+                      const newSet = new Set(prev);
+                      contactsWithUpcomingTouchpoints.forEach((c) => newSet.add(c.id));
+                      return newSet;
+                    });
+                  }
+                }}
+                label={`Select all ${contactsWithUpcomingTouchpoints.length} upcoming touchpoint${contactsWithUpcomingTouchpoints.length !== 1 ? "s" : ""}`}
+                labelClassName="text-sm font-medium text-gray-700 break-words flex-1 min-w-0"
+              />
             </div>
           )}
 

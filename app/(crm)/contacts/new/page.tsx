@@ -95,7 +95,7 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -110,7 +110,7 @@ export default function NewContactPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="new-contact-first-name" className="block text-sm font-medium text-gray-700 mb-2">
                     First Name
                   </label>
                   <Input
@@ -122,7 +122,7 @@ export default function NewContactPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="new-contact-last-name" className="block text-sm font-medium text-gray-700 mb-2">
                     Last Name
                   </label>
                   <Input
@@ -135,7 +135,7 @@ export default function NewContactPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-company" className="block text-sm font-medium text-gray-700 mb-2">
                   Company
                 </label>
                 <Input
@@ -169,28 +169,31 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Segment</label>
+                <label htmlFor="new-contact-segment" className="block text-sm font-medium text-gray-700 mb-2">Segment</label>
                 <Input
+                  id="new-contact-segment"
                   value={form.segment || ""}
                   onChange={(e) => updateField("segment", e.target.value)}
                   placeholder="e.g., Enterprise, SMB, Individual"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-lead-source" className="block text-sm font-medium text-gray-700 mb-2">
                   Lead Source
                 </label>
                 <Input
+                  id="new-contact-lead-source"
                   value={form.leadSource || ""}
                   onChange={(e) => updateField("leadSource", e.target.value)}
                   placeholder="e.g., Website, Referral, Event"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-engagement-score" className="block text-sm font-medium text-gray-700 mb-2">
                   Engagement Score
                 </label>
                 <Input
+                  id="new-contact-engagement-score"
                   type="number"
                   min="0"
                   max="100"
@@ -202,7 +205,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                <label htmlFor="new-contact-tags" className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
                 <Input
                   id="new-contact-tags"
                   name="new-contact-tags"
@@ -230,6 +233,7 @@ export default function NewContactPage() {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -240,6 +244,7 @@ export default function NewContactPage() {
               </svg>
               Notes
             </h2>
+            <label htmlFor="new-contact-notes" className="sr-only">Notes</label>
             <Textarea
               id="new-contact-notes"
               name="new-contact-notes"
@@ -270,8 +275,9 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <label htmlFor="new-contact-next-touchpoint-date" className="block text-sm font-medium text-gray-700 mb-2">Date</label>
                 <Input
+                  id="new-contact-next-touchpoint-date"
                   type="date"
                   value={
                     form.nextTouchpointDate && typeof form.nextTouchpointDate === "string"
@@ -282,7 +288,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <label htmlFor="new-contact-next-touchpoint-message" className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                 <Textarea
                   id="new-contact-next-touchpoint-message"
                   name="new-contact-next-touchpoint-message"

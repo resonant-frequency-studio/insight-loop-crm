@@ -217,7 +217,7 @@ export default function OutreachDraftCard({
                 onClick={openGmailCompose}
                 variant="gradient-blue"
                 size="sm"
-                title="Open this draft in Gmail"
+                aria-label="Open this draft in Gmail"
                 className="whitespace-nowrap"
                 icon={
                   <svg
@@ -225,6 +225,7 @@ export default function OutreachDraftCard({
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"

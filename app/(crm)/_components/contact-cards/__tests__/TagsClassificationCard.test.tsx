@@ -163,9 +163,9 @@ describe("TagsClassificationCard", () => {
       render(<TagsClassificationCard contactId={mockContactId} userId={mockUserId} />);
       
       const tagsInput = screen.getByPlaceholderText("tag1, tag2, tag3") as HTMLInputElement;
-      fireEvent.change(tagsInput, { target: { value: "School of Hard Knocks, Referral, VIP" } });
+      fireEvent.change(tagsInput, { target: { value: "Project Manager, Marketing Lead,Referral, VIP" } });
       
-      expect(tagsInput.value).toBe("School of Hard Knocks, Referral, VIP");
+      expect(tagsInput.value).toBe("Project Manager, Marketing Lead,Referral, VIP");
     });
   });
 

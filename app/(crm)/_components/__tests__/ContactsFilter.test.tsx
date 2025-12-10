@@ -195,7 +195,7 @@ describe("ContactsFilter", () => {
           {...mockHandlers}
         />
       );
-      const checkbox = screen.getByLabelText(/View Archived/i);
+      const checkbox = screen.getByLabelText(/Show archived contacts/i);
       fireEvent.click(checkbox);
       expect(mockHandlers.onShowArchivedChange).toHaveBeenCalledWith(true);
     });

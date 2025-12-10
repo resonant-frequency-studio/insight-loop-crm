@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import { createPortal } from "react-dom";
 
 interface ModalProps {
@@ -21,6 +21,58 @@ export default function Modal({
   closeOnBackdropClick = true,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // Get all focusable elements within the modal
+  const getFocusableElements = (): HTMLElement[] => {
+    if (!modalRef.current) return [];
+    
+    const focusableSelectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'textarea:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+    
+    return Array.from(modalRef.current.querySelectorAll<HTMLElement>(focusableSelectors));
+  };
+
+  // Focus trap: keep focus within modal
+  useEffect(() => {
+    if (!isOpen || !modalRef.current) return;
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => {
+      document.removeEventListener('keydown', handleTabKey);
+    };
+  }, [isOpen]);
 
   // Handle escape key
   useEffect(() => {
@@ -37,6 +89,30 @@ export default function Modal({
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, onClose]);
+
+  // Focus management: move focus to modal on open, return on close
+  useEffect(() => {
+    if (isOpen) {
+      // Store the previously focused element
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+      
+      // Move focus to modal after a brief delay to ensure it's rendered
+      setTimeout(() => {
+        const focusableElements = getFocusableElements();
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        } else if (modalRef.current) {
+          modalRef.current.focus();
+        }
+      }, 0);
+    } else {
+      // Return focus to the previously focused element
+      if (previousActiveElementRef.current) {
+        previousActiveElementRef.current.focus();
+        previousActiveElementRef.current = null;
+      }
+    }
+  }, [isOpen]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -63,17 +139,22 @@ export default function Modal({
     <div
       className="fixed inset-0 z-200 flex items-center justify-center"
       onClick={handleBackdropClick}
+      role="presentation"
     >
       {showBackdrop && (
         <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
       )}
       <div
         ref={modalRef}
-        className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
+        className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+          <h3 id={titleId} className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
         )}
         {children}
       </div>

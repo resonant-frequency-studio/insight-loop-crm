@@ -96,10 +96,11 @@ export default function ContactsFilter({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         {/* Email Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="email-search" className="block text-sm font-medium text-gray-700 mb-2">
             Search by Email
           </label>
           <Input
+            id="email-search"
             type="text"
             value={emailSearch}
             onChange={(e) => onEmailSearchChange(e.target.value)}
@@ -109,10 +110,11 @@ export default function ContactsFilter({
 
         {/* Last Name Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="last-name-search" className="block text-sm font-medium text-gray-700 mb-2">
             Search by Last Name
           </label>
           <Input
+            id="last-name-search"
             type="text"
             value={lastNameSearch}
             onChange={(e) => onLastNameSearchChange(e.target.value)}
@@ -122,10 +124,11 @@ export default function ContactsFilter({
 
         {/* First Name Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="first-name-search" className="block text-sm font-medium text-gray-700 mb-2">
             Search by First Name
           </label>
           <Input
+            id="first-name-search"
             type="text"
             value={firstNameSearch}
             onChange={(e) => onFirstNameSearchChange(e.target.value)}
@@ -135,10 +138,11 @@ export default function ContactsFilter({
 
         {/* Company Search */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="company-search" className="block text-sm font-medium text-gray-700 mb-2">
             Search by Company
           </label>
           <Input
+            id="company-search"
             type="text"
             value={companySearch}
             onChange={(e) => onCompanySearchChange(e.target.value)}
@@ -151,10 +155,11 @@ export default function ContactsFilter({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Segment Filter */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="segment-filter" className="block text-sm font-medium text-gray-700 mb-2">
             Filter by Segment
           </label>
           <Select
+            id="segment-filter"
             value={selectedSegment}
             onChange={(e) => onSegmentChange(e.target.value)}
           >
@@ -168,10 +173,11 @@ export default function ContactsFilter({
         {/* Custom Filters (At-Risk, Warm) */}
         {onCustomFilterChange && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="quick-filters" className="block text-sm font-medium text-gray-700 mb-2">
               Quick Filters
             </label>
             <Select
+              id="quick-filters"
               value={customFilter || ""}
               onChange={(e) => {
                 const value = e.target.value;
@@ -190,41 +196,14 @@ export default function ContactsFilter({
           {/* Tags Filter - Searchable Multi-Select */}
           {uniqueTags.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="tag-search" className="block text-sm font-medium text-gray-700 mb-2">
                 Filter by Tags
               </label>
               
-              {/* Selected Tags Display */}
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {selectedTags.map(tag => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
-                    >
-                      {tag}
-                      <Button
-                        onClick={() => toggleTag(tag)}
-                        variant="ghost"
-                        size="sm"
-                        className="p-0 w-auto h-auto hover:text-blue-900"
-                        title="Remove tag"
-                        icon={
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        }
-                      >
-                        <span className="sr-only">Remove {tag}</span>
-                      </Button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* Searchable Tag Dropdown */}
               <div className="relative">
                 <Input
+                  id="tag-search"
                   type="text"
                   value={tagSearch}
                   onChange={(e) => {
@@ -233,16 +212,22 @@ export default function ContactsFilter({
                   }}
                   onFocus={() => setShowTagDropdown(true)}
                   placeholder="Search and select tags..."
+                  aria-expanded={showTagDropdown}
+                  aria-haspopup="listbox"
                 />
                 
-                {/* Dropdown */}
+                {/* Dropdown - positioned absolutely to prevent layout shift */}
                 {showTagDropdown && (
                   <>
                     <div 
                       className="fixed inset-0 z-10" 
                       onClick={() => setShowTagDropdown(false)}
+                      aria-hidden="true"
                     />
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div 
+                      className="absolute z-20 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      role="listbox"
+                    >
                       {uniqueTags
                         .filter(tag => 
                           !selectedTags.includes(tag) &&
@@ -259,6 +244,8 @@ export default function ContactsFilter({
                             variant="ghost"
                             size="sm"
                             className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 justify-start"
+                            role="option"
+                            aria-selected="false"
                           >
                             {tag}
                           </Button>
@@ -275,6 +262,34 @@ export default function ContactsFilter({
                   </>
                 )}
               </div>
+
+              {/* Selected Tags Display - Below input */}
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedTags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                    >
+                      {tag}
+                      <Button
+                        onClick={() => toggleTag(tag)}
+                        variant="ghost"
+                        size="sm"
+                        className="p-0 w-auto h-auto hover:text-blue-900"
+                        aria-label={`Remove ${tag} tag`}
+                        icon={
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        }
+                      >
+                        <span className="sr-only">Remove {tag}</span>
+                      </Button>
+                    </span>
+                  ))}
+                </div>
+              )}
               
               {selectedTags.length > 0 && (
                 <p className="mt-2 text-xs text-gray-500">
@@ -292,7 +307,6 @@ export default function ContactsFilter({
           checked={showArchived}
           onChange={(e) => onShowArchivedChange(e.target.checked)}
           label={showArchived ? "Showing archived contacts" : "Show archived contacts"}
-          aria-label="View Archived"
         />
       </div>
     </Card>

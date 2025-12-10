@@ -6,6 +6,7 @@ import { ActionItem, Contact } from "@/types/firestore";
 import { formatContactDate } from "@/util/contact-utils";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { Button } from "./Button";
+import Textarea from "./Textarea";
 
 interface ActionItemCardProps {
   actionItem: ActionItem;
@@ -146,10 +147,10 @@ export default function ActionItemCard({
     <div className={`rounded-lg p-4 transition-all duration-200 ${getVariantStyles()}`}>
       {isEditing ? (
         <div className="space-y-3">
-          <textarea
+          <Textarea
             value={editText}
             onChange={(e) => setEditText(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+            className="resize-none"
             rows={2}
             disabled={disabled}
           />
@@ -283,13 +284,14 @@ export default function ActionItemCard({
                       variant="ghost"
                       size="sm"
                       className="p-1 text-gray-400 hover:text-blue-600"
-                      title="Edit"
+                      aria-label="Edit action item"
                       icon={
                         <svg
                           className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -308,13 +310,14 @@ export default function ActionItemCard({
                       variant="ghost"
                       size="sm"
                       className="p-1 text-gray-400 hover:text-red-600"
-                      title="Delete"
+                      aria-label="Delete action item"
                       icon={
                         <svg
                           className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
