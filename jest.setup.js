@@ -4,9 +4,29 @@ import '@testing-library/jest-dom'
 // Mock Response for Firebase (needed for Firebase Auth in tests)
 if (typeof global.Response === 'undefined') {
   global.Response = class Response {
-    constructor() {}
-    ok = true;
-    status = 200;
+    constructor(body, init) {
+      this.body = body;
+      this.status = init?.status || 200;
+      this.ok = this.status >= 200 && this.status < 300;
+    }
+    async json() {
+      return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+    }
+  };
+}
+
+// Mock Request for API route tests
+if (typeof global.Request === 'undefined') {
+  global.Request = class Request {
+    constructor(input, init) {
+      this.url = typeof input === 'string' ? input : input.url;
+      this.method = init?.method || 'GET';
+      this.headers = new Headers(init?.headers);
+      this.body = init?.body;
+    }
+    async json() {
+      return JSON.parse(this.body);
+    }
   };
 }
 

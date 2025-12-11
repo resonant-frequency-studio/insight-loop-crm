@@ -509,3 +509,45 @@ export function useBulkUpdateTags() {
   });
 }
 
+/**
+ * Mutation hook for bulk updating contact companies
+ */
+export function useBulkUpdateCompanies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      contactIds,
+      company,
+    }: {
+      contactIds: string[];
+      company: string | null;
+    }) => {
+      const response = await fetch("/api/contacts/bulk-company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactIds, company }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to bulk update companies");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate by prefixes → guarantees matching all screen variations
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["contact"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (error) => {
+      reportException(error, {
+        context: "Bulk updating contact companies",
+        tags: { component: "useBulkUpdateCompanies" },
+      });
+    },
+  });
+}
+

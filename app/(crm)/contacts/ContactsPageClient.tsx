@@ -14,7 +14,7 @@ import ContactCard from "../_components/ContactCard";
 import { Button } from "@/components/Button";
 import { reportException, reportMessage, ErrorLevel } from "@/lib/error-reporting";
 import { useContacts } from "@/hooks/useContacts";
-import { useBulkArchiveContacts, useBulkUpdateSegments, useBulkUpdateTags } from "@/hooks/useContactMutations";
+import { useBulkArchiveContacts, useBulkUpdateSegments, useBulkUpdateTags, useBulkUpdateCompanies } from "@/hooks/useContactMutations";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import BulkActionsBar from "@/components/BulkActionsBar";
 import Input from "@/components/Input";
@@ -38,8 +38,10 @@ export default function ContactsPageClient({
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
   const [showBulkSegmentModal, setShowBulkSegmentModal] = useState(false);
   const [showBulkTagsModal, setShowBulkTagsModal] = useState(false);
+  const [showBulkCompanyModal, setShowBulkCompanyModal] = useState(false);
   const [selectedNewSegment, setSelectedNewSegment] = useState<string>("");
   const [selectedNewTags, setSelectedNewTags] = useState<string>("");
+  const [selectedNewCompany, setSelectedNewCompany] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const urlParamsInitializedRef = useRef(false);
 
@@ -64,6 +66,7 @@ export default function ContactsPageClient({
   const bulkArchiveMutation = useBulkArchiveContacts();
   const bulkSegmentMutation = useBulkUpdateSegments();
   const bulkTagsMutation = useBulkUpdateTags();
+  const bulkCompanyMutation = useBulkUpdateCompanies();
 
   // Use filtering hook
   const filterContacts = useFilterContacts(contacts);
@@ -287,6 +290,44 @@ export default function ContactsPageClient({
     );
   };
 
+  const handleBulkCompanyUpdate = async (newCompany: string | null) => {
+    if (!userId || selectedContactIds.size === 0) return;
+
+    const contactIdsArray = Array.from(selectedContactIds);
+    
+    bulkCompanyMutation.mutate(
+      { contactIds: contactIdsArray, company: newCompany },
+      {
+        onSuccess: (result) => {
+          if (result.errors > 0) {
+            alert(
+              `Updated ${result.success} contact(s), but ${result.errors} failed. Check console for details.`
+            );
+            reportMessage("Bulk company update errors occurred", ErrorLevel.WARNING, {
+              tags: { component: "ContactsPageClient" },
+              extra: { errorDetails: result.errorDetails },
+            });
+          } else {
+            reportMessage(`Successfully updated ${result.success} contact(s)`, ErrorLevel.INFO, {
+              tags: { component: "ContactsPageClient" },
+            });
+          }
+
+          setSelectedContactIds(new Set());
+          setShowBulkCompanyModal(false);
+          setSelectedNewCompany("");
+        },
+        onError: (error) => {
+          reportException(error, {
+            context: "Bulk company update",
+            tags: { component: "ContactsPageClient" },
+          });
+          alert("Failed to update contacts. Please try again.");
+        },
+      }
+    );
+  };
+
   const handleBulkArchive = async (archived: boolean) => {
     if (!userId || selectedContactIds.size === 0) return;
 
@@ -386,6 +427,21 @@ export default function ContactsPageClient({
                       strokeLinejoin="round"
                       strokeWidth={2}
                       d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                    />
+                  </svg>
+                ),
+              },
+              {
+                label: "Reassign Company",
+                onClick: () => setShowBulkCompanyModal(true),
+                variant: "gradient-blue",
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                     />
                   </svg>
                 ),
@@ -773,6 +829,97 @@ export default function ContactsPageClient({
                   size="sm"
                 >
                   Update Tags
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Bulk Company Reassignment Modal */}
+      <Modal
+        isOpen={showBulkCompanyModal}
+        onClose={() => !bulkCompanyMutation.isPending && setShowBulkCompanyModal(false)}
+        title="Reassign Company"
+        closeOnBackdropClick={!bulkCompanyMutation.isPending}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-theme-darkest">
+            Update the company for{" "}
+            <strong className="font-semibold text-theme-darkest">{selectedContactIds.size}</strong>{" "}
+            selected {selectedContactIds.size === 1 ? "contact" : "contacts"}.
+          </p>
+
+          {bulkCompanyMutation.isPending ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <svg
+                  className="animate-spin h-5 w-5 text-blue-600"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span className="text-sm font-medium text-theme-darkest">
+                  Updating contacts...
+                </span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-theme-darkest mb-2">
+                  Company Name
+                </label>
+                <Input
+                  type="text"
+                  value={selectedNewCompany}
+                  onChange={(e) => setSelectedNewCompany(e.target.value)}
+                  placeholder="Enter company name..."
+                  className="text-theme-darker"
+                />
+                <p className="mt-2 text-xs text-theme-dark">
+                  Enter a company name to assign to all selected contacts. Leave empty to clear the company field.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    setShowBulkCompanyModal(false);
+                    setSelectedNewCompany("");
+                  }}
+                  disabled={bulkCompanyMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const newCompany = selectedNewCompany.trim() || null;
+                    handleBulkCompanyUpdate(newCompany);
+                    setSelectedNewCompany("");
+                  }}
+                  disabled={bulkCompanyMutation.isPending}
+                  loading={bulkCompanyMutation.isPending}
+                  variant="gradient-blue"
+                  size="sm"
+                >
+                  Update Company
                 </Button>
               </div>
             </>
