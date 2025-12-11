@@ -168,7 +168,7 @@ export default function OutreachDraftCard({
         onClose={() => setModalContent(null)}
         title={modalContent === "no-email" ? "No Email Address" : "No Draft Message"}
       >
-        <p className="text-gray-600 mb-6">
+        <p className="text-theme-dark mb-6">
           {modalContent === "no-email"
             ? "This contact does not have an email address."
             : "Please add a draft message before continuing in Gmail."}
@@ -191,7 +191,7 @@ export default function OutreachDraftCard({
         </div>
         
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mb-2">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 pr-20 xl:pr-0">
+          <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2 pr-20 xl:pr-0">
             <svg
               className="w-5 h-5 text-gray-400 shrink-0"
               fill="none"
@@ -242,7 +242,7 @@ export default function OutreachDraftCard({
             )}
           </div>
         </div>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-theme-dark mb-4">
         Draft and refine your email messages before sending. Your draft is automatically saved and can be opened directly in Gmail when ready to send.
       </p>
       <Textarea
@@ -252,7 +252,7 @@ export default function OutreachDraftCard({
         onChange={(e) => setLocalDraft(e.target.value)}
         onBlur={handleBlur}
         placeholder="Write your outreach draft here..."
-        className="min-h-[120px] text-gray-900 bg-gray-50 border-gray-200 focus:ring-green-500 focus:border-green-500 resize-y font-sans text-sm leading-relaxed"
+        className="min-h-[120px] text-foreground resize-y font-sans text-sm leading-relaxed"
       />
       </Card>
     </>

@@ -32,8 +32,8 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Frequently Asked Questions</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Frequently Asked Questions</h1>
+        <p className="text-theme-dark text-lg">
           Find answers to common questions about using the {appConfig.crmName}
         </p>
       </div>
@@ -87,7 +87,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
                       {faq.category}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-theme-darkest group-hover:text-blue-600 transition-colors">
                     {faq.question}
                   </h3>
                 </div>
@@ -116,7 +116,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
               >
                 <div className="px-6 pb-5 pt-0">
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                    <p className="text-theme-darker leading-relaxed whitespace-pre-line">
                       {faq.answer}
                     </p>
                   </div>
@@ -131,7 +131,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
       <Card padding="lg" className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
         <div className="flex items-start gap-4">
           <div className="shrink-0">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-md flex items-center justify-center">
               <svg
                 className="w-6 h-6 text-white"
                 fill="none"
@@ -148,11 +148,11 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Still have questions?</h3>
-            <p className="text-gray-700 mb-4">
+            <h3 className="text-lg font-semibold text-theme-darkest mb-2">Still have questions?</h3>
+            <p className="text-theme-darker mb-4">
               Can&apos;t find what you&apos;re looking for? Our support team is here to help you get the most out of your CRM.
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-theme-dark">
               Reach out through your normal support channels or check your account documentation for additional resources.
             </p>
           </div>

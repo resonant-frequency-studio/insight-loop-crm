@@ -96,8 +96,8 @@ export default function ExtractNamesPage() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Extract Names from Emails</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Extract Names from Emails</h1>
+        <p className="text-theme-dark text-lg">
           Batch process all contacts to extract first and last names from email addresses
         </p>
       </div>
@@ -134,8 +134,8 @@ export default function ExtractNamesPage() {
       <Card padding="md">
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">What this does:</h2>
-            <ul className="list-disc list-inside space-y-1 text-gray-700">
+            <h2 className="text-xl font-semibold text-theme-darkest mb-2">What this does:</h2>
+            <ul className="list-disc list-inside space-y-1 text-theme-darker">
               <li>Processes contacts that have <strong>NO company name</strong></li>
               <li>Extracts first name and last name from email addresses</li>
               <li>Capitalizes the extracted names (e.g., &quot;dorothy&quot; → &quot;Dorothy&quot;)</li>
@@ -145,7 +145,7 @@ export default function ExtractNamesPage() {
             </ul>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
             <input
               type="checkbox"
               id="dryRun"
@@ -154,7 +154,7 @@ export default function ExtractNamesPage() {
               disabled={running}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label htmlFor="dryRun" className="text-sm font-medium text-gray-700 cursor-pointer">
+            <label htmlFor="dryRun" className="text-sm font-medium text-theme-darker cursor-pointer">
               Dry run (preview changes without updating)
             </label>
           </div>
@@ -215,11 +215,11 @@ export default function ExtractNamesPage() {
               </h3>
             </div>
 
-            <div className="bg-white rounded-lg p-4 space-y-2">
+            <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Processed</p>
-                  <p className="text-lg font-bold text-gray-900">{result.processed}</p>
+                  <p className="text-lg font-bold text-theme-darkest">{result.processed}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Updated</p>
@@ -237,7 +237,7 @@ export default function ExtractNamesPage() {
 
               {result.details && result.details.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-700 mb-2">
+                  <p className="text-xs font-medium text-theme-darker mb-2">
                     Sample Results (showing first 20):
                   </p>
                   <div className="max-h-96 overflow-y-auto space-y-2">
@@ -252,11 +252,11 @@ export default function ExtractNamesPage() {
                             : "bg-red-50 border border-red-200"
                         }`}
                       >
-                        <div className="font-medium text-gray-900 mb-1">
+                        <div className="font-medium text-theme-darkest mb-1">
                           {detail.email}
                         </div>
                         {detail.action === "updated" && (
-                          <div className="text-gray-600 space-y-0.5">
+                          <div className="text-theme-dark space-y-0.5">
                             <div>
                               Current: {detail.current?.firstName || "—"} {detail.current?.lastName || "—"}
                             </div>
@@ -266,7 +266,7 @@ export default function ExtractNamesPage() {
                           </div>
                         )}
                         {detail.action === "skipped" && (
-                          <div className="text-gray-600">
+                          <div className="text-theme-dark">
                             Already has: {detail.current?.firstName || "—"} {detail.current?.lastName || "—"}
                           </div>
                         )}

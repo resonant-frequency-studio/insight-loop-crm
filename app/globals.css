@@ -1,22 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #eeeeec;
+  --foreground: #191919;
+  --card-light: #fafaf9;
+  --card-dark: #292927;
+  --card-upcoming: rgba(253, 153, 0, 0.03);
+  --card-upcoming-dark: rgba(253, 153, 0, 0.15);
+  --card-overdue: rgba(250, 43, 54, 0.03);
+  --card-overdue-dark: rgba(250, 43, 54, 0.15);
+  --card-highlight-light: #ebe7e4;
+  --card-highlight-dark: #333330;
+  --theme-lightest: #fafaf9;
+  --theme-lighter: #ebe7e4;
+  --theme-light: #d4d1cc;
+  --theme-medium: #8d8a85;
+  --theme-dark: #585550;
+  --theme-darker: #292927;
+  --theme-darkest: #191919;
+}
+
+/* Dark theme via data attribute (manual override) */
+[data-theme='dark'] {
+  --background: #191919;
+  --foreground: #eeeeec;
+  --card-light: #292927;
+  --card-dark: #fafaf9;
+  --card-upcoming: rgba(253, 153, 0, 0.03);
+  --card-upcoming-dark: rgba(253, 153, 0, 0.15);
+  --card-overdue: rgba(250, 43, 54, 0.03);
+  --card-overdue-dark: rgba(250, 43, 54, 0.15);
+  --card-highlight-light: #333330;
+  --card-highlight-dark: #ebe7e4;
+  --theme-lightest: #191919;
+  --theme-lighter: #292927;
+  --theme-light: #585550;
+  --theme-medium: #8d8a85;
+  --theme-dark: #d4d1cc;
+  --theme-darker: #ebe7e4;
+  --theme-darkest: #fafaf9;
+}
+
+/* Dark theme via browser preference (when no manual override) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --background: #191919;
+    --foreground: #eeeeec;
+    --card-light: #292927;
+    --card-dark: #fafaf9;
+    --card-upcoming: rgba(253, 153, 0, 0.03);
+    --card-upcoming-dark: rgba(253, 153, 0, 0.15);
+    --card-overdue: rgba(250, 43, 54, 0.03);
+    --card-overdue-dark: rgba(250, 43, 54, 0.15);
+    --card-highlight-light: #333330;
+    --card-highlight-dark: #ebe7e4;
+    --theme-lightest: #191919;
+    --theme-lighter: #292927;
+    --theme-light: #585550;
+    --theme-medium: #8d8a85;
+    --theme-dark: #d4d1cc;
+    --theme-darker: #ebe7e4;
+    --theme-darkest: #fafaf9;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-light: var(--card-light);
+  --color-card-dark: var(--card-dark);
+  --color-card-upcoming: var(--card-upcoming);
+  --color-card-upcoming-dark: var(--card-upcoming-dark);
+  --color-card-overdue: var(--card-overdue);
+  --color-card-overdue-dark: var(--card-overdue-dark);
+  --color-card-highlight-light: var(--card-highlight-light);
+  --color-card-highlight-dark: var(--card-highlight-dark);
+  --color-theme-lightest: var(--theme-lightest);
+  --color-theme-lighter: var(--theme-lighter);
+  --color-theme-light: var(--theme-light);
+  --color-theme-medium: var(--theme-medium);
+  --color-theme-dark: var(--theme-dark);
+  --color-theme-darker: var(--theme-darker);
+  --color-theme-darkest: var(--theme-darkest);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 html {
@@ -30,9 +97,9 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #ffffff;
+  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
 }
 
@@ -65,3 +132,71 @@ body {
   );
   animation: progress-bar-shimmer 1.5s ease-in-out infinite;
 }
+
+/* Style the calendar picker icon to match theme colors */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  /* Use theme-darkest color for light mode - native icon is black, so we keep it */
+  filter: brightness(0) saturate(100%) invert(0%);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+/* Dark theme adjustments for calendar icon */
+[data-theme='dark'] input[type="date"]::-webkit-calendar-picker-indicator {
+  /* In dark mode, invert to make icon light (theme-darkest in dark = light color) */
+  filter: brightness(0) saturate(100%) invert(100%);
+  opacity: 0.8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) saturate(100%) invert(100%);
+    opacity: 0.8;
+  }
+  
+  :root:not([data-theme]) input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    background-color: var(--theme-medium);
+    filter: brightness(0) saturate(100%) invert(100%);
+  }
+}
+
+/* Style date input text parts */
+input[type="date"]::-webkit-datetime-edit-text {
+  color: var(--foreground);
+  padding: 0 0.25em;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: var(--foreground);
+  padding: 0 0.25em;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus {
+  background-color: var(--theme-light);
+  color: var(--foreground);
+  border-radius: 0.25rem;
+}
+
+/* Firefox date input styling */
+input[type="date"] {
+  color-scheme: light;
+}
+
+[data-theme='dark'] input[type="date"] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) input[type="date"] {
+    color-scheme: dark;
+  }
+}
+

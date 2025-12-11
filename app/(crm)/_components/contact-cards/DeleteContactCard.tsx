@@ -46,7 +46,7 @@ export default function DeleteContactCard({
         title="Delete Contact"
         closeOnBackdropClick={!deleteContactMutation.isPending}
       >
-        <p className="text-gray-600 mb-6">
+        <p className="text-theme-dark mb-6">
           Are you sure? Deleting this contact is final and cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">

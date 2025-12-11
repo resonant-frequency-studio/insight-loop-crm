@@ -55,7 +55,7 @@ describe("ActionItemCard", () => {
       const text = screen.getByText("Follow up on proposal");
       expect(text).toHaveClass("line-through", "text-gray-500");
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("bg-gray-50");
+      expect(card).toHaveClass("bg-card-highlight-light");
     });
 
     it("overdue status shows correct styling (red)", () => {
@@ -76,7 +76,7 @@ describe("ActionItemCard", () => {
         />
       );
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("bg-red-50", "border-red-200");
+      expect(card).toHaveClass("bg-card-overdue", "border-card-overdue-dark");
     });
   });
 
@@ -434,7 +434,7 @@ describe("ActionItemCard", () => {
         />
       );
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("bg-red-50");
+      expect(card).toHaveClass("bg-card-overdue", "border-card-overdue-dark");
     });
 
     it("uses pre-computed displayName when provided", () => {

@@ -31,8 +31,8 @@ export default function ActionItemsCard({
 
   return (
     <Card padding="md">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Action Items</h2>
-      <p className="text-sm text-gray-600 mb-6">
+      <h2 className="text-xl font-semibold text-theme-darkest mb-2">Action Items</h2>
+      <p className="text-sm text-theme-dark mb-6">
         Track tasks and follow-ups for this contact. Create action items with due dates to stay organized and never miss an important next step in your relationship.
       </p>
       <ActionItemsList

@@ -27,8 +27,8 @@ export default function NewContactPage() {
       {/* Header Section */}
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Add New Contact</h1>
-          <p className="text-gray-600 text-lg">Create a new contact in your CRM</p>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Add New Contact</h1>
+          <p className="text-theme-dark text-lg">Create a new contact in your CRM</p>
         </div>
         <div className="hidden xl:block">
           <ContactsLink variant="default" />
@@ -37,7 +37,7 @@ export default function NewContactPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex items-center gap-3">
             <svg
               className="w-5 h-5 text-red-600"
@@ -62,8 +62,8 @@ export default function NewContactPage() {
         <div className="xl:col-span-1 space-y-6 order-1 xl:order-2">
           {/* Quick Info Card */}
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Details</h2>
-            <div className="space-y-4 text-sm text-gray-600">
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4">Contact Details</h2>
+            <div className="space-y-4 text-sm text-theme-dark">
               <p>Fill in the form fields to create a new contact. Email is required.</p>
               <p>
                 Once saved, the contact will be added to your CRM and you can view and edit it
@@ -77,7 +77,7 @@ export default function NewContactPage() {
         <div className="xl:col-span-2 space-y-6 order-2 xl:order-1">
           {/* Basic Information Card */}
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
                 fill="none"
@@ -95,7 +95,7 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label htmlFor="new-contact-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-email" className="block text-sm font-medium text-theme-darker mb-2">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <Input
@@ -110,7 +110,7 @@ export default function NewContactPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="new-contact-first-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="new-contact-first-name" className="block text-sm font-medium text-theme-darker mb-2">
                     First Name
                   </label>
                   <Input
@@ -122,7 +122,7 @@ export default function NewContactPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="new-contact-last-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="new-contact-last-name" className="block text-sm font-medium text-theme-darker mb-2">
                     Last Name
                   </label>
                   <Input
@@ -135,7 +135,7 @@ export default function NewContactPage() {
                 </div>
               </div>
               <div>
-                <label htmlFor="new-contact-company" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-company" className="block text-sm font-medium text-theme-darker mb-2">
                   Company
                 </label>
                 <Input
@@ -151,7 +151,7 @@ export default function NewContactPage() {
 
           {/* CRM Fields Card */}
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
                 fill="none"
@@ -169,7 +169,7 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label htmlFor="new-contact-segment" className="block text-sm font-medium text-gray-700 mb-2">Segment</label>
+                <label htmlFor="new-contact-segment" className="block text-sm font-medium text-theme-darker mb-2">Segment</label>
                 <Input
                   id="new-contact-segment"
                   value={form.segment || ""}
@@ -178,7 +178,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label htmlFor="new-contact-lead-source" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-lead-source" className="block text-sm font-medium text-theme-darker mb-2">
                   Lead Source
                 </label>
                 <Input
@@ -189,7 +189,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label htmlFor="new-contact-engagement-score" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="new-contact-engagement-score" className="block text-sm font-medium text-theme-darker mb-2">
                   Engagement Score
                 </label>
                 <Input
@@ -205,7 +205,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label htmlFor="new-contact-tags" className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                <label htmlFor="new-contact-tags" className="block text-sm font-medium text-theme-darker mb-2">Tags</label>
                 <Input
                   id="new-contact-tags"
                   name="new-contact-tags"
@@ -218,7 +218,7 @@ export default function NewContactPage() {
                   }
                   placeholder="tag1, tag2, tag3"
                 />
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-theme-dark">
                   Enter tags separated by commas. Spaces within tags are allowed (e.g., &quot;Project Manager, Marketing Lead,Referral, VIP&quot;).
                 </p>
               </div>
@@ -227,7 +227,7 @@ export default function NewContactPage() {
 
           {/* Notes Card */}
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
                 fill="none"
@@ -257,7 +257,7 @@ export default function NewContactPage() {
 
           {/* Next Touchpoint Card */}
           <Card padding="md">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-gray-400"
                 fill="none"
@@ -275,7 +275,7 @@ export default function NewContactPage() {
             </h2>
             <div className="space-y-4">
               <div>
-                <label htmlFor="new-contact-next-touchpoint-date" className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <label htmlFor="new-contact-next-touchpoint-date" className="block text-sm font-medium text-theme-darker mb-2">Date</label>
                 <Input
                   id="new-contact-next-touchpoint-date"
                   type="date"
@@ -288,7 +288,7 @@ export default function NewContactPage() {
                 />
               </div>
               <div>
-                <label htmlFor="new-contact-next-touchpoint-message" className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                <label htmlFor="new-contact-next-touchpoint-message" className="block text-sm font-medium text-theme-darker mb-2">Message</label>
                 <Textarea
                   id="new-contact-next-touchpoint-message"
                   name="new-contact-next-touchpoint-message"

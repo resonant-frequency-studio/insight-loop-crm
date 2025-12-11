@@ -327,8 +327,8 @@ export default function ContactsPageClient({
       {/* Header Section */}
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Contacts</h1>
-          <p className="text-gray-600 text-lg">
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Contacts</h1>
+          <p className="text-theme-dark text-lg">
             {filteredContacts.length} of {contacts.length}{" "}
             {contacts.length === 1 ? "contact" : "contacts"}
             {hasActiveFilters && " (filtered)"}
@@ -368,234 +368,235 @@ export default function ContactsPageClient({
         onShowArchivedChange={setShowArchived}
         onCustomFilterChange={filterContacts.setCustomFilter}
       />
+      <Card padding="sm">
+        {/* Bulk Action Bar */}
+        {selectedContactIds.size > 0 && filteredContacts.length > 0 && (
+          <BulkActionsBar
+            selectedCount={selectedContactIds.size}
+            itemLabel="contact"
+            actions={[
+              {
+                label: "Reassign Segment",
+                onClick: () => setShowBulkSegmentModal(true),
+                variant: "gradient-blue",
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                    />
+                  </svg>
+                ),
+              },
+              {
+                label: "Update Tags",
+                onClick: () => setShowBulkTagsModal(true),
+                variant: "gradient-blue",
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
+                  </svg>
+                ),
+              },
+              ...(!showArchived
+                ? [
+                    {
+                      label: "Archive",
+                      onClick: () => handleBulkArchive(true),
+                      variant: "gradient-gray" as const,
+                      disabled: bulkArchiveMutation.isPending,
+                      loading: bulkArchiveMutation.isPending,
+                      showCount: true,
+                      icon: (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                          />
+                        </svg>
+                      ),
+                    },
+                  ]
+                : [
+                    {
+                      label: "Unarchive",
+                      onClick: () => handleBulkArchive(false),
+                      variant: "gradient-green" as const,
+                      disabled: bulkArchiveMutation.isPending,
+                      loading: bulkArchiveMutation.isPending,
+                      showCount: true,
+                      icon: (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                      ),
+                    },
+                  ]),
+            ]}
+          />
+        )}
 
-      {/* Bulk Action Bar */}
-      {selectedContactIds.size > 0 && filteredContacts.length > 0 && (
-        <BulkActionsBar
-          selectedCount={selectedContactIds.size}
-          itemLabel="contact"
-          actions={[
-            {
-              label: "Reassign Segment",
-              onClick: () => setShowBulkSegmentModal(true),
-              variant: "gradient-blue",
-              icon: (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              ),
-            },
-            {
-              label: "Update Tags",
-              onClick: () => setShowBulkTagsModal(true),
-              variant: "gradient-blue",
-              icon: (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                  />
-                </svg>
-              ),
-            },
-            ...(!showArchived
-              ? [
-                  {
-                    label: "Archive",
-                    onClick: () => handleBulkArchive(true),
-                    variant: "gradient-gray" as const,
-                    disabled: bulkArchiveMutation.isPending,
-                    loading: bulkArchiveMutation.isPending,
-                    showCount: true,
-                    icon: (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                        />
-                      </svg>
-                    ),
-                  },
-                ]
-              : [
-                  {
-                    label: "Unarchive",
-                    onClick: () => handleBulkArchive(false),
-                    variant: "gradient-green" as const,
-                    disabled: bulkArchiveMutation.isPending,
-                    loading: bulkArchiveMutation.isPending,
-                    showCount: true,
-                    icon: (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    ),
-                  },
-                ]),
-          ]}
-        />
-      )}
-
-      {/* Contacts Grid - Only the list is suspended */}
-      <Suspense
-        fallback={
-          <div className="space-y-3">
-            <div className="h-6 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
-            <div className="grid grid-cols-1 gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow p-4 animate-pulse">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-5 bg-gray-200 rounded w-2/3" />
-                      <div className="h-4 bg-gray-200 rounded w-1/2" />
+        {/* Contacts Grid - Only the list is suspended */}
+        <Suspense
+          fallback={
+            <div className="space-y-3">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-2 animate-pulse" />
+              <div className="grid grid-cols-1 gap-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-4 animate-pulse">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 bg-gray-200 rounded w-2/3" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        }
-      >
-        {filteredContacts.length === 0 && contacts.length > 0 ? (
-          <Card padding="xl" className="text-center">
-            <svg
-              className="w-16 h-16 mx-auto mb-4 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <p className="text-lg font-medium text-gray-900 mb-2">No contacts match your filters</p>
-            <p className="text-sm text-gray-500 mb-6">
-              Try adjusting your search criteria or clear filters to see all contacts
-            </p>
-            <Button onClick={onClearFilters} variant="gradient-blue" size="sm">
-              Clear Filters
-            </Button>
-          </Card>
-        ) : filteredContacts.length === 0 ? (
-          <Card padding="xl" className="text-center">
-            <svg
-              className="w-16 h-16 mx-auto mb-4 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-            <p className="text-lg font-medium text-gray-900 mb-2">No contacts yet</p>
-            <p className="text-sm text-gray-500 mb-6">Start by importing contacts from a CSV file</p>
-            <Link
-              href="/contacts/import"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          }
+        >
+          {filteredContacts.length === 0 && contacts.length > 0 ? (
+            <Card padding="xl" className="text-center">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              Import Contacts
-            </Link>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {/* Select All Checkbox */}
-            {filteredContacts.length > 0 && (
-              <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={allFilteredSelected}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              <p className="text-lg font-medium text-theme-darkest mb-2">No contacts match your filters</p>
+              <p className="text-sm text-gray-500 mb-6">
+                Try adjusting your search criteria or clear filters to see all contacts
+              </p>
+              <Button onClick={onClearFilters} variant="gradient-blue" size="sm">
+                Clear Filters
+              </Button>
+            </Card>
+          ) : filteredContacts.length === 0 ? (
+            <Card padding="xl" className="text-center">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+              <p className="text-lg font-medium text-theme-darkest mb-2">No contacts yet</p>
+              <p className="text-sm text-gray-500 mb-6">Start by importing contacts from a CSV file</p>
+              <Link
+                href="/contacts/import"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-medium text-sm active:scale-95"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                   />
-                  <span className="text-sm font-medium text-gray-700">
-                    Select all {filteredContacts.length}{" "}
-                    {filteredContacts.length === 1 ? "contact" : "contacts"}
-                  </span>
-                </label>
-              </div>
-            )}
+                </svg>
+                Import Contacts
+              </Link>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {/* Select All Checkbox */}
+              {filteredContacts.length > 0 && (
+                <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-theme-darker">
+                      Select all {filteredContacts.length}{" "}
+                      {filteredContacts.length === 1 ? "contact" : "contacts"}
+                    </span>
+                  </label>
+                </div>
+              )}
 
-            <div className="grid grid-cols-1 gap-3">
-              {paginatedContacts.map((contact) => {
-                const isSelected = selectedContactIds.has(contact.id);
-                return (
-                  <ContactCard
-                    key={contact.id}
-                    contact={contact}
-                    showCheckbox={true}
-                    isSelected={isSelected}
-                    onSelectChange={toggleContactSelection}
-                    variant={isSelected ? "selected" : "default"}
-                    userId={userId}
-                  />
-                );
-              })}
+              <div className="grid grid-cols-1 gap-3">
+                {paginatedContacts.map((contact) => {
+                  const isSelected = selectedContactIds.has(contact.id);
+                  return (
+                    <ContactCard
+                      key={contact.id}
+                      contact={contact}
+                      showCheckbox={true}
+                      isSelected={isSelected}
+                      onSelectChange={toggleContactSelection}
+                      variant={isSelected ? "selected" : "default"}
+                      userId={userId}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              {filteredContacts.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4 mt-4">
+                  <div className="text-sm text-theme-darker">
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredContacts.length)} of{" "}
+                    {filteredContacts.length} {filteredContacts.length === 1 ? "contact" : "contacts"}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
+                    <span className="flex items-center px-4 text-sm text-theme-darker">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Pagination */}
-            {filteredContacts.length > ITEMS_PER_PAGE && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4 mt-4">
-                <div className="text-sm text-gray-700">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredContacts.length)} of{" "}
-                  {filteredContacts.length} {filteredContacts.length === 1 ? "contact" : "contacts"}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Previous
-                  </Button>
-                  <span className="flex items-center px-4 text-sm text-gray-700">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Suspense>
+          )}
+        </Suspense>
+      </Card>
 
       {/* Bulk Segment Reassignment Modal */}
       <Modal
@@ -605,9 +606,9 @@ export default function ContactsPageClient({
         closeOnBackdropClick={!bulkSegmentMutation.isPending}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-900">
+          <p className="text-sm text-theme-darkest">
             Update the segment for{" "}
-            <strong className="font-semibold text-gray-900">{selectedContactIds.size}</strong>{" "}
+            <strong className="font-semibold text-theme-darkest">{selectedContactIds.size}</strong>{" "}
             selected {selectedContactIds.size === 1 ? "contact" : "contacts"}.
           </p>
 
@@ -634,7 +635,7 @@ export default function ContactsPageClient({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-theme-darkest">
                   Updating contacts...
                 </span>
               </div>
@@ -642,7 +643,7 @@ export default function ContactsPageClient({
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-theme-darkest mb-2">
                   New Segment
                 </label>
                 <SegmentSelect
@@ -651,7 +652,7 @@ export default function ContactsPageClient({
                   existingSegments={uniqueSegments}
                   placeholder="Enter or select segment..."
                 />
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-theme-dark">
                   Select an existing segment from the dropdown, or type a new segment name to create
                   it. Choose &quot;No Segment&quot; to clear.
                 </p>
@@ -696,9 +697,9 @@ export default function ContactsPageClient({
         closeOnBackdropClick={!bulkTagsMutation.isPending}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-900">
+          <p className="text-sm text-theme-darkest">
             Update the tags for{" "}
-            <strong className="font-semibold text-gray-900">{selectedContactIds.size}</strong>{" "}
+            <strong className="font-semibold text-theme-darkest">{selectedContactIds.size}</strong>{" "}
             selected {selectedContactIds.size === 1 ? "contact" : "contacts"}.
           </p>
 
@@ -725,7 +726,7 @@ export default function ContactsPageClient({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-theme-darkest">
                   Updating contacts...
                 </span>
               </div>
@@ -733,7 +734,7 @@ export default function ContactsPageClient({
           ) : (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-theme-darkest mb-2">
                   Tags (comma-separated)
                 </label>
                 <Input
@@ -741,9 +742,9 @@ export default function ContactsPageClient({
                   value={selectedNewTags}
                   onChange={(e) => setSelectedNewTags(e.target.value)}
                   placeholder="tag1, tag2, tag3"
-                  className="text-gray-700"
+                  className="text-theme-darker"
                 />
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-theme-dark">
                   Enter tags separated by commas. This will replace all existing tags on the selected contacts.
                   Leave empty to remove all tags.
                 </p>

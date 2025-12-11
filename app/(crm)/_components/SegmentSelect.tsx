@@ -173,13 +173,13 @@ export default function SegmentSelect({
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 pr-10 text-gray-900 placeholder:text-gray-400"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 pr-10 text-theme-darkest placeholder:text-gray-400"
         />
         {inputValue && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-theme-dark transition-colors"
             tabIndex={-1}
           >
             <svg
@@ -225,7 +225,7 @@ export default function SegmentSelect({
           />
           <div
             ref={dropdownRef}
-            className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            className="absolute z-20 w-full mt-1 bg-[#EEEEEC] border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
             {filteredSegments.length > 0 ? (
               <>
@@ -240,7 +240,7 @@ export default function SegmentSelect({
                     className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm ${
                       index === highlightedIndex ? "bg-gray-100" : ""
                     } ${
-                      segment === value ? "font-medium text-blue-600" : "text-gray-700"
+                      segment === value ? "font-medium text-blue-600" : "text-theme-darker"
                     }`}
                   >
                     {segment}

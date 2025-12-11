@@ -28,7 +28,7 @@ export default function AiInsights({ userId }: AiInsightsProps) {
             d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
           />
         </svg>
-        <h3 className="text-lg font-semibold text-gray-900">AI Insights</h3>
+        <h3 className="text-lg font-semibold text-theme-darkest">AI Insights</h3>
       </div>
 
       {isLoading && (
@@ -59,8 +59,8 @@ export default function AiInsights({ userId }: AiInsightsProps) {
         <div className="space-y-4">
           {insights.slice(0, 3).map((insight) => (
             <div key={insight.id} className="border-b border-gray-200 last:border-0 pb-3 last:pb-0">
-              <h4 className="font-semibold text-gray-900 text-sm mb-1">{insight.title}</h4>
-              <p className="text-xs text-gray-600 mb-2">{insight.description}</p>
+              <h4 className="font-semibold text-theme-darkest text-sm mb-1">{insight.title}</h4>
+              <p className="text-xs text-theme-dark mb-2">{insight.description}</p>
               <Link href={insight.actionHref}>
                 <Button size="sm" variant="outline" className="text-xs">
                   View

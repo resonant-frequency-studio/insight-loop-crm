@@ -51,7 +51,7 @@ function ContactDetailContent({
             {getInitials(contact)}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1 truncate">
+            <h1 className="text-3xl font-bold text-theme-darkest mb-1 truncate">
               {getDisplayName(contact)}
             </h1>
             <p className="text-gray-500 flex items-center gap-2 min-w-0">

@@ -150,11 +150,11 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10 focus:outline-none"
+        className="relative bg-background rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10 border border-theme-light focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <h3 id={titleId} className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+          <h3 id={titleId} className="text-lg font-semibold text-foreground mb-4">{title}</h3>
         )}
         {children}
       </div>

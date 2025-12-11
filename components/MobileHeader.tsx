@@ -11,11 +11,11 @@ interface MobileHeaderProps {
 
 export default function MobileHeader({ isMenuOpen, onMenuToggle }: MobileHeaderProps) {
   return (
-    <header className="xl:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4">
+    <header className="xl:hidden fixed top-0 left-0 right-0 h-16 bg-[#EEEEEC] border-b border-gray-200 z-50 flex items-center justify-between px-4">
       {/* CRM Name - Link to Dashboard */}
       <Link
         href="/"
-        className="text-sm font-semibold text-gray-900 hover:text-gray-700 transition-colors truncate max-w-[calc(100%-4rem)]"
+        className="text-sm font-semibold text-theme-darkest hover:text-theme-darker transition-colors truncate max-w-[calc(100%-4rem)]"
       >
         {appConfig.crmName}
       </Link>

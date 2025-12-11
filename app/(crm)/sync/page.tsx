@@ -24,8 +24,8 @@ export default async function SyncStatusPage() {
       {/* Static Header - renders immediately */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Gmail Sync Status</h1>
-          <p className="text-gray-600 text-lg">
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Gmail Sync Status</h1>
+          <p className="text-theme-dark text-lg">
             Monitor your email synchronization status and history
           </p>
         </div>

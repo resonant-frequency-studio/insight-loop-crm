@@ -242,7 +242,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
       {(contactsWithTodayTouchpoints.length > 0 || contactsWithOverdueTouchpoints.length > 0) && (
         <Card padding="sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-theme-darkest">
               Today&apos;s Priorities ({totalTodayPriorities} total)
             </h2>
             <ViewAllLink href="/touchpoints/today" />
@@ -272,7 +272,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
                   });
                 }}
                 label={`Select all ${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length} priorit${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length === 1 ? "y" : "ies"} for bulk actions`}
-                labelClassName="text-sm font-medium text-gray-700 break-words flex-1 min-w-0"
+                labelClassName="text-sm font-medium text-theme-darker break-words flex-1 min-w-0"
               />
             </div>
           )}
@@ -285,7 +285,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
           {/* Due Today Subsection */}
           {contactsWithTodayTouchpoints.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Due Today</h3>
+              <h3 className="text-sm font-medium text-theme-darker mb-3">Due Today</h3>
               <div className="grid grid-cols-1 gap-2">
                 {contactsWithTodayTouchpoints.map((contact) => {
                   const isSelected = selectedTouchpointIds.has(contact.id);
@@ -356,7 +356,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
       {contactsWithUpcomingTouchpoints.length > 0 && (
         <Card padding="sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-theme-darkest">
               Upcoming Touchpoints ({totalUpcomingCount} total)
             </h2>
             <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
             <div className="flex items-center gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
               <Checkbox
                 checked={contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))}
-                onChange={(e) => {
+                onChange={() => {
                   if (contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))) {
                     setSelectedTouchpointIds((prev) => {
                       const newSet = new Set(prev);
@@ -389,7 +389,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
                   }
                 }}
                 label={`Select all ${contactsWithUpcomingTouchpoints.length} upcoming touchpoint${contactsWithUpcomingTouchpoints.length !== 1 ? "s" : ""}`}
-                labelClassName="text-sm font-medium text-gray-700 break-words flex-1 min-w-0"
+                labelClassName="text-sm font-medium text-theme-darker break-words flex-1 min-w-0"
               />
             </div>
           )}
@@ -425,7 +425,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
       {recentContacts.length > 0 && (
         <Card padding="sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Contacts</h2>
+            <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
             <ViewAllLink href="/contacts" />
           </div>
           <div className="grid grid-cols-1 gap-2">
@@ -447,7 +447,7 @@ export default function DashboardTouchpoints({ userId }: { userId: string }) {
           <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+              <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-md">
                 <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-5 bg-gray-200 rounded w-2/3" />

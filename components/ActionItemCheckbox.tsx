@@ -28,7 +28,7 @@ export default function ActionItemCheckbox({
         title={displayLabel}
         aria-label={displayLabel}
       />
-      <span className="text-sm text-gray-700 select-none">{displayLabel}</span>
+      <span className="text-sm text-theme-darker select-none">{displayLabel}</span>
     </label>
   );
 }

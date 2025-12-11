@@ -142,8 +142,8 @@ export default function ImportContactsPage() {
     <div className="space-y-8">
       {/* Header Section */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Import Contacts</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Import Contacts</h1>
+        <p className="text-theme-dark text-lg">
           Upload a CSV file to import contacts into your CRM
         </p>
       </div>
@@ -152,8 +152,8 @@ export default function ImportContactsPage() {
         {/* CSV Format Guide - Top on mobile, Right on desktop */}
         <div className="xl:col-span-1 space-y-6 order-1 xl:order-2">
           <Card padding="md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">CSV Format Guide</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="text-lg font-semibold text-theme-darkest mb-2">CSV Format Guide</h3>
+            <p className="text-sm text-theme-dark mb-4">
               Download a sample CSV template or review the required format below.
             </p>
             <Button
@@ -170,9 +170,9 @@ export default function ImportContactsPage() {
             >
               Download Sample CSV
             </Button>
-            <div className="space-y-3 text-sm text-gray-600">
+            <div className="space-y-3 text-sm text-theme-dark">
               <div>
-                <p className="font-medium text-gray-900 mb-2">Required columns:</p>
+                <p className="font-medium text-theme-darkest mb-2">Required columns:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
                     <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Email</code> - Contact email address
@@ -180,7 +180,7 @@ export default function ImportContactsPage() {
                 </ul>
               </div>
               <div>
-                <p className="font-medium text-gray-900 mt-4 mb-2">Optional columns:</p>
+                <p className="font-medium text-theme-darkest mt-4 mb-2">Optional columns:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
                     <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">FirstName</code>,{" "}
@@ -211,7 +211,7 @@ export default function ImportContactsPage() {
         <div className="xl:col-span-2 space-y-6 order-2 xl:order-1">
       <Card padding="lg">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">CSV File Upload</h2>
+          <h2 className="text-xl font-semibold text-theme-darkest mb-2">CSV File Upload</h2>
           <p className="text-sm text-gray-500">
                 Select a CSV file with contact information. The file should include columns like
                 Email, FirstName, LastName, and other CRM fields.
@@ -267,14 +267,14 @@ export default function ImportContactsPage() {
             </div>
             {selectedFileName && !isImporting ? (
               <div className="mb-2">
-                <p className="text-lg font-medium text-gray-900 mb-1">{selectedFileName}</p>
+                <p className="text-lg font-medium text-theme-darkest mb-1">{selectedFileName}</p>
                 {fileSize && (
                   <p className="text-sm text-gray-500">Size: {fileSize}</p>
                 )}
               </div>
             ) : (
               <>
-                <p className="text-lg font-medium text-gray-900 mb-1">
+                <p className="text-lg font-medium text-theme-darkest mb-1">
                   {isImporting ? "Importing..." : isDragging ? "Drop CSV file here" : "Click to upload or drag and drop"}
                 </p>
                 <p className="text-sm text-gray-500">CSV files only (max size: 10MB)</p>
@@ -287,7 +287,7 @@ export default function ImportContactsPage() {
         {isChecking && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Checking for existing contacts</span>
+              <span className="text-sm font-medium text-theme-darker">Checking for existing contacts</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
               <div className="bg-blue-600 h-2.5 rounded-full animate-progress-bar relative"></div>
@@ -299,7 +299,7 @@ export default function ImportContactsPage() {
         {isImporting && importState.progress && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Import Progress</span>
+              <span className="text-sm font-medium text-theme-darker">Import Progress</span>
               <span className="text-sm text-gray-500">
                 {importState.importCount} / {importState.progress.total}
               </span>
@@ -317,7 +317,7 @@ export default function ImportContactsPage() {
 
         {/* Warning Message - Don't refresh or navigate away */}
         {isProcessing && (
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
             <div className="flex items-start gap-3">
               <svg
                 className="w-5 h-5 text-amber-600 mt-0.5 shrink-0"
@@ -347,7 +347,7 @@ export default function ImportContactsPage() {
         {/* Status Messages */}
         {status && (
           <div
-            className={`mt-6 p-4 rounded-lg ${
+            className={`mt-6 p-4 rounded-md ${
               hasError
                 ? "bg-red-50 border border-red-200"
                 : isSuccess
@@ -483,7 +483,7 @@ export default function ImportContactsPage() {
 
             {/* Overwrite Modal */}
       <Modal isOpen={showOverwriteModal} onClose={handleCancelModalWithReset} title="Import Options">
-        <p className="text-gray-600 mb-4">
+        <p className="text-theme-dark mb-4">
           Found {existingContactsCount} existing contact
           {existingContactsCount !== 1 ? "s" : ""} in your database that match contacts in the
           CSV file.
@@ -492,7 +492,7 @@ export default function ImportContactsPage() {
           How would you like to handle existing contacts?
         </p>
         <div className="space-y-3 mb-6">
-          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
             <input
               type="radio"
               name="overwriteMode"
@@ -502,14 +502,14 @@ export default function ImportContactsPage() {
               className="mt-1"
             />
             <div>
-              <div className="font-medium text-gray-900">Overwrite existing contacts</div>
+              <div className="font-medium text-theme-darkest">Overwrite existing contacts</div>
               <div className="text-sm text-gray-500">
                 Replace all fields in existing contacts with data from the CSV. This will
                 overwrite any modifications you&apos;ve made.
               </div>
             </div>
           </div>
-          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
             <input
               type="radio"
               name="overwriteMode"
@@ -519,7 +519,7 @@ export default function ImportContactsPage() {
               className="mt-1"
             />
             <div>
-              <div className="font-medium text-gray-900">Skip existing contacts</div>
+              <div className="font-medium text-theme-darkest">Skip existing contacts</div>
               <div className="text-sm text-gray-500">
                 Only import new contacts. Existing contacts will be left unchanged, preserving
                 your modifications.

@@ -18,7 +18,7 @@ function DashboardChartsContent({ userId, initialStats }: { userId: string; init
     return (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl shadow p-6 animate-pulse">
+          <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
             <div className="h-6 bg-gray-200 rounded w-40 mb-4" />
             <div className="h-64 bg-gray-200 rounded" />
           </div>
@@ -31,7 +31,7 @@ function DashboardChartsContent({ userId, initialStats }: { userId: string; init
   if (!stats) {
     return (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow p-6">
+        <div className="bg-[#EEEEEC] rounded-xl shadow p-6">
           <p className="text-gray-500">Loading charts...</p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function DashboardCharts({ userId, initialStats }: { userId: stri
       fallback={
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow p-6 animate-pulse">
+            <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
               <div className="h-6 bg-gray-200 rounded w-40 mb-4" />
               <div className="h-64 bg-gray-200 rounded" />
             </div>

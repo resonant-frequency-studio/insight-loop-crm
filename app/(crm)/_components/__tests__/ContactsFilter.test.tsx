@@ -65,8 +65,9 @@ describe("ContactsFilter", () => {
       expect(screen.getByPlaceholderText("Enter last name...")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter first name...")).toBeInTheDocument();
       expect(screen.getByText(/Filter by Segment/i)).toBeInTheDocument();
-      const comboboxes = screen.getAllByRole("combobox");
-      expect(comboboxes.length).toBeGreaterThan(0);
+      // Select components now use buttons with listbox role instead of combobox
+      const selectButtons = screen.getAllByRole("button", { name: /Select|All Segments|None/i });
+      expect(selectButtons.length).toBeGreaterThan(0);
       expect(screen.getByRole("checkbox")).toBeInTheDocument();
     });
   });
@@ -145,12 +146,13 @@ describe("ContactsFilter", () => {
           {...mockHandlers}
         />
       );
-      const comboboxes = screen.getAllByRole("combobox");
-      const segmentSelect = comboboxes.find(select => 
-        (select as HTMLSelectElement).options[0]?.text === "All Segments"
-      ) as HTMLSelectElement;
-      expect(segmentSelect).toBeDefined();
-      fireEvent.change(segmentSelect, { target: { value: "Enterprise" } });
+      // Find the segment select button and click it to open dropdown
+      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
+      fireEvent.click(segmentSelectButton);
+      
+      // Click on Enterprise option
+      const enterpriseOption = screen.getByRole("option", { name: "Enterprise" });
+      fireEvent.click(enterpriseOption);
       expect(mockHandlers.onSegmentChange).toHaveBeenCalledWith("Enterprise");
     });
 
@@ -168,15 +170,14 @@ describe("ContactsFilter", () => {
           {...mockHandlers}
         />
       );
-      const comboboxes = screen.getAllByRole("combobox");
-      const segmentSelect = comboboxes.find(select => 
-        (select as HTMLSelectElement).options[0]?.text === "All Segments"
-      ) as HTMLSelectElement;
-      expect(segmentSelect).toBeDefined();
-      const options = Array.from(segmentSelect.options).map(opt => opt.value);
-      expect(options).toContain("Enterprise");
-      expect(options).toContain("SMB");
-      expect(options).toContain(""); // "All Segments" option
+      // Open the segment select dropdown
+      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
+      fireEvent.click(segmentSelectButton);
+      
+      // Check that options are available
+      expect(screen.getByRole("option", { name: "All Segments" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Enterprise" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "SMB" })).toBeInTheDocument();
     });
   });
 
@@ -474,15 +475,13 @@ describe("ContactsFilter", () => {
           {...mockHandlers}
         />
       );
-      const comboboxes = screen.getAllByRole("combobox");
-      const segmentSelect = comboboxes.find(select => 
-        (select as HTMLSelectElement).options[0]?.text === "All Segments"
-      ) as HTMLSelectElement;
-      expect(segmentSelect).toBeDefined();
-      const options = Array.from(segmentSelect.options).map(opt => opt.text);
-      // Should have "All Segments", "Enterprise", "SMB" (sorted)
-      expect(options).toContain("Enterprise");
-      expect(options).toContain("SMB");
+      // Open the segment select dropdown
+      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
+      fireEvent.click(segmentSelectButton);
+      
+      // Check that options are available
+      expect(screen.getByRole("option", { name: "Enterprise" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "SMB" })).toBeInTheDocument();
     });
 
     it("extracts unique tags from contacts", () => {

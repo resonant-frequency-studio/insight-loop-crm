@@ -14,8 +14,8 @@ export default function ContactsLink({
   const baseClasses = "transition-colors duration-200 font-medium";
   
   const variantClasses = {
-    default: "flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg",
-    error: "inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg",
+    default: "flex items-center gap-2 px-4 py-2 text-theme-dark hover:text-theme-darkest hover:bg-gray-100 rounded-md",
+    error: "inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md",
   };
 
   const iconSvg = (

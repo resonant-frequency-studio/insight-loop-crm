@@ -56,7 +56,7 @@ describe("ChartCard", () => {
         </ChartCard>
       );
       // Card should have base card styles
-      const card = container.querySelector(".bg-white.rounded-xl");
+      const card = container.querySelector(".bg-card-light.rounded-xl");
       expect(card).toBeInTheDocument();
     });
   });

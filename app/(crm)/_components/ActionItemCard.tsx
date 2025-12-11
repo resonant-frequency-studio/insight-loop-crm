@@ -112,12 +112,12 @@ export default function ActionItemCard({
 
   const getVariantStyles = () => {
     if (actionItem.status === "completed") {
-      return "bg-gray-50 border border-gray-200";
+      return "bg-card-highlight-light border border-gray-200";
     }
     if (isOverdue) {
-      return "bg-red-50 border border-red-200";
+      return "bg-card-overdue border border-card-overdue-dark";
     }
-    return "bg-gray-50 border border-gray-200";
+    return "bg-transparent border border-gray-200";
   };
 
   const getAvatarStyles = () => {
@@ -148,7 +148,7 @@ export default function ActionItemCard({
   };
 
   return (
-    <div className={`rounded-lg p-3 sm:p-4 transition-all duration-200 min-w-0 overflow-hidden ${getVariantStyles()}`}>
+    <div className={`rounded-md p-3 sm:p-4 transition-all duration-200 min-w-0 overflow-hidden ${getVariantStyles()}`}>
       {isEditing ? (
         <div className="space-y-3">
           <Textarea
@@ -258,7 +258,7 @@ export default function ActionItemCard({
           {!compact && (
             <Link
               href={`/contacts/${contactId}`}
-              className="flex items-center gap-2 group border border-gray-300 rounded-lg px-3 py-2 hover:border-gray-400 transition-colors"
+              className="flex items-center gap-2 group border border-gray-300 rounded-md px-3 py-2 hover:border-gray-400 transition-colors"
             >
               {/* Avatar */}
               <div className="shrink-0">
@@ -273,8 +273,8 @@ export default function ActionItemCard({
                   <div className="h-[38px] bg-gray-200 rounded w-24 animate-pulse" />
                 ) : (
                   <>
-                    <h3 className={`text-sm font-semibold group-hover:text-gray-700 transition-colors truncate ${
-                      actionItem.status === "completed" ? "text-gray-500" : "text-gray-900"
+                    <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors truncate ${
+                      actionItem.status === "completed" ? "text-gray-500" : "text-theme-darkest"
                     }`}>
                       {displayName || ""}
                     </h3>
@@ -297,7 +297,7 @@ export default function ActionItemCard({
               className={`text-sm font-medium wrap-break-word mb-2 ${
                 actionItem.status === "completed"
                   ? "text-gray-500 line-through"
-                  : "text-gray-900"
+                  : "text-theme-darkest"
               }`}
             >
               {actionItem.text}

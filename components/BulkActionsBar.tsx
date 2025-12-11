@@ -34,7 +34,7 @@ export default function BulkActionsBar({
     <Card padding="md" className={`bg-blue-50 border-blue-200 mb-4 ${className}`}>
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center">
-          <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+          <span className="text-sm font-medium text-theme-darkest whitespace-nowrap">
             {selectedCount} {itemLabel}{selectedCount !== 1 ? "s" : ""} selected
           </span>
         </div>

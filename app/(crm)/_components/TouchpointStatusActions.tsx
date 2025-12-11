@@ -101,7 +101,7 @@ export default function TouchpointStatusActions({
             <button
               onClick={() => setShowCompleteModal(true)}
               disabled={mutation.isPending}
-              className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
+              className="flex-1 cursor-pointer sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-[#191919] bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
               title="I've contacted this person"
             >
               <svg
@@ -124,7 +124,7 @@ export default function TouchpointStatusActions({
             <button
               onClick={() => setShowCancelModal(true)}
               disabled={mutation.isPending}
-              className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
+              className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-foreground border border-theme-medium rounded hover:bg-theme-medium cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
               title="Skip this touchpoint - no action needed"
             >
               <svg
@@ -163,11 +163,11 @@ export default function TouchpointStatusActions({
           title="Mark as Contacted"
           closeOnBackdropClick={!mutation.isPending}
         >
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-theme-dark mb-4">
             Mark the touchpoint for <strong>{contactName}</strong> as contacted? This indicates you&apos;ve reached out to them.
           </p>
           <div className="mb-4">
-            <label htmlFor="touchpoint-complete-note-compact" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="touchpoint-complete-note-compact" className="block text-sm font-medium text-theme-darker mb-2">
               Note (optional)
               <span className="text-xs text-gray-500 font-normal ml-1">
                 — This will be saved and displayed on the contact page
@@ -179,7 +179,7 @@ export default function TouchpointStatusActions({
               value={reason}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
               placeholder="e.g., Discussed proposal, scheduled follow-up, sent quote..."
-              className="px-3 py-2 text-gray-900 disabled:text-gray-600"
+              className="px-3 py-2 text-theme-darkest disabled:text-theme-dark"
               rows={3}
               disabled={mutation.isPending}
               autoComplete="off"
@@ -233,11 +233,11 @@ export default function TouchpointStatusActions({
           title="Skip Touchpoint"
           closeOnBackdropClick={!mutation.isPending}
         >
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-theme-dark mb-4">
             Skip the touchpoint for <strong>{contactName}</strong>? This indicates no action is needed at this time.
           </p>
           <div className="mb-4">
-            <label htmlFor="touchpoint-skip-reason-compact" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="touchpoint-skip-reason-compact" className="block text-sm font-medium text-theme-darker mb-2">
               Reason (optional)
               <span className="text-xs text-gray-500 font-normal ml-1">
                 — This will be saved and displayed on the contact page
@@ -249,7 +249,7 @@ export default function TouchpointStatusActions({
               value={reason}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
               placeholder="e.g., Not relevant, contact inactive, wrong contact..."
-              className="px-3 py-2 text-gray-900 disabled:text-gray-600"
+              className="px-3 py-2 text-theme-darkest disabled:text-theme-dark"
               rows={3}
               disabled={mutation.isPending}
               autoComplete="off"
@@ -305,7 +305,7 @@ export default function TouchpointStatusActions({
           </span>
         )}
         {currentStatus === "cancelled" && (
-          <span className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full">
+          <span className="px-3 py-1 text-sm font-medium text-[#eeeeec] bg-theme-medium rounded-full">
             ✕ Skipped
           </span>
         )}
@@ -371,11 +371,11 @@ export default function TouchpointStatusActions({
         title="Mark as Contacted"
         closeOnBackdropClick={!mutation.isPending}
       >
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-theme-dark mb-4">
           Mark the touchpoint for <strong>{contactName}</strong> as contacted? This indicates you&apos;ve reached out to them.
         </p>
         <div className="mb-4">
-          <label htmlFor="touchpoint-complete-note" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="touchpoint-complete-note" className="block text-sm font-medium text-theme-darker mb-2">
             Note (optional)
             <span className="text-xs text-gray-500 font-normal ml-1">
               — This will be saved and displayed on the contact page
@@ -387,7 +387,7 @@ export default function TouchpointStatusActions({
             value={reason}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
             placeholder="e.g., Discussed proposal, scheduled follow-up, sent quote..."
-            className="px-3 py-2 text-gray-900 disabled:text-gray-600"
+            className="px-3 py-2 text-theme-darkest disabled:text-theme-dark"
             rows={3}
             disabled={mutation.isPending}
             autoComplete="off"
@@ -442,11 +442,11 @@ export default function TouchpointStatusActions({
         title="Skip Touchpoint"
         closeOnBackdropClick={!mutation.isPending}
       >
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-theme-dark mb-4">
           Skip the touchpoint for <strong>{contactName}</strong>? This indicates no action is needed at this time.
         </p>
         <div className="mb-4">
-          <label htmlFor="touchpoint-skip-reason" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="touchpoint-skip-reason" className="block text-sm font-medium text-theme-darker mb-2">
             Reason (optional)
             <span className="text-xs text-gray-500 font-normal ml-1">
               — This will be saved and displayed on the contact page
@@ -458,7 +458,7 @@ export default function TouchpointStatusActions({
             value={reason}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
             placeholder="e.g., Not relevant, contact inactive, wrong contact..."
-            className="px-3 py-2 text-gray-900 disabled:text-gray-600"
+            className="px-3 py-2 text-theme-darkest disabled:text-theme-dark"
             rows={3}
             disabled={mutation.isPending}
             autoComplete="off"

@@ -30,7 +30,7 @@ export default function ContactInsightsCard({
 
   return (
     <Card padding="md">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Contact Insights</h2>
+      <h2 className="text-xl font-semibold text-theme-darkest mb-6">Contact Insights</h2>
       <div className="space-y-6">
         {/* AI Summary Section */}
         {displayContact.summary && (
@@ -53,7 +53,7 @@ export default function ContactInsightsCard({
                 AI Summary
               </h3>
             </div>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-theme-darkest whitespace-pre-wrap leading-relaxed">
               {displayContact.summary}
             </p>
           </div>
@@ -94,7 +94,7 @@ export default function ContactInsightsCard({
                     style={{ width: `${Math.min(engagementScore, 100)}%` }}
                   ></div>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-semibold text-theme-darkest">
                   {Math.round(engagementScore)}
                 </span>
               </div>
@@ -123,7 +123,7 @@ export default function ContactInsightsCard({
                 Email Threads
               </h3>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-theme-darkest">
               {displayContact.threadCount}
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function ContactInsightsCard({
                 Last Email Date
               </h3>
             </div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-theme-darkest">
               {formatContactDate(displayContact.lastEmailDate, { relative: true })}
             </p>
             <p className="text-xs text-gray-500 mt-1">
@@ -180,7 +180,7 @@ export default function ContactInsightsCard({
                 Pain Points
               </h3>
             </div>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-theme-darkest whitespace-pre-wrap leading-relaxed">
               {displayContact.painPoints}
             </p>
           </div>
@@ -212,7 +212,7 @@ export default function ContactInsightsCard({
                   ? "bg-green-100 text-green-800"
                   : displayContact.sentiment.toLowerCase().includes("negative")
                   ? "bg-red-100 text-red-800"
-                  : "bg-gray-100 text-gray-700"
+                  : "bg-gray-100 text-theme-darker"
               }`}
             >
               {displayContact.sentiment}

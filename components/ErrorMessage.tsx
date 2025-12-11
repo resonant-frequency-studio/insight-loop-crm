@@ -26,7 +26,7 @@ export function ErrorMessage({
 
   return (
     <div
-      className={`flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg ${className}`}
+      className={`flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md ${className}`}
       role="alert"
       aria-live="polite"
     >

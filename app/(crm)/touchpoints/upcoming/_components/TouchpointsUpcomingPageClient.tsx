@@ -72,8 +72,8 @@ export default function TouchpointsUpcomingPageClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Upcoming Touchpoints</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Upcoming Touchpoints</h1>
+        <p className="text-theme-dark text-lg">
           {allUpcomingTouchpoints.length} touchpoint{allUpcomingTouchpoints.length !== 1 ? "s" : ""} in the next 60 days
         </p>
       </div>
@@ -105,7 +105,7 @@ export default function TouchpointsUpcomingPageClient() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-theme-darker">
                   Showing {startIndex + 1} to {Math.min(endIndex, allUpcomingTouchpoints.length)} of{" "}
                   {allUpcomingTouchpoints.length} touchpoints
                 </div>
@@ -118,7 +118,7 @@ export default function TouchpointsUpcomingPageClient() {
                   >
                     Previous
                   </Button>
-                  <span className="flex items-center px-4 text-sm text-gray-700">
+                  <span className="flex items-center px-4 text-sm text-theme-darker">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button

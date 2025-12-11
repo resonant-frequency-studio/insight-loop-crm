@@ -46,8 +46,8 @@ export default function ActionItemsPageClient({
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Action Items</h1>
-          <p className="text-gray-600 text-lg">
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
+          <p className="text-theme-dark text-lg">
             Manage tasks and action items across all your contacts
           </p>
         </div>

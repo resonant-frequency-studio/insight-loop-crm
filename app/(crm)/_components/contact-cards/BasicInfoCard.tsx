@@ -113,7 +113,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg
             className="w-5 h-5 text-gray-400"
             fill="none"
@@ -134,7 +134,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-theme-darker mb-2">
               First Name
             </label>
             <Input
@@ -147,7 +147,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-theme-darker mb-2">
               Last Name
             </label>
             <Input
@@ -161,7 +161,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-theme-darker mb-2">
             Company
           </label>
           <Input
@@ -174,7 +174,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-theme-darker mb-2">
             Email
           </label>
           <Input
@@ -182,7 +182,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
             id="contact-email"
             name="contact-email"
             disabled
-            className="bg-gray-50 text-gray-500 cursor-not-allowed"
+            className="bg-theme-lighter text-[#8d8a85] cursor-not-allowed"
             value={contact.primaryEmail}
           />
         </div>

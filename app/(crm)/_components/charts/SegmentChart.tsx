@@ -52,9 +52,9 @@ const renderTooltip = (props: any) => {
     const total = payload.reduce((sum: number, item: { value?: number }) => sum + (item.value || 0), 0);
     const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : "0";
     return (
-      <div className="bg-white p-2 xl:p-3 border border-gray-200 rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900 text-xs xl:text-sm">{data.name}</p>
-        <p className="text-xs text-gray-600">
+      <div className="bg-[#EEEEEC] p-2 xl:p-3 border border-gray-200 rounded-md shadow-lg">
+        <p className="font-semibold text-theme-darkest text-xs xl:text-sm">{data.name}</p>
+        <p className="text-xs text-theme-dark">
           {data.value} contacts ({percentage}%)
         </p>
       </div>

@@ -163,8 +163,8 @@ export default function CleanupTagsPage() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Tag Cleanup</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Tag Cleanup</h1>
+        <p className="text-theme-dark text-lg">
           View tag usage and remove tags from all contacts
         </p>
       </div>
@@ -197,7 +197,7 @@ export default function CleanupTagsPage() {
       {/* Tag Statistics */}
       <Card padding="md">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Tag Usage Statistics</h2>
+          <h2 className="text-lg font-semibold text-theme-darkest">Tag Usage Statistics</h2>
           <Button
             onClick={loadTags}
             variant="outline"
@@ -208,15 +208,15 @@ export default function CleanupTagsPage() {
           </Button>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">{tags.length}</div>
-            <div className="text-sm text-gray-600">Total Tags</div>
+          <div className="text-center p-4 bg-gray-50 rounded-md">
+            <div className="text-2xl font-bold text-theme-darkest">{tags.length}</div>
+            <div className="text-sm text-theme-dark">Total Tags</div>
           </div>
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
+          <div className="text-center p-4 bg-blue-50 rounded-md">
             <div className="text-2xl font-bold text-blue-900">{usedTags.length}</div>
             <div className="text-sm text-blue-600">In Use</div>
           </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
+          <div className="text-center p-4 bg-red-50 rounded-md">
             <div className="text-2xl font-bold text-red-900">{unusedTags.length}</div>
             <div className="text-sm text-red-600">Unused</div>
           </div>
@@ -225,7 +225,7 @@ export default function CleanupTagsPage() {
         {/* Tag Selection */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-md font-semibold text-gray-900">
+            <h3 className="text-md font-semibold text-theme-darkest">
               Select Tags to Remove ({selectedTags.size} selected)
             </h3>
             <div className="flex gap-2">
@@ -251,7 +251,7 @@ export default function CleanupTagsPage() {
           {/* Unused Tags Section */}
           {unusedTags.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-theme-darker mb-2">
                 Unused Tags ({unusedTags.length})
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -259,10 +259,10 @@ export default function CleanupTagsPage() {
                   <button
                     key={tagUsage.tag}
                     onClick={() => toggleTag(tagUsage.tag)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       selectedTags.has(tagUsage.tag)
                         ? "bg-red-100 text-red-800 border-2 border-red-300"
-                        : "bg-gray-100 text-gray-700 border-2 border-transparent hover:bg-gray-200"
+                        : "bg-gray-100 text-theme-darker border-2 border-transparent hover:bg-gray-200"
                     }`}
                   >
                     {tagUsage.tag} (0)
@@ -275,7 +275,7 @@ export default function CleanupTagsPage() {
           {/* Used Tags Section */}
           {usedTags.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <h4 className="text-sm font-medium text-theme-darker mb-2">
                 Tags in Use ({usedTags.length})
               </h4>
               <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto">
@@ -283,7 +283,7 @@ export default function CleanupTagsPage() {
                   <button
                     key={tagUsage.tag}
                     onClick={() => toggleTag(tagUsage.tag)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       selectedTags.has(tagUsage.tag)
                         ? "bg-red-100 text-red-800 border-2 border-red-300"
                         : "bg-blue-50 text-blue-700 border-2 border-transparent hover:bg-blue-100"
@@ -313,7 +313,7 @@ export default function CleanupTagsPage() {
               onChange={(e) => setDryRun(e.target.checked)}
               className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label htmlFor="dryRun" className="text-sm font-medium text-gray-900">
+            <label htmlFor="dryRun" className="text-sm font-medium text-theme-darkest">
               Dry run mode (preview changes without applying them)
             </label>
           </div>
@@ -393,16 +393,16 @@ export default function CleanupTagsPage() {
 
                 <div className="grid grid-cols-4 gap-4 mb-4">
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{result.processed}</div>
-                    <div className="text-xs text-gray-600">Processed</div>
+                    <div className="text-2xl font-bold text-theme-darkest">{result.processed}</div>
+                    <div className="text-xs text-theme-dark">Processed</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-900">{result.updated}</div>
                     <div className="text-xs text-green-600">Updated</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{result.skipped}</div>
-                    <div className="text-xs text-gray-600">Skipped</div>
+                    <div className="text-2xl font-bold text-theme-darkest">{result.skipped}</div>
+                    <div className="text-xs text-theme-dark">Skipped</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-red-900">{result.errors}</div>

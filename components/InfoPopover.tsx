@@ -48,7 +48,7 @@ export default function InfoPopover({ content }: InfoPopoverProps) {
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={() => setIsOpen(false)}
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 hover:text-gray-900 transition-colors"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-card-highlight-light border border-gray-200 text-theme-darkest hover:bg-theme-medium transition-colors"
         aria-label="More information"
       >
         <span className="text-xs font-bold leading-none">i</span>
@@ -56,7 +56,7 @@ export default function InfoPopover({ content }: InfoPopoverProps) {
       {isOpen && (
         <div
           ref={popoverRef}
-          className={`absolute bottom-full mb-2 w-64 p-3 bg-white border border-gray-200 text-gray-900 text-[14px] rounded-lg shadow-xl z-50 ${
+          className={`absolute bottom-full mb-2 w-64 p-3 bg-card-highlight-light border border-gray-200 text-foreground text-[14px] rounded-md shadow-xl z-50 ${
             positionRight ? "right-0" : "left-0"
           }`}
         >

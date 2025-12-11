@@ -84,10 +84,10 @@ export default function CleanupActionItemsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-theme-darkest mb-2">
           Cleanup Action Items
         </h1>
-        <p className="text-gray-600">
+        <p className="text-theme-dark">
           Delete all action items from contacts whose last email was more than 90 days ago
         </p>
       </div>
@@ -95,10 +95,10 @@ export default function CleanupActionItemsPage() {
       <Card padding="lg">
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-theme-darkest mb-4">
               What this script does:
             </h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
+            <ul className="list-disc list-inside space-y-2 text-theme-darker">
               <li>Finds all contacts where <code className="bg-gray-100 px-1 rounded">lastEmailDate</code> is more than 90 days old</li>
               <li>Deletes ALL action items for those contacts</li>
               <li>This action cannot be undone</li>
@@ -118,7 +118,7 @@ export default function CleanupActionItemsPage() {
           </div>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-800 font-semibold">Error</p>
               <p className="text-red-700">{error}</p>
             </div>
@@ -127,7 +127,7 @@ export default function CleanupActionItemsPage() {
           {result && (
             <div className="mt-4 space-y-4">
               <div
-                className={`p-4 rounded-lg border ${
+                className={`p-4 rounded-md border ${
                   result.success
                     ? "bg-green-50 border-green-200"
                     : "bg-red-50 border-red-200"
@@ -148,17 +148,17 @@ export default function CleanupActionItemsPage() {
               </div>
 
               {result.stats && (
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Statistics</h3>
+                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                  <h3 className="font-semibold text-theme-darkest mb-3">Statistics</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Contacts Checked</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm text-theme-dark">Contacts Checked</p>
+                      <p className="text-2xl font-bold text-theme-darkest">
                         {result.stats.totalContactsChecked}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-theme-dark">
                         Contacts with Old Emails
                       </p>
                       <p className="text-2xl font-bold text-amber-600">
@@ -166,7 +166,7 @@ export default function CleanupActionItemsPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-theme-dark">
                         Action Items Deleted
                       </p>
                       <p className="text-2xl font-bold text-red-600">
@@ -174,7 +174,7 @@ export default function CleanupActionItemsPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-theme-dark">
                         Contacts Processed
                       </p>
                       <p className="text-2xl font-bold text-blue-600">
@@ -183,7 +183,7 @@ export default function CleanupActionItemsPage() {
                     </div>
                     {result.stats.errors > 0 && (
                       <div className="col-span-2">
-                        <p className="text-sm text-gray-600">Errors</p>
+                        <p className="text-sm text-theme-dark">Errors</p>
                         <p className="text-2xl font-bold text-red-600">
                           {result.stats.errors}
                         </p>

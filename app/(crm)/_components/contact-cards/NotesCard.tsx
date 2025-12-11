@@ -104,7 +104,7 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg
             className="w-5 h-5 text-gray-400"
             fill="none"

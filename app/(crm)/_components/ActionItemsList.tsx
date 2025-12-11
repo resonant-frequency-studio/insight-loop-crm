@@ -213,7 +213,7 @@ export default function ActionItemsList({
         title="Delete Action Item"
         closeOnBackdropClick={!deleteActionItemMutation.isPending}
       >
-        <p className="text-gray-600 mb-6">
+        <p className="text-theme-dark mb-6">
           Are you sure you want to delete this action item? This action cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">
@@ -245,7 +245,7 @@ export default function ActionItemsList({
       {/* Header with filters */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-theme-darkest">
             Action Items
           </h3>
         </div>
@@ -256,15 +256,15 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("all")}
             role="tab"
             aria-selected={filterStatus === "all"}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 border ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
               filterStatus === "all"
-                ? "bg-white text-gray-900 shadow-sm border-gray-300"
-                : "text-gray-600 hover:text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100"
+                ? "bg-theme-light"
+                : "hover:bg-theme-light hover:bg-opacity-10"
             }`}
           >
             All
             <span className={`ml-1 ${
-              filterStatus === "all" ? "text-gray-600" : "text-gray-400"
+              filterStatus === "all" ? "text-theme-dark" : "text-gray-400"
             }`}>
               ({actionItems.length})
             </span>
@@ -273,15 +273,15 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("pending")}
             role="tab"
             aria-selected={filterStatus === "pending"}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 border ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
               filterStatus === "pending"
-                ? "bg-white text-gray-900 shadow-sm border-gray-300"
-                : "text-gray-600 hover:text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100"
+                ? "bg-theme-light"
+                : "hover:bg-theme-light hover:bg-opacity-10"
             }`}
           >
             Pending
             <span className={`ml-1 ${
-              filterStatus === "pending" ? "text-gray-600" : "text-gray-400"
+              filterStatus === "pending" ? "text-theme-dark" : "text-gray-400"
             }`}>
               ({pendingCount})
             </span>
@@ -290,15 +290,15 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("completed")}
             role="tab"
             aria-selected={filterStatus === "completed"}
-            className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 border ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
               filterStatus === "completed"
-                ? "bg-white text-gray-900 shadow-sm border-gray-300"
-                : "text-gray-600 hover:text-gray-900 bg-gray-50 border-gray-200 hover:bg-gray-100"
+                ? "bg-theme-light"
+                : "hover:bg-theme-light hover:bg-opacity-10"
             }`}
           >
             Completed
             <span className={`ml-1 ${
-              filterStatus === "completed" ? "text-gray-600" : "text-gray-400"
+              filterStatus === "completed" ? "text-theme-dark" : "text-gray-400"
             }`}>
               ({completedCount})
             </span>
@@ -308,7 +308,7 @@ export default function ActionItemsList({
 
       {/* Add new action item */}
       {isAdding ? (
-        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
+        <div className="p-3 rounded-md border border-gray-200 space-y-3">
           <Textarea
             id="action-item-new-text"
             name="action-item-new-text"
@@ -333,7 +333,7 @@ export default function ActionItemsList({
                 onClick={handleAdd}
                 disabled={saving || !newText.trim()}
                 loading={saving}
-                variant="gradient-blue"
+                variant="gradient-green"
                 size="sm"
                 error={addError}
               >
@@ -388,7 +388,7 @@ export default function ActionItemsList({
 
       {/* Action items list */}
       {filteredItems.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-sm text-theme-medium text-center py-4">
           {filterStatus === "all"
             ? "No action items yet"
             : `No ${filterStatus} action items`}

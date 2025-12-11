@@ -26,7 +26,7 @@ export default function CrmError({
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-6">
           <h2 className="text-lg font-semibold text-red-900 mb-2">Something went wrong</h2>
           <ErrorMessage
             message={error.message || "An unexpected error occurred"}

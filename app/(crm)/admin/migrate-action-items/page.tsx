@@ -112,8 +112,8 @@ export default function MigrateActionItemsPage() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Migrate Action Items</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Migrate Action Items</h1>
+        <p className="text-theme-dark text-lg">
           Migrate action items from old string format to new subcollection format
         </p>
       </div>
@@ -148,10 +148,10 @@ export default function MigrateActionItemsPage() {
       <Card padding="md">
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Migration Options</h2>
+            <h2 className="text-xl font-semibold text-theme-darkest mb-2">Migration Options</h2>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
             <input
               type="checkbox"
               id="dryRun"
@@ -160,12 +160,12 @@ export default function MigrateActionItemsPage() {
               disabled={running}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label htmlFor="dryRun" className="text-sm font-medium text-gray-700 cursor-pointer">
+            <label htmlFor="dryRun" className="text-sm font-medium text-theme-darker cursor-pointer">
               Dry run (preview changes without migrating)
             </label>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
             <input
               type="checkbox"
               id="clearOldField"
@@ -174,7 +174,7 @@ export default function MigrateActionItemsPage() {
               disabled={running || dryRun}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label htmlFor="clearOldField" className="text-sm font-medium text-gray-700 cursor-pointer">
+            <label htmlFor="clearOldField" className="text-sm font-medium text-theme-darker cursor-pointer">
               Clear old actionItems field after migration (only when not in dry run mode)
             </label>
           </div>
@@ -291,9 +291,9 @@ export default function MigrateActionItemsPage() {
               </h3>
             </div>
 
-            <div className="bg-white rounded-lg p-4 space-y-2">
+            <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
               {result.summary && (
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
                   <p className="text-xs font-medium text-blue-900 mb-2">Database Summary:</p>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
@@ -314,7 +314,7 @@ export default function MigrateActionItemsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Processed</p>
-                  <p className="text-lg font-bold text-gray-900">{result.processed}</p>
+                  <p className="text-lg font-bold text-theme-darkest">{result.processed}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Migrated</p>
@@ -332,7 +332,7 @@ export default function MigrateActionItemsPage() {
 
               {result.details && result.details.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-700 mb-2">
+                  <p className="text-xs font-medium text-theme-darker mb-2">
                     Sample Results (showing first 20):
                   </p>
                   <div className="max-h-96 overflow-y-auto space-y-2">
@@ -347,11 +347,11 @@ export default function MigrateActionItemsPage() {
                             : "bg-red-50 border border-red-200"
                         }`}
                       >
-                        <div className="font-medium text-gray-900 mb-1">
+                        <div className="font-medium text-theme-darkest mb-1">
                           {detail.email}
                         </div>
                         {detail.action === "migrated" && (
-                          <div className="text-gray-600">
+                          <div className="text-theme-dark">
                             Created {detail.itemsCreated} action item(s)
                             {detail.oldActionItems && (
                               <div className="mt-1 text-xs text-gray-500 italic">
@@ -362,7 +362,7 @@ export default function MigrateActionItemsPage() {
                           </div>
                         )}
                         {detail.action === "skipped" && (
-                          <div className="text-gray-600">{detail.error}</div>
+                          <div className="text-theme-dark">{detail.error}</div>
                         )}
                         {detail.action === "error" && (
                           <div className="text-red-600">{detail.error}</div>

@@ -46,7 +46,7 @@ describe("ContactCard", () => {
       render(<ContactCard contact={contactWithoutName} />);
       // Initials should be in the avatar div - should be "T" from "test@example.com"
       // Query for the avatar directly - there's only one rounded-full element per card
-      const card = screen.getByRole("link").closest(".rounded-lg");
+      const card = screen.getByRole("link").closest(".rounded-md");
       const avatar = card?.querySelector(".rounded-full");
       expect(avatar?.textContent?.trim()).toBe("T");
     });
@@ -125,7 +125,7 @@ describe("ContactCard", () => {
         />
       );
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("bg-gray-50", "border", "border-gray-200");
+      expect(card).toHaveClass("border", "border-theme-light");
     });
 
     it("touchpoint-overdue variant shows correct styling", () => {
@@ -138,7 +138,7 @@ describe("ContactCard", () => {
         />
       );
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("bg-red-50", "border", "border-red-200");
+      expect(card).toHaveClass("bg-card-overdue", "border", "border-card-overdue-dark");
     });
   });
 

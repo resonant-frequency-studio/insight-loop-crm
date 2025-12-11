@@ -22,12 +22,12 @@ export default function ActivityCard({ contactId, userId }: ActivityCardProps) {
 
   return (
     <Card padding="md">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity</h2>
+      <h2 className="text-lg font-semibold text-theme-darkest mb-4">Activity</h2>
       <div className="space-y-3 text-sm">
         <div className="flex items-start gap-3">
           <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
           <div>
-            <p className="font-medium text-gray-900">Last updated</p>
+            <p className="font-medium text-theme-darkest">Last updated</p>
             <p className="text-gray-500">
               {formatContactDate(contact.updatedAt, { includeTime: true })}
             </p>
@@ -37,7 +37,7 @@ export default function ActivityCard({ contactId, userId }: ActivityCardProps) {
           <div className="flex items-start gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
             <div>
-              <p className="font-medium text-gray-900">Created</p>
+              <p className="font-medium text-theme-darkest">Created</p>
               <p className="text-gray-500">
                 {formatContactDate(contact.createdAt, { includeTime: true })}
               </p>

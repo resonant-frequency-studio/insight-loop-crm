@@ -144,7 +144,7 @@ export default function ActionItemCard({
   };
 
   return (
-    <div className={`rounded-lg p-4 transition-all duration-200 ${getVariantStyles()}`}>
+    <div className={`rounded-md p-4 transition-all duration-200 ${getVariantStyles()}`}>
       {isEditing ? (
         <div className="space-y-3">
           <Textarea
@@ -158,7 +158,7 @@ export default function ActionItemCard({
             type="date"
             value={editDueDate}
             onChange={(e) => setEditDueDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             disabled={disabled}
           />
           <div className="flex gap-2">
@@ -230,8 +230,8 @@ export default function ActionItemCard({
 
                   {/* Contact Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-sm font-semibold group-hover:text-gray-700 transition-colors ${
-                      actionItem.status === "completed" ? "text-gray-500" : "text-gray-900"
+                    <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors ${
+                      actionItem.status === "completed" ? "text-gray-500" : "text-theme-darkest"
                     }`}>
                       {displayName}
                     </h3>
@@ -271,7 +271,7 @@ export default function ActionItemCard({
                   className={`text-sm font-medium flex-1 min-w-0 break-words ${
                     actionItem.status === "completed"
                       ? "text-gray-500 line-through"
-                      : "text-gray-900"
+                      : "text-theme-darkest"
                   }`}
                 >
                   {actionItem.text}

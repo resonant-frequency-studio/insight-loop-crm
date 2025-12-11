@@ -68,8 +68,8 @@ export default function TouchpointsOverduePageClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Overdue Touchpoints</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Overdue Touchpoints</h1>
+        <p className="text-theme-dark text-lg">
           {allOverdueTouchpoints.length} touchpoint{allOverdueTouchpoints.length !== 1 ? "s" : ""} need your attention
         </p>
       </div>
@@ -101,7 +101,7 @@ export default function TouchpointsOverduePageClient() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-theme-darker">
                   Showing {startIndex + 1} to {Math.min(endIndex, allOverdueTouchpoints.length)} of{" "}
                   {allOverdueTouchpoints.length} touchpoints
                 </div>
@@ -114,7 +114,7 @@ export default function TouchpointsOverduePageClient() {
                   >
                     Previous
                   </Button>
-                  <span className="flex items-center px-4 text-sm text-gray-700">
+                  <span className="flex items-center px-4 text-sm text-theme-darker">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button

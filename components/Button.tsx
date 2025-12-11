@@ -32,26 +32,26 @@ export interface ButtonProps
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400",
+    "bg-blue-600 text-[#eeeeec] hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400",
   secondary:
-    "bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500 disabled:bg-gray-400",
+    "bg-theme-dark text-background hover:bg-theme-darker focus:ring-gray-500 disabled:bg-gray-400",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400",
+    "bg-red-600 text-[#eeeeec] hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400",
   success:
-    "bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 disabled:bg-emerald-400",
+    "bg-emerald-600 text-[#eeeeec] hover:bg-emerald-700 focus:ring-emerald-500 disabled:bg-emerald-400",
   outline:
-    "bg-transparent border-2 border-gray-600 text-gray-700 hover:bg-gray-50 focus:ring-gray-500 disabled:border-gray-300 disabled:text-gray-400",
+    "bg-transparent border-2 border-theme-dark text-theme-darker hover:bg-gray-50 focus:ring-gray-500 disabled:border-gray-300 disabled:text-gray-400",
   ghost:
-    "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-500 disabled:text-gray-400",
+    "bg-transparent text-theme-darker hover:bg-gray-100 focus:ring-gray-500 disabled:text-gray-400",
   link: "bg-transparent text-blue-600 hover:text-blue-700 underline focus:ring-blue-500 disabled:text-blue-400",
   "gradient-blue":
-    "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
+    "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
   "gradient-gray":
-    "bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
+    "bg-gradient-to-r from-gray-500 to-theme-dark hover:from-theme-dark hover:to-theme-darker text-background shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
   "gradient-green":
-    "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
+    "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
   "gradient-emerald":
-    "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
+    "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -76,7 +76,7 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const baseStyles =
-    "cursor-pointer inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    "cursor-pointer inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
   const variantStyle = variantStyles[variant];
   const sizeStyle = sizeStyles[size];

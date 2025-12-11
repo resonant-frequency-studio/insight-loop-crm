@@ -32,10 +32,10 @@ export default function DashboardPageClient({ userId, initialStats }: DashboardP
     <div className="space-y-6">
       {/* Header Section */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">
           Welcome back, {user?.displayName?.split(" ")[0] || "User"}!
         </h1>
-        <p className="text-gray-600 text-lg">
+        <p className="text-theme-dark text-lg">
           Here&apos;s what&apos;s happening with your contacts today
         </p>
       </div>

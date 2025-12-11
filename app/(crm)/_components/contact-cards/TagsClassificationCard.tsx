@@ -10,6 +10,7 @@ import SavingIndicator from "./SavingIndicator";
 import SegmentSelect from "../SegmentSelect";
 import { reportException } from "@/lib/error-reporting";
 import { useSavingState } from "@/contexts/SavingStateContext";
+import Input from "@/components/Input";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -143,7 +144,7 @@ export default function TagsClassificationCard({
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg
             className="w-5 h-5 text-gray-400"
             fill="none"
@@ -161,25 +162,24 @@ export default function TagsClassificationCard({
         </h2>
         <SavingIndicator status={saveStatus} />
       </div>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-theme-dark mb-4">
         Organize and categorize your contacts using tags, segments, and lead sources to better track relationships and tailor your communication strategies.
       </p>
       <div className="space-y-4">
         <div>
-          <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+          <label className="flex items-center gap-1.5 text-sm font-medium text-theme-darker mb-2">
             Tags
             <InfoPopover content="Tags are labels you can assign to contacts to organize and categorize them. Use tags to group contacts by characteristics like industry, role, project, or any custom classification that helps you manage your relationships." />
           </label>
-          <input
+          <Input
             id="contact-tags"
             name="contact-tags"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             value={tagsInput}
             onChange={handleTagsInputChange}
             onBlur={handleTagsBlur}
             placeholder="tag1, tag2, tag3"
           />
-          <p className="mt-2 text-xs text-gray-600">
+          <p className="mt-2 text-xs text-theme-dark">
             Enter tags separated by commas. Spaces within tags are allowed (e.g., &quot;School of Hard Knocks, Referral, VIP&quot;).
           </p>
           {tags.length > 0 && (
@@ -197,7 +197,7 @@ export default function TagsClassificationCard({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center gap-1.5 text-sm font-medium text-theme-darker mb-2">
               Segment
               <InfoPopover content="A segment categorizes contacts into distinct groups based on shared characteristics such as company size, industry, customer type, or market segment. This helps you tailor your communication and sales strategies to different groups." />
             </label>
@@ -211,13 +211,14 @@ export default function TagsClassificationCard({
             </div>
           </div>
           <div>
-            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center gap-1.5 text-sm font-medium text-theme-darker mb-2">
               Lead Source
               <InfoPopover content="The original source or channel where this contact was first acquired. This helps track which marketing channels or referral sources are most effective for your business." />
             </label>
-            <input
+            <Input
               type="text"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              id="contact-lead-source"
+              name="contact-lead-source"
               value={leadSource}
               onChange={(e) => setLeadSource(e.target.value)}
               onBlur={handleBlur}

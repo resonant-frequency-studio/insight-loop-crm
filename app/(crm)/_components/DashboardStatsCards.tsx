@@ -13,7 +13,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl shadow p-6 animate-pulse">
+          <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-24 mb-4" />
             <div className="h-8 bg-gray-200 rounded w-16 mb-1" />
             <div className="h-4 bg-gray-200 rounded w-32" />
@@ -28,7 +28,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
     // This shouldn't happen in production with prefetched data, but handle gracefully
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow p-6">
+        <div className="bg-[#EEEEEC] rounded-xl shadow p-6">
           <p className="text-gray-500">Loading stats...</p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function DashboardStatsCards({ userId, initialStats }: { userId: 
       fallback={
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl shadow p-6 animate-pulse">
+            <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-24 mb-4" />
               <div className="h-8 bg-gray-200 rounded w-16 mb-1" />
               <div className="h-4 bg-gray-200 rounded w-32" />

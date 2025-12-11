@@ -15,13 +15,13 @@ export default function RightColumnMetrics({ userId, initialStats }: RightColumn
     return (
       <div className="space-y-3">
         <Card className="p-4">
-          <div className="h-16 bg-gray-200 animate-pulse rounded" />
+          <div className="h-16 bg-card-highlight-light animate-pulse rounded" />
         </Card>
         <Card className="p-4">
-          <div className="h-16 bg-gray-200 animate-pulse rounded" />
+          <div className="h-16 bg-card-highlight-light animate-pulse rounded" />
         </Card>
         <Card className="p-4">
-          <div className="h-16 bg-gray-200 animate-pulse rounded" />
+          <div className="h-16 bg-card-highlight-light animate-pulse rounded" />
         </Card>
       </div>
     );
@@ -48,8 +48,8 @@ export default function RightColumnMetrics({ userId, initialStats }: RightColumn
             </svg>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Total Contacts</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalContacts.toLocaleString()}</p>
+            <p className="text-sm text-theme-dark">Total Contacts</p>
+            <p className="text-2xl font-bold text-theme-darkest">{stats.totalContacts.toLocaleString()}</p>
           </div>
         </div>
       </Card>
@@ -73,8 +73,8 @@ export default function RightColumnMetrics({ userId, initialStats }: RightColumn
             </svg>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Active Threads</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.contactsWithThreads.toLocaleString()}</p>
+            <p className="text-sm text-theme-dark">Active Threads</p>
+            <p className="text-2xl font-bold text-theme-darkest">{stats.contactsWithThreads.toLocaleString()}</p>
           </div>
         </div>
       </Card>
@@ -98,8 +98,8 @@ export default function RightColumnMetrics({ userId, initialStats }: RightColumn
             </svg>
           </div>
           <div>
-            <p className="text-sm text-gray-600">Avg Engagement</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.averageEngagementScore.toFixed(1)}</p>
+            <p className="text-sm text-theme-dark">Avg Engagement</p>
+            <p className="text-2xl font-bold text-theme-darkest">{stats.averageEngagementScore.toFixed(1)}</p>
           </div>
         </div>
       </Card>

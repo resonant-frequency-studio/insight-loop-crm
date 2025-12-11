@@ -21,7 +21,7 @@ export default function Checkbox({
         className={`w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 ${className}`}
       />
       {label && (
-        <span className="text-sm text-gray-700 select-none">{label}</span>
+        <span className="text-sm text-theme-darker select-none">{label}</span>
       )}
     </label>
   );

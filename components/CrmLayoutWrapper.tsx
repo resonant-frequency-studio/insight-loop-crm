@@ -11,6 +11,7 @@ import { Button } from "@/components/Button";
 import { appConfig } from "@/lib/app-config";
 import { reportException } from "@/lib/error-reporting";
 import { useSavingState } from "@/contexts/SavingStateContext";
+import ThemeToggle from "./ThemeToggle";
 
 export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -180,15 +181,14 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   
   // Helper to get link classes with disabled state styling
   const getLinkClasses = (isActive: boolean, isSaving: boolean) => {
-    const baseClasses = "flex items-center px-4 py-3 rounded-lg transition-colors duration-200 font-medium";
+    const baseClasses = "flex items-center px-4 py-3 rounded-md transition-colors duration-200 font-medium";
     if (isSaving) {
-      // Darker gray when saving - gray-600 on mobile (darker than normal gray-700), gray-500 on desktop (darker than normal gray-300)
-      return `${baseClasses} text-gray-600 xl:text-gray-500 cursor-not-allowed pointer-events-none`;
+      return `${baseClasses} text-[#8d8a85] cursor-not-allowed pointer-events-none`;
     }
     if (isActive) {
-      return `${baseClasses} bg-gray-200 xl:bg-gray-700 text-gray-900 xl:text-white`;
+      return `${baseClasses} bg-[#ebe7e4] xl:bg-[#333330] text-[#191919] xl:text-[#fafaf9]`;
     }
-    return `${baseClasses} text-gray-700 xl:text-gray-300 hover:bg-gray-100 xl:hover:bg-gray-700 hover:text-gray-900 xl:hover:text-white`;
+    return `${baseClasses} text-[#292927] xl:text-[#ebe7e4] hover:bg-[#ebe7e4] xl:hover:bg-[#333330] hover:text-[#191919] xl:hover:text-[#fafaf9]`;
   };
 
   return (
@@ -196,7 +196,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-[#fafaf9] focus:rounded-md focus:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         Skip to main content
       </a>
@@ -213,12 +213,12 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - Fixed on desktop, overlay on mobile */}
       <nav
-        className={`w-full xl:w-64 bg-white xl:bg-[#212B36] p-6 border-r border-gray-200 xl:border-gray-700 flex flex-col h-[calc(100vh-4rem)] xl:h-screen fixed right-0 xl:left-0 top-16 xl:top-0 z-50 transition-transform duration-500 ease-in-out ${
+        className={`w-full xl:w-64 bg-[#EEEEEC] xl:bg-[#191918] p-6 border-r border-theme-light flex flex-col h-[calc(100dvh-4rem)] xl:h-screen fixed right-0 xl:left-0 top-16 xl:top-0 z-50 transition-transform duration-500 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"
         }`}
       >
         {/* Title - Only show on desktop */}
-        <h2 className="hidden xl:block text-xl font-semibold mb-8 text-white">{appConfig.crmName}</h2>
+        <h2 className="hidden xl:block text-xl font-semibold mb-8 text-[#fafaf9]">{appConfig.crmName}</h2>
 
         {/* Scrollable menu content */}
         <div className="flex-1 overflow-y-auto -mx-6 px-6">
@@ -490,23 +490,23 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
           </li>
           </ul>
         </div>
-
+        <ThemeToggle />
         {/* User Profile and Sign Out - only show when user is loaded */}
         {showUserElements && (
           <div className="mt-auto space-y-3">
             {/* User Info Card */}
-            <div className="px-4 py-3 bg-gray-100 xl:bg-gray-700 rounded-lg">
+            <div className="px-4 py-3 bg-[#fafaf9] xl:bg-[#333330] rounded-md">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-300 xl:bg-gray-600 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-gray-900 xl:text-white font-semibold text-sm">
+                <div className="w-10 h-10 bg-gray-300 xl:bg-[#191918] rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-[#191919] xl:text-[#fafaf9] font-semibold text-sm">
                     {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-gray-900 xl:text-white font-medium text-sm truncate">
+                  <p className="text-[#191919] xl:text-[#fafaf9] font-medium text-sm truncate">
                     {user?.displayName || "User"}
                   </p>
-                  <p className="text-gray-600 xl:text-gray-400 text-xs truncate">
+                  <p className="text-[#8d8a85] text-xs truncate">
                     {user?.email}
                   </p>
                 </div>
@@ -520,7 +520,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               variant="secondary"
               size="sm"
               fullWidth
-              className="bg-gray-200 xl:bg-gray-700 hover:bg-gray-300 xl:hover:bg-gray-600 text-gray-900 xl:text-white"
+              className="bg-gray-200 xl:bg-[#333330] hover:bg-gray-300 xl:hover:bg-gray-600 text-[#191919] xl:text-[#fafaf9]"
               icon={
                 <svg
                   className="w-4 h-4"
@@ -544,7 +544,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Main content - Scrollable */}
-      <main id="main-content" className="flex-1 xl:ml-64 pt-20 xl:pt-10 px-6 xl:px-10 pb-6 xl:pb-10 bg-white text-gray-800 overflow-y-auto h-screen">
+      <main id="main-content" className="flex-1 xl:ml-64 pt-20 xl:pt-10 px-6 xl:px-10 pb-6 xl:pb-10 bg-background text-foreground overflow-y-auto h-screen">
         {children}
       </main>
     </div>

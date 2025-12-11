@@ -65,7 +65,7 @@ describe("DashboardCharts", () => {
   it("renders chart components with correct data", () => {
     const { container } = renderWithProviders(<DashboardCharts userId="user-1" />);
     // Charts should be rendered (check for chart containers)
-    const chartCards = container.querySelectorAll(".bg-white.rounded-xl");
+    const chartCards = container.querySelectorAll(".bg-card-light.rounded-xl");
     expect(chartCards.length).toBeGreaterThan(0);
   });
 });

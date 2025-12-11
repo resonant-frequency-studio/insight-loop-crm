@@ -19,9 +19,9 @@ const renderTooltip = (props: any) => {
     const data = payload[0];
     if (!data) return null;
     return (
-      <div className="bg-white p-2 xl:p-3 border border-gray-200 rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-900 text-xs xl:text-sm">{data.payload?.name || "Unknown"}</p>
-        <p className="text-xs text-gray-600">{data.value || 0} contacts</p>
+      <div className="bg-[#EEEEEC] p-2 xl:p-3 border border-gray-200 rounded-md shadow-lg">
+        <p className="font-semibold text-theme-darkest text-xs xl:text-sm">{data.payload?.name || "Unknown"}</p>
+        <p className="text-xs text-theme-dark">{data.value || 0} contacts</p>
       </div>
     );
   }

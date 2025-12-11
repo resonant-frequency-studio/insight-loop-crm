@@ -131,7 +131,7 @@ export default function NextTouchpointCard({
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg
             className="w-5 h-5 text-gray-400"
             fill="none"
@@ -149,18 +149,18 @@ export default function NextTouchpointCard({
         </h2>
         <SavingIndicator status={saveStatus} />
       </div>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-theme-dark mb-4">
         Schedule and plan your next interaction with this contact. Set a date and add notes about what to discuss to maintain consistent, meaningful engagement.
       </p>
       <div className="space-y-4">
         <div>
-          <label htmlFor="next-touchpoint-date" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="next-touchpoint-date" className="block text-sm font-medium text-theme-darker mb-2">
             Date
           </label>
           <input
             id="next-touchpoint-date"
             type="date"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             value={nextTouchpointDate}
             onChange={(e) => {
               const dateValue = e.target.value;
@@ -174,7 +174,7 @@ export default function NextTouchpointCard({
           />
         </div>
         <div>
-          <label htmlFor="next-touchpoint-message" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="next-touchpoint-message" className="block text-sm font-medium text-theme-darker mb-2">
             Message
           </label>
           <Textarea
@@ -209,11 +209,11 @@ export default function NextTouchpointCard({
             </p>
           )}
           {contact.touchpointStatusReason && (
-            <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="mt-3 p-3 bg-theme-lighter border border-gray-200 rounded-md">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
                 {contact.touchpointStatus === "completed" ? "Note" : "Reason"}
               </p>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-theme-darker">
                 {contact.touchpointStatusReason}
               </p>
             </div>

@@ -14,7 +14,7 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
   if (isLoading || !counts) {
     return (
       <Card className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Pipeline Snapshot</h3>
+        <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-20 bg-gray-200 animate-pulse rounded" />
@@ -43,7 +43,7 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
   if (topSegments.length === 0) {
     return (
       <Card className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Pipeline Snapshot</h3>
+        <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
         <p className="text-sm text-gray-500">No segments found</p>
       </Card>
     );
@@ -51,13 +51,13 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Pipeline Snapshot</h3>
+      <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
       <div className="grid grid-cols-2 gap-3">
         {topSegments.map(([segment, count], index) => (
           <Link
             key={segment}
             href={`/contacts?segment=${encodeURIComponent(segment)}`}
-            className={`p-3 rounded-lg border-2 ${getSegmentColor(index)} hover:opacity-80 transition-opacity`}
+            className={`p-3 rounded-md border-2 ${getSegmentColor(index)} hover:opacity-80 transition-opacity`}
           >
             <p className="text-xs font-medium mb-1 truncate">{segment}</p>
             <p className="text-2xl font-bold">{count.toLocaleString()}</p>

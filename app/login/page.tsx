@@ -76,18 +76,18 @@ function LoginContent() {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-4xl font-bold text-theme-darkest mb-3">
             {appConfig.crmName}
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-theme-dark text-lg">
             Manage your contacts and relationships with ease
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-[#EEEEEC] rounded-2xl shadow-xl p-8 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-2xl font-semibold text-theme-darkest mb-2">
               Welcome back
             </h2>
             <p className="text-gray-500">
@@ -96,7 +96,7 @@ function LoginContent() {
           </div>
 
           {expired && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
               <p className="text-sm text-amber-800">
                 Your session has expired. Please sign in again.
               </p>
@@ -137,8 +137,8 @@ function LoginContent() {
 
         {/* Features Section */}
         <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="p-4 bg-white/60 backdrop-blur-sm rounded-xl">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+          <div className="p-4 bg-[#EEEEEC]/60 backdrop-blur-sm rounded-xl">
+            <div className="w-10 h-10 bg-blue-100 rounded-md flex items-center justify-center mx-auto mb-2">
               <svg
                 className="w-6 h-6 text-blue-600"
                 fill="none"
@@ -153,10 +153,10 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-gray-700">Contacts</p>
+            <p className="text-xs font-medium text-theme-darker">Contacts</p>
           </div>
-          <div className="p-4 bg-white/60 backdrop-blur-sm rounded-xl">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+          <div className="p-4 bg-[#EEEEEC]/60 backdrop-blur-sm rounded-xl">
+            <div className="w-10 h-10 bg-green-100 rounded-md flex items-center justify-center mx-auto mb-2">
               <svg
                 className="w-6 h-6 text-green-600"
                 fill="none"
@@ -171,10 +171,10 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-gray-700">Gmail Sync</p>
+            <p className="text-xs font-medium text-theme-darker">Gmail Sync</p>
           </div>
-          <div className="p-4 bg-white/60 backdrop-blur-sm rounded-xl">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+          <div className="p-4 bg-[#EEEEEC]/60 backdrop-blur-sm rounded-xl">
+            <div className="w-10 h-10 bg-purple-100 rounded-md flex items-center justify-center mx-auto mb-2">
               <svg
                 className="w-6 h-6 text-purple-600"
                 fill="none"
@@ -189,7 +189,7 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-gray-700">AI Insights</p>
+            <p className="text-xs font-medium text-theme-darker">AI Insights</p>
           </div>
         </div>
       </div>
@@ -201,7 +201,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-radial from-neutral-200 via-neutral-100 to-blue-100 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-theme-dark">Loading...</div>
       </div>
     }>
       <LoginContent />

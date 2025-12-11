@@ -81,8 +81,8 @@ export default function CleanupTouchpointsPage() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Cleanup Old Touchpoints</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Cleanup Old Touchpoints</h1>
+        <p className="text-theme-dark text-lg">
           One-time script to skip touchpoints overdue by more than 120 days
         </p>
       </div>
@@ -115,8 +115,8 @@ export default function CleanupTouchpointsPage() {
       <Card padding="md">
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">What this does:</h2>
-            <ul className="list-disc list-inside space-y-1 text-gray-700">
+            <h2 className="text-xl font-semibold text-theme-darkest mb-2">What this does:</h2>
+            <ul className="list-disc list-inside space-y-1 text-theme-darker">
               <li>Finds all contacts with touchpoints overdue by more than 120 days</li>
               <li>Only updates touchpoints that are still &quot;pending&quot; (not already completed/cancelled)</li>
               <li>Sets status to &quot;cancelled&quot; (Skip Touchpoint) with an auto-generated reason</li>
@@ -183,11 +183,11 @@ export default function CleanupTouchpointsPage() {
             </div>
 
             {result.stats && (
-              <div className="bg-white rounded-lg p-4 space-y-2">
+              <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500">Total Contacts Checked</p>
-                    <p className="text-lg font-bold text-gray-900">{result.stats.totalChecked}</p>
+                    <p className="text-lg font-bold text-theme-darkest">{result.stats.totalChecked}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Old Touchpoints Found</p>
@@ -205,7 +205,7 @@ export default function CleanupTouchpointsPage() {
 
                 {result.stats.errorsDetails && result.stats.errorsDetails.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-700 mb-2">Error Details:</p>
+                    <p className="text-xs font-medium text-theme-darker mb-2">Error Details:</p>
                     <ul className="text-xs text-red-600 space-y-1">
                       {result.stats.errorsDetails.map((err, idx) => (
                         <li key={idx} className="font-mono">{err}</li>

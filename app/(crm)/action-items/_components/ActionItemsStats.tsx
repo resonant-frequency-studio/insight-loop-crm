@@ -19,7 +19,7 @@ export default function ActionItemsStats({
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card padding="md">
         <p className="text-sm font-medium text-gray-500 mb-1">Total</p>
-        <p className="text-2xl font-bold text-gray-900">{total}</p>
+        <p className="text-2xl font-bold text-theme-darkest">{total}</p>
       </Card>
       <Card padding="md">
         <p className="text-sm font-medium text-gray-500 mb-1">Pending</p>

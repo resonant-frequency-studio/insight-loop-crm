@@ -14,7 +14,7 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
   if (isLoading || !counts) {
     return (
       <Card className="p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Saved Segments</h3>
+        <h3 className="text-lg font-semibold text-theme-darkest mb-4">Saved Segments</h3>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 bg-gray-200 animate-pulse rounded" />
@@ -35,17 +35,17 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Saved Segments</h3>
+      <h3 className="text-lg font-semibold text-theme-darkest mb-4">Saved Segments</h3>
       <div className="space-y-2">
         {topSegments.map(([segment, count]) => (
           <Link
             key={segment}
             href={`/contacts?segment=${encodeURIComponent(segment)}`}
-            className="block p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            className="block p-3 rounded-md border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">{segment}</span>
-              <span className="text-sm text-gray-600">({count})</span>
+              <span className="text-sm font-medium text-theme-darkest">{segment}</span>
+              <span className="text-sm text-theme-dark">({count})</span>
             </div>
           </Link>
         ))}

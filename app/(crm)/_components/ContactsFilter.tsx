@@ -79,7 +79,7 @@ export default function ContactsFilter({
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Filters & Search</h2>
+        <h2 className="text-lg font-semibold text-theme-darkest">Filters & Search</h2>
         {hasActiveFilters && (
           <Button
             onClick={onClearFilters}
@@ -96,7 +96,7 @@ export default function ContactsFilter({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         {/* Email Search */}
         <div>
-          <label htmlFor="email-search" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="email-search" className="block text-sm font-medium text-theme-darker mb-2">
             Search by Email
           </label>
           <Input
@@ -110,7 +110,7 @@ export default function ContactsFilter({
 
         {/* Last Name Search */}
         <div>
-          <label htmlFor="last-name-search" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="last-name-search" className="block text-sm font-medium text-theme-darker mb-2">
             Search by Last Name
           </label>
           <Input
@@ -124,7 +124,7 @@ export default function ContactsFilter({
 
         {/* First Name Search */}
         <div>
-          <label htmlFor="first-name-search" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="first-name-search" className="block text-sm font-medium text-theme-darker mb-2">
             Search by First Name
           </label>
           <Input
@@ -138,7 +138,7 @@ export default function ContactsFilter({
 
         {/* Company Search */}
         <div>
-          <label htmlFor="company-search" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="company-search" className="block text-sm font-medium text-theme-darker mb-2">
             Search by Company
           </label>
           <Input
@@ -155,7 +155,7 @@ export default function ContactsFilter({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Segment Filter */}
         <div>
-          <label htmlFor="segment-filter" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="segment-filter" className="block text-sm font-medium text-theme-darker mb-2">
             Filter by Segment
           </label>
           <Select
@@ -173,7 +173,7 @@ export default function ContactsFilter({
         {/* Custom Filters (At-Risk, Warm) */}
         {onCustomFilterChange && (
           <div>
-            <label htmlFor="quick-filters" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="quick-filters" className="block text-sm font-medium text-theme-darker mb-2">
               Quick Filters
             </label>
             <Select
@@ -196,7 +196,7 @@ export default function ContactsFilter({
           {/* Tags Filter - Searchable Multi-Select */}
           {uniqueTags.length > 0 && (
             <div>
-              <label htmlFor="tag-search" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="tag-search" className="block text-sm font-medium text-theme-darker mb-2">
                 Filter by Tags
               </label>
               
@@ -225,7 +225,7 @@ export default function ContactsFilter({
                       aria-hidden="true"
                     />
                     <div 
-                      className="absolute z-20 w-full top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
                       role="listbox"
                     >
                       {uniqueTags
@@ -243,7 +243,7 @@ export default function ContactsFilter({
                             }}
                             variant="ghost"
                             size="sm"
-                            className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 justify-start"
+                            className="w-full text-left px-4 py-2 hover:bg-theme-darker hover:text-theme-lightest text-sm text-theme-darker justify-start"
                             role="option"
                             aria-selected="false"
                           >
@@ -269,7 +269,7 @@ export default function ContactsFilter({
                   {selectedTags.map(tag => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium"
                     >
                       {tag}
                       <Button

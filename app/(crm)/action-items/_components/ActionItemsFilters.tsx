@@ -29,7 +29,7 @@ export default function ActionItemsFilters({
     <Card padding="md">
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[200px]">
-          <label htmlFor="filter-status" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="filter-status" className="block text-sm font-medium text-theme-darker mb-2">
             Filter by Status
           </label>
           <Select
@@ -43,7 +43,7 @@ export default function ActionItemsFilters({
           </Select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label htmlFor="filter-date" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="filter-date" className="block text-sm font-medium text-theme-darker mb-2">
             Filter by Date
           </label>
           <Select
@@ -59,7 +59,7 @@ export default function ActionItemsFilters({
           </Select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label htmlFor="filter-contact" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="filter-contact" className="block text-sm font-medium text-theme-darker mb-2">
             Filter by Contact
           </label>
           <Select

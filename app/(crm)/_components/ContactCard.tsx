@@ -48,44 +48,11 @@ export default function ContactCard({
       case "selected":
         return "ring-2 ring-blue-500 bg-blue-50";
       case "touchpoint-upcoming":
-        return needsReminder ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-200";
+        return needsReminder ? "bg-card-upcoming border border-card-upcoming-dark" : "border border-theme-light";
       case "touchpoint-overdue":
-        return "bg-red-50 border border-red-200";
+        return "bg-card-overdue border border-card-overdue-dark";
       default:
-        return "bg-gray-50 border border-gray-200";
-    }
-  };
-
-  const getAvatarStyles = () => {
-    switch (variant) {
-      case "touchpoint-overdue":
-        return "bg-linear-to-br from-red-600 to-red-700";
-      case "touchpoint-upcoming":
-        return "bg-linear-to-br from-gray-600 to-gray-700";
-      default:
-        return "bg-linear-to-br from-blue-500 to-purple-600";
-    }
-  };
-
-  const getTextColor = () => {
-    switch (variant) {
-      case "touchpoint-overdue":
-        return "text-red-900";
-      case "touchpoint-upcoming":
-        return "text-gray-900";
-      default:
-        return "text-gray-900";
-    }
-  };
-
-  const getEmailColor = () => {
-    switch (variant) {
-      case "touchpoint-overdue":
-        return "text-red-600";
-      case "touchpoint-upcoming":
-        return "text-gray-600";
-      default:
-        return "text-gray-500";
+        return "border border-theme-light";
     }
   };
 
@@ -103,7 +70,7 @@ export default function ContactCard({
 
   return (
     <div
-      className={`rounded-lg p-4 transition-all duration-200 ${
+      className={`rounded-md p-4 transition-all duration-200 ${
         isSelected ? "ring-2 ring-blue-500 bg-blue-50" : getVariantStyles()
       }`}
     >
@@ -130,7 +97,7 @@ export default function ContactCard({
             <div className="flex items-start gap-3">
               {/* Avatar */}
               <div className="shrink-0">
-                <div className={`w-10 h-10 ${getAvatarStyles()} rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm bg-linear-to-br from-blue-500 to-purple-600`}>
                   {getInitials(contact)}
                 </div>
               </div>
@@ -138,29 +105,29 @@ export default function ContactCard({
               {/* Contact Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1">
-                  <h3 className={`text-sm font-semibold group-hover:text-gray-700 transition-colors ${getTextColor()} break-words`}>
+                  <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors text-theme-darkest wrap-break-word`}>
                     {getDisplayName(contact)}
                   </h3>
                   {/* Touchpoint Date Badges */}
                   {isTouchpointVariant && (
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
                       {variant === "touchpoint-upcoming" && needsReminder && (
-                        <span className="px-2 py-0.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-md whitespace-nowrap">
                           Due Soon
                         </span>
                       )}
                       {variant === "touchpoint-overdue" && (
-                        <span className="px-2 py-0.5 text-xs font-medium text-red-700 bg-red-100 rounded-md whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-md whitespace-nowrap">
                           Overdue
                         </span>
                       )}
                       {formatTouchpointDate() && (
                         <span className={`text-xs font-medium px-2 py-1 rounded-md whitespace-nowrap ${
                           variant === "touchpoint-overdue"
-                            ? "text-red-700 bg-red-100"
+                            ? "text-theme-darker border border-theme-medium"
                             : daysUntil !== null && daysUntil !== undefined && daysUntil <= 3
-                            ? "text-amber-700 bg-amber-100"
-                            : "text-gray-700 bg-gray-200"
+                            ? "text-theme-darker border border-theme-medium"
+                            : "text-theme-darker border border-theme-medium"
                         }`}>
                           {formatTouchpointDate()}
                         </span>
@@ -168,7 +135,7 @@ export default function ContactCard({
                     </div>
                   )}
                 </div>
-                <p className={`text-xs truncate mb-2 ${getEmailColor()}`}>
+                <p className={`text-xs truncate mb-2 text-theme-dark`}>
                   {contact.primaryEmail}
                 </p>
 
@@ -217,7 +184,7 @@ export default function ContactCard({
                 {/* Segment and Tags - Mobile: show below */}
                 <div className="flex flex-wrap items-center gap-1.5 mt-1.5 xl:hidden">
                   {contact.segment && (
-                    <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">
+                    <span className="px-2 py-0.5 text-xs font-medium bg-theme-darkest text-theme-lightest rounded">
                       {contact.segment}
                     </span>
                   )}
@@ -245,7 +212,7 @@ export default function ContactCard({
               {/* Segment and Tags - Desktop: show on right */}
               <div className={`hidden xl:flex ${isTouchpointVariant ? 'items-center' : 'flex-col items-end'} gap-2 shrink-0 ${isTouchpointVariant ? 'ml-2' : 'max-w-[250px]'}`}>
                 {contact.segment && (
-                  <span className={`px-2 ${isTouchpointVariant ? 'py-1' : 'py-1'} text-xs font-medium bg-gray-100 text-gray-700 rounded whitespace-nowrap`}>
+                  <span className={`px-2 py-1 text-xs font-medium text-theme-medium rounded whitespace-nowrap border border-theme-medium`}>
                     {contact.segment}
                   </span>
                 )}
@@ -293,13 +260,7 @@ export default function ContactCard({
           {/* Touchpoint Message - Outside Link to span full width */}
           {isTouchpointVariant && contact.nextTouchpointMessage && (
             <div className="w-full mt-2 mb-3">
-              <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block break-words ${
-                variant === "touchpoint-overdue"
-                  ? "text-red-900 bg-red-100"
-                  : needsReminder
-                  ? "text-amber-900 bg-amber-100"
-                  : "text-gray-900 bg-gray-100"
-              }`}>
+              <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block wrap-break-word`}>
                 {contact.nextTouchpointMessage}
               </p>
             </div>

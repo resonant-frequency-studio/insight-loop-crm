@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import Card from "@/components/Card";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
@@ -16,12 +16,15 @@ interface ActionItemsListSectionProps {
   actionItems: EnrichedActionItem[];
 }
 
+const ITEMS_PER_PAGE = 20;
+
 export default function ActionItemsListSection({
   actionItems,
 }: ActionItemsListSectionProps) {
   const updateActionItemMutation = useUpdateActionItem();
   const deleteActionItemMutation = useDeleteActionItem();
   const { filterStatus, filterDate, selectedContactId } = useActionItemsFilters();
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Local state for checkbox status - UI/UX source of truth
   const [checkboxStates, setCheckboxStates] = useState<
@@ -189,7 +192,8 @@ export default function ActionItemsListSection({
     setItemToDelete(null);
   };
 
-  const filteredItems = actionItems.filter((item) => {
+  const filteredItems = useMemo(() => {
+    return actionItems.filter((item) => {
     // Hide items that are deleted (unless they have an error - then show them with error)
     const deletedState = deletedItems.get(item.actionItemId);
     if (deletedState && !deletedState.error) {
@@ -218,7 +222,21 @@ export default function ActionItemsListSection({
     }
 
     return true;
-  });
+    });
+  }, [actionItems, filterStatus, filterDate, selectedContactId, deletedItems]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setTimeout(() => {
+      setCurrentPage(1);
+    }, 0);
+  }, [filterStatus, filterDate, selectedContactId]);
+
+  // Paginate filtered items
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
   return (
     <>
@@ -229,7 +247,7 @@ export default function ActionItemsListSection({
         title="Delete Action Item"
         closeOnBackdropClick={!deleteActionItemMutation.isPending}
       >
-        <p className="text-gray-600 mb-6">
+        <p className="text-theme-dark mb-6">
           Are you sure you want to delete this action item? This action cannot be undone.
         </p>
         <div className="flex gap-3 justify-end">
@@ -260,7 +278,7 @@ export default function ActionItemsListSection({
               <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse" />
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
+                  <div key={i} className="bg-gray-50 rounded-md p-4 animate-pulse">
                     <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
                     <div className="h-4 bg-gray-200 rounded w-1/2" />
                   </div>
@@ -269,14 +287,15 @@ export default function ActionItemsListSection({
             </div>
           }
         >
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-theme-darkest mb-4">
             {filteredItems.length} Action Item{filteredItems.length !== 1 ? "s" : ""}
           </h2>
           {filteredItems.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No action items match your filters</p>
           ) : (
-            <div className="space-y-3">
-              {filteredItems.map((item) => {
+            <>
+              <div className="space-y-3">
+                {paginatedItems.map((item) => {
                 const checkboxState = checkboxStates.get(item.actionItemId);
                 const isCompleted = checkboxState?.isCompleted ?? item.status === "completed";
                 const checkboxError = checkboxState?.error;
@@ -374,7 +393,39 @@ export default function ActionItemsListSection({
                   </div>
                 );
               })}
-            </div>
+              </div>
+
+              {/* Pagination */}
+              {filteredItems.length > ITEMS_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4 mt-4">
+                  <div className="text-sm text-theme-darker">
+                    Showing {startIndex + 1} to {Math.min(endIndex, filteredItems.length)} of{" "}
+                    {filteredItems.length} {filteredItems.length === 1 ? "action item" : "action items"}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
+                    <span className="flex items-center px-4 text-sm text-theme-darker">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </Suspense>
       </Card>
