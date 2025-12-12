@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
+import ThemedSuspense from "@/components/ThemedSuspense";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
@@ -96,8 +97,7 @@ export default function SyncPageClient({
           onClick={handleManualSync}
           disabled={syncing}
           loading={syncing}
-          variant="gradient-blue"
-          size="md"
+          size="sm"
           icon={
             <svg
               className="w-5 h-5"
@@ -149,7 +149,7 @@ export default function SyncPageClient({
       )}
 
       {/* Sync Data - Only dynamic data is suspended */}
-      <Suspense
+      <ThemedSuspense
         fallback={
           <div className="space-y-8">
             <Card padding="md" className="animate-pulse">
@@ -202,7 +202,7 @@ export default function SyncPageClient({
               )}
             </div>
             {lastSync.errorMessage && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-sm">
                 <p className="text-sm text-red-800">
                   <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
                 </p>
@@ -221,7 +221,7 @@ export default function SyncPageClient({
               {syncHistory.map((job) => (
                 <div
                   key={job.syncJobId}
-                  className="flex items-center justify-between p-4 bg-card-highlight-light rounded-md hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-4 bg-card-highlight-light rounded-sm"
                 >
                   <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
@@ -258,7 +258,7 @@ export default function SyncPageClient({
             </div>
           )}
         </Card>
-      </Suspense>
+      </ThemedSuspense>
     </div>
   );
 }

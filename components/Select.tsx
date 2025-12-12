@@ -69,7 +69,7 @@ export default function Select({ children, className = "", value, onChange, ...p
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2 pr-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-foreground text-left flex items-center justify-between ${className}`}
+        className={`w-full px-4 py-2 pr-3 border border-theme-darker rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-foreground text-left flex items-center justify-between ${className}`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -98,7 +98,7 @@ export default function Select({ children, className = "", value, onChange, ...p
             aria-hidden="true"
           />
           <div 
-            className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+            className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-sm shadow-lg max-h-60 overflow-y-auto"
             role="listbox"
           >
             {options.map((option, index) => {
@@ -109,7 +109,7 @@ export default function Select({ children, className = "", value, onChange, ...p
                   key={index}
                   type="button"
                   onClick={() => handleOptionClick(optionValue)}
-                  className={`w-full text-left px-4 py-2 text-sm text-foreground rounded-md hover:bg-theme-darker hover:text-theme-lightest transition-colors ${
+                  className={`w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-theme-darker hover:text-theme-lightest transition-colors ${
                     isSelected ? 'bg-theme-darker text-theme-lightest font-bold' : ''
                   }`}
                   role="option"

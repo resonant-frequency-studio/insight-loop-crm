@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
@@ -24,13 +24,13 @@ export default function StatCard({ userId, title, description, icon, iconBgColor
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</h3>
-        <div className={`w-10 h-10 ${iconBgColor} rounded-md flex items-center justify-center`}>
+        <div className={`w-10 h-10 ${iconBgColor} rounded-sm flex items-center justify-center`}>
           {icon}
         </div>
       </div>
-      <Suspense fallback={<div className="h-8 w-16 bg-gray-200 rounded mb-1 animate-pulse" />}>
+      <ThemedSuspense variant="simple">
         <StatValue userId={userId} getValue={getValue} />
-      </Suspense>
+      </ThemedSuspense>
       <p className="text-sm text-gray-500">{description}</p>
     </Card>
   );

@@ -151,7 +151,7 @@ export default function MigrateActionItemsPage() {
             <h2 className="text-xl font-semibold text-theme-darkest mb-2">Migration Options</h2>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-sm">
             <input
               type="checkbox"
               id="dryRun"
@@ -165,7 +165,7 @@ export default function MigrateActionItemsPage() {
             </label>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-sm">
             <input
               type="checkbox"
               id="clearOldField"
@@ -291,9 +291,9 @@ export default function MigrateActionItemsPage() {
               </h3>
             </div>
 
-            <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
+            <div className="bg-[#EEEEEC] rounded-sm p-4 space-y-2">
               {result.summary && (
-                <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <div className="mb-4 p-3 bg-blue-50 rounded-sm border border-blue-200">
                   <p className="text-xs font-medium text-blue-900 mb-2">Database Summary:</p>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>

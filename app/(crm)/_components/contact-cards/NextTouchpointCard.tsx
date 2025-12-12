@@ -160,7 +160,7 @@ export default function NextTouchpointCard({
           <input
             id="next-touchpoint-date"
             type="date"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            className="w-full px-4 py-2 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
             value={nextTouchpointDate}
             onChange={(e) => {
               const dateValue = e.target.value;
@@ -209,7 +209,7 @@ export default function NextTouchpointCard({
             </p>
           )}
           {contact.touchpointStatusReason && (
-            <div className="mt-3 p-3 bg-theme-lighter border border-gray-200 rounded-md">
+            <div className="mt-3 p-3 bg-theme-lighter border border-gray-200 rounded-sm">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
                 {contact.touchpointStatus === "completed" ? "Note" : "Reason"}
               </p>

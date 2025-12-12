@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import ContactsPageClient from "../ContactsPageClient";
 import { useContacts } from "@/hooks/useContacts";
 import { 
@@ -7,7 +7,7 @@ import {
   useBulkUpdateTags,
   useBulkUpdateCompanies 
 } from "@/hooks/useContactMutations";
-import { createMockContact } from "@/components/__tests__/test-utils";
+import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 
 // Mock hooks
 jest.mock("@/hooks/useContacts");
@@ -60,27 +60,50 @@ describe("ContactsPageClient - Bulk Company Update", () => {
   ];
 
   const mockMutate = jest.fn();
-  const mockBulkCompanyMutation = {
-    mutate: mockMutate,
-    isPending: false,
-  };
+  const mockMutateAsync = jest.fn();
+  const mockBulkCompanyMutation = createMockUseMutationResult<
+    { success: number; errors: number; errorDetails: string[] },
+    Error,
+    { contactIds: string[]; company: string | null },
+    unknown
+  >(mockMutate, mockMutateAsync, false);
 
-  const defaultMutationMock = {
-    mutate: jest.fn(),
-    isPending: false,
-  };
+  const archiveMutate = jest.fn();
+  const archiveMutateAsync = jest.fn();
+  const archiveMutationMock = createMockUseMutationResult<
+    { success: number; errors: number; errorDetails: string[] },
+    Error,
+    { contactIds: string[]; archived: boolean },
+    unknown
+  >(archiveMutate, archiveMutateAsync, false);
+
+  const segmentMutate = jest.fn();
+  const segmentMutateAsync = jest.fn();
+  const segmentMutationMock = createMockUseMutationResult<
+    { success: number; errors: number; errorDetails: string[] },
+    Error,
+    { contactIds: string[]; segment: string | null },
+    unknown
+  >(segmentMutate, segmentMutateAsync, false);
+
+  const tagsMutate = jest.fn();
+  const tagsMutateAsync = jest.fn();
+  const tagsMutationMock = createMockUseMutationResult<
+    { success: number; errors: number; errorDetails: string[] },
+    Error,
+    { contactIds: string[]; tags: string[] },
+    unknown
+  >(tagsMutate, tagsMutateAsync, false);
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseContacts.mockReturnValue({
-      data: mockContacts,
-      isLoading: false,
-      error: null,
-    } as any);
-    mockUseBulkArchiveContacts.mockReturnValue(defaultMutationMock as any);
-    mockUseBulkUpdateSegments.mockReturnValue(defaultMutationMock as any);
-    mockUseBulkUpdateTags.mockReturnValue(defaultMutationMock as any);
-    mockUseBulkUpdateCompanies.mockReturnValue(mockBulkCompanyMutation as any);
+    mockUseContacts.mockReturnValue(
+      createMockUseQueryResult<typeof mockContacts, Error>(mockContacts, false, null)
+    );
+    mockUseBulkArchiveContacts.mockReturnValue(archiveMutationMock);
+    mockUseBulkUpdateSegments.mockReturnValue(segmentMutationMock);
+    mockUseBulkUpdateTags.mockReturnValue(tagsMutationMock);
+    mockUseBulkUpdateCompanies.mockReturnValue(mockBulkCompanyMutation);
   });
 
   describe("Bulk Company Action", () => {
@@ -113,7 +136,6 @@ describe("ContactsPageClient - Bulk Company Update", () => {
     });
 
     it("should handle successful bulk company update", async () => {
-      const mockOnSuccess = jest.fn();
       mockMutate.mockImplementation((params, callbacks) => {
         if (callbacks?.onSuccess) {
           callbacks.onSuccess({ success: 2, errors: 0, errorDetails: [] });
@@ -127,7 +149,6 @@ describe("ContactsPageClient - Bulk Company Update", () => {
     });
 
     it("should handle errors in bulk company update", async () => {
-      const mockOnError = jest.fn();
       mockMutate.mockImplementation((params, callbacks) => {
         if (callbacks?.onError) {
           callbacks.onError(new Error("Update failed"));
@@ -175,11 +196,13 @@ describe("ContactsPageClient - Bulk Company Update", () => {
 
   describe("Modal Behavior", () => {
     it("should show loading state during mutation", () => {
-      const loadingMutation = {
-        ...mockBulkCompanyMutation,
-        isPending: true,
-      };
-      mockUseBulkUpdateCompanies.mockReturnValue(loadingMutation as any);
+      const loadingMutation = createMockUseMutationResult<
+        { success: number; errors: number; errorDetails: string[] },
+        Error,
+        { contactIds: string[]; company: string | null },
+        unknown
+      >(mockMutate, mockMutateAsync, true);
+      mockUseBulkUpdateCompanies.mockReturnValue(loadingMutation);
 
       render(<ContactsPageClient userId={mockUserId} />);
       

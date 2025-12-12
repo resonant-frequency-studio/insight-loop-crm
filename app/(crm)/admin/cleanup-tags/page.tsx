@@ -208,15 +208,15 @@ export default function CleanupTagsPage() {
           </Button>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center p-4 bg-gray-50 rounded-md">
+          <div className="text-center p-4 bg-gray-50 rounded-sm">
             <div className="text-2xl font-bold text-theme-darkest">{tags.length}</div>
             <div className="text-sm text-theme-dark">Total Tags</div>
           </div>
-          <div className="text-center p-4 bg-blue-50 rounded-md">
+          <div className="text-center p-4 bg-blue-50 rounded-sm">
             <div className="text-2xl font-bold text-blue-900">{usedTags.length}</div>
             <div className="text-sm text-blue-600">In Use</div>
           </div>
-          <div className="text-center p-4 bg-red-50 rounded-md">
+          <div className="text-center p-4 bg-red-50 rounded-sm">
             <div className="text-2xl font-bold text-red-900">{unusedTags.length}</div>
             <div className="text-sm text-red-600">Unused</div>
           </div>
@@ -259,7 +259,7 @@ export default function CleanupTagsPage() {
                   <button
                     key={tagUsage.tag}
                     onClick={() => toggleTag(tagUsage.tag)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
                       selectedTags.has(tagUsage.tag)
                         ? "bg-red-100 text-red-800 border-2 border-red-300"
                         : "bg-gray-100 text-theme-darker border-2 border-transparent hover:bg-gray-200"
@@ -283,7 +283,7 @@ export default function CleanupTagsPage() {
                   <button
                     key={tagUsage.tag}
                     onClick={() => toggleTag(tagUsage.tag)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
                       selectedTags.has(tagUsage.tag)
                         ? "bg-red-100 text-red-800 border-2 border-red-300"
                         : "bg-blue-50 text-blue-700 border-2 border-transparent hover:bg-blue-100"

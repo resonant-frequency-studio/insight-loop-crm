@@ -183,7 +183,7 @@ export default function CleanupTouchpointsPage() {
             </div>
 
             {result.stats && (
-              <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
+              <div className="bg-[#EEEEEC] rounded-sm p-4 space-y-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500">Total Contacts Checked</p>

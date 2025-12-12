@@ -118,7 +118,7 @@ export default function CleanupActionItemsPage() {
           </div>
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-sm">
               <p className="text-red-800 font-semibold">Error</p>
               <p className="text-red-700">{error}</p>
             </div>
@@ -127,7 +127,7 @@ export default function CleanupActionItemsPage() {
           {result && (
             <div className="mt-4 space-y-4">
               <div
-                className={`p-4 rounded-md border ${
+                className={`p-4 rounded-sm border ${
                   result.success
                     ? "bg-green-50 border-green-200"
                     : "bg-red-50 border-red-200"
@@ -148,7 +148,7 @@ export default function CleanupActionItemsPage() {
               </div>
 
               {result.stats && (
-                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <div className="bg-gray-50 p-4 rounded-sm border border-gray-200">
                   <h3 className="font-semibold text-theme-darkest mb-3">Statistics</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

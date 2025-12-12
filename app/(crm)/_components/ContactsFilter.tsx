@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 import Select from "@/components/Select";
 import Input from "@/components/Input";
 import Checkbox from "@/components/Checkbox";
+import { useContactsFilter } from "../contacts/_components/ContactsFilterContext";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -14,45 +15,28 @@ interface ContactWithId extends Contact {
 
 interface ContactsFilterProps {
   contacts: ContactWithId[];
-  selectedSegment: string;
-  selectedTags: string[];
-  emailSearch: string;
-  firstNameSearch: string;
-  lastNameSearch: string;
-  companySearch: string;
-  showArchived: boolean;
-  customFilter?: "at-risk" | "warm" | null;
-  onSegmentChange: (segment: string) => void;
-  onTagsChange: (tags: string[]) => void;
-  onEmailSearchChange: (email: string) => void;
-  onFirstNameSearchChange: (firstName: string) => void;
-  onLastNameSearchChange: (lastName: string) => void;
-  onCompanySearchChange: (company: string) => void;
-  onShowArchivedChange: (show: boolean) => void;
-  onCustomFilterChange?: (filter: "at-risk" | "warm" | null) => void;
-  onClearFilters: () => void;
 }
 
-export default function ContactsFilter({
-  contacts,
-  selectedSegment,
-  selectedTags,
-  emailSearch,
-  firstNameSearch,
-  lastNameSearch,
-  companySearch,
-  showArchived,
-  customFilter,
-  onSegmentChange,
-  onTagsChange,
-  onEmailSearchChange,
-  onFirstNameSearchChange,
-  onLastNameSearchChange,
-  onCompanySearchChange,
-  onShowArchivedChange,
-  onCustomFilterChange,
-  onClearFilters,
-}: ContactsFilterProps) {
+export default function ContactsFilter({ contacts }: ContactsFilterProps) {
+  const {
+    selectedSegment,
+    selectedTags,
+    emailSearch,
+    firstNameSearch,
+    lastNameSearch,
+    companySearch,
+    showArchived,
+    customFilter,
+    onSegmentChange,
+    onTagsChange,
+    onEmailSearchChange,
+    onFirstNameSearchChange,
+    onLastNameSearchChange,
+    onCompanySearchChange,
+    onShowArchivedChange,
+    onCustomFilterChange,
+    onClearFilters,
+  } = useContactsFilter();
   const [tagSearch, setTagSearch] = useState<string>("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
 
@@ -192,7 +176,7 @@ export default function ContactsFilter({
         )}
 
         {/* Tags Filter */}
-        <div className={onCustomFilterChange ? "md:col-span-1" : "md:col-span-2"}>
+        <div className={customFilter !== undefined ? "md:col-span-1" : "md:col-span-2"}>
           {/* Tags Filter - Searchable Multi-Select */}
           {uniqueTags.length > 0 && (
             <div>
@@ -225,7 +209,7 @@ export default function ContactsFilter({
                       aria-hidden="true"
                     />
                     <div 
-                      className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                      className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-sm shadow-lg max-h-60 overflow-y-auto"
                       role="listbox"
                     >
                       {uniqueTags
@@ -269,7 +253,7 @@ export default function ContactsFilter({
                   {selectedTags.map(tag => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-sm text-sm font-medium"
                     >
                       {tag}
                       <Button

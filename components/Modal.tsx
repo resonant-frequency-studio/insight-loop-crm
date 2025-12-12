@@ -97,8 +97,11 @@ export default function Modal({
       previousActiveElementRef.current = document.activeElement as HTMLElement;
       
       // Move focus to modal after a brief delay to ensure it's rendered
+      // Skip inputs that have data-no-autofocus attribute
       setTimeout(() => {
-        const focusableElements = getFocusableElements();
+        const focusableElements = getFocusableElements().filter(
+          (el) => !el.hasAttribute('data-no-autofocus')
+        );
         if (focusableElements.length > 0) {
           focusableElements[0].focus();
         } else if (modalRef.current) {

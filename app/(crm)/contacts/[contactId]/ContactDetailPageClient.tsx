@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import ThemedSuspense from "@/components/ThemedSuspense";
 import ContactEditor from "../../_components/ContactEditor";
 import ContactsLink from "../../_components/ContactsLink";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
@@ -102,17 +102,17 @@ export default function ContactDetailPageClient({
       </div>
 
       {/* Contact Data - Only dynamic data is suspended */}
-      <Suspense
+      <ThemedSuspense
         fallback={
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-full animate-pulse" />
+              <div className="w-16 h-16 bg-theme-light rounded-full animate-pulse" />
               <div className="space-y-2">
-                <div className="h-8 bg-gray-200 rounded w-48 animate-pulse" />
-                <div className="h-5 bg-gray-200 rounded w-64 animate-pulse" />
+                <div className="h-8 bg-theme-light rounded w-48 animate-pulse" />
+                <div className="h-5 bg-theme-light rounded w-64 animate-pulse" />
               </div>
             </div>
-            <div className="h-96 bg-gray-200 rounded animate-pulse" />
+            <div className="h-96 bg-theme-light rounded animate-pulse" />
           </div>
         }
       >
@@ -122,7 +122,7 @@ export default function ContactDetailPageClient({
           initialActionItems={initialActionItems}
           uniqueSegments={uniqueSegments}
         />
-      </Suspense>
+      </ThemedSuspense>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default function NewContactPage() {
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="bg-red-50 border border-red-200 rounded-sm p-4">
           <div className="flex items-center gap-3">
             <svg
               className="w-5 h-5 text-red-600"
@@ -307,8 +307,10 @@ export default function NewContactPage() {
               onClick={handleSave}
               disabled={saving}
               loading={saving}
-              variant="gradient-blue"
+              variant="success"
               size="md"
+              className="shadow-[rgba(34,32,29,0.1)_0px_2px_4px]
+"
               icon={
                 <svg
                   className="w-4 h-4"

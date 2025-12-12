@@ -57,7 +57,7 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
           <Link
             key={segment}
             href={`/contacts?segment=${encodeURIComponent(segment)}`}
-            className={`p-3 rounded-md border-2 ${getSegmentColor(index)} hover:opacity-80 transition-opacity`}
+            className={`p-3 rounded-sm border-2 ${getSegmentColor(index)} hover:opacity-80 transition-opacity`}
           >
             <p className="text-xs font-medium mb-1 truncate">{segment}</p>
             <p className="text-2xl font-bold">{count.toLocaleString()}</p>

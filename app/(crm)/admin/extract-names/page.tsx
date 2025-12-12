@@ -145,7 +145,7 @@ export default function ExtractNamesPage() {
             </ul>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-md">
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-sm">
             <input
               type="checkbox"
               id="dryRun"
@@ -215,7 +215,7 @@ export default function ExtractNamesPage() {
               </h3>
             </div>
 
-            <div className="bg-[#EEEEEC] rounded-md p-4 space-y-2">
+            <div className="bg-[#EEEEEC] rounded-sm p-4 space-y-2">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Processed</p>

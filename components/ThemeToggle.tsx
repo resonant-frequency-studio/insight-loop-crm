@@ -67,7 +67,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="flex items-center justify-center gap-2 w-full px-3 py-1.5 text-sm font-medium rounded-md bg-[#fafaf9] xl:bg-[#333330] hover:bg-gray-300 xl:hover:bg-gray-600 text-theme-darkest xl:text-white transition-colors duration-200 cursor-pointer mb-3"
+      className="flex items-center justify-center gap-2 w-full px-3 py-1.5 text-sm font-medium rounded-sm bg-[#fafaf9] xl:bg-[#333330] hover:bg-gray-300 xl:hover:bg-gray-600 text-theme-darkest xl:text-white transition-colors duration-200 cursor-pointer mb-3"
       aria-label={`Switch to ${getLabel()}`}
       title={`Switch to ${getLabel()}`}
     >

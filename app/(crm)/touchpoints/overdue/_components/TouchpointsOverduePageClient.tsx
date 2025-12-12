@@ -7,7 +7,7 @@ import { useContacts } from "@/hooks/useContacts";
 import { getDaysUntilTouchpoint } from "@/util/date-utils-server";
 import { Contact } from "@/types/firestore";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/Button";
+import Pagination from "@/components/Pagination";
 
 interface ContactWithTouchpoint extends Contact {
   id: string;
@@ -99,35 +99,15 @@ export default function TouchpointsOverduePageClient() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-                <div className="text-sm text-theme-darker">
-                  Showing {startIndex + 1} to {Math.min(endIndex, allOverdueTouchpoints.length)} of{" "}
-                  {allOverdueTouchpoints.length} touchpoints
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Previous
-                  </Button>
-                  <span className="flex items-center px-4 text-sm text-theme-darker">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={allOverdueTouchpoints.length}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              itemLabel="touchpoint"
+              onPageChange={setCurrentPage}
+            />
           </>
         )}
       </Card>

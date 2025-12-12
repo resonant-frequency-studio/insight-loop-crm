@@ -83,7 +83,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md">
+                    <span className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-sm">
                       {faq.category}
                     </span>
                   </div>
@@ -131,7 +131,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
       <Card padding="lg" className="bg-linear-to-r from-blue-50 to-indigo-50 border-blue-200">
         <div className="flex items-start gap-4">
           <div className="shrink-0">
-            <div className="w-12 h-12 bg-blue-600 rounded-md flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-600 rounded-sm flex items-center justify-center">
               <svg
                 className="w-6 h-6 text-white"
                 fill="none"

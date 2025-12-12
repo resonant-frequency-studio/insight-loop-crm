@@ -98,10 +98,11 @@ export default function TouchpointStatusActions({
       <div className="space-y-2">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {currentStatus !== "completed" && (
-            <button
+            <Button
+              variant="success"
               onClick={() => setShowCompleteModal(true)}
               disabled={mutation.isPending}
-              className="flex-1 cursor-pointer sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-[#191919] bg-green-50 border border-green-200 rounded hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
+              className="flex-1 cursor-pointer sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
               title="I've contacted this person"
             >
               <svg
@@ -118,10 +119,11 @@ export default function TouchpointStatusActions({
                 />
               </svg>
               <span className="whitespace-nowrap">Mark as Contacted</span>
-            </button>
+            </Button>
           )}
           {currentStatus !== "cancelled" && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => setShowCancelModal(true)}
               disabled={mutation.isPending}
               className="flex-1 sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs font-medium text-foreground border border-theme-medium rounded hover:bg-theme-medium cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
@@ -141,7 +143,7 @@ export default function TouchpointStatusActions({
                 />
               </svg>
               <span className="whitespace-nowrap">Skip Touchpoint</span>
-            </button>
+            </Button>
           )}
         </div>
         {error && (
@@ -205,7 +207,7 @@ export default function TouchpointStatusActions({
                 setError(null);
               }}
               disabled={mutation.isPending}
-              variant="secondary"
+              variant="outline"
               size="sm"
             >
               Cancel
@@ -275,7 +277,6 @@ export default function TouchpointStatusActions({
                 setError(null);
               }}
               disabled={mutation.isPending}
-              variant="secondary"
               size="sm"
             >
               Keep Touchpoint
@@ -284,7 +285,7 @@ export default function TouchpointStatusActions({
               onClick={() => handleUpdateStatus("cancelled", reason)}
               disabled={mutation.isPending}
               loading={mutation.isPending}
-              variant="secondary"
+              variant="outline"
               size="sm"
             >
               Skip Touchpoint
@@ -329,7 +330,7 @@ export default function TouchpointStatusActions({
           <Button
             onClick={() => setShowCancelModal(true)}
             disabled={mutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Skip Touchpoint
@@ -484,7 +485,6 @@ export default function TouchpointStatusActions({
               setError(null);
             }}
             disabled={mutation.isPending}
-            variant="secondary"
             size="sm"
           >
             Keep Touchpoint
@@ -493,7 +493,7 @@ export default function TouchpointStatusActions({
             onClick={() => handleUpdateStatus("cancelled", reason)}
             disabled={mutation.isPending}
             loading={mutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Skip Touchpoint

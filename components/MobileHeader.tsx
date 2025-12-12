@@ -11,7 +11,7 @@ interface MobileHeaderProps {
 
 export default function MobileHeader({ isMenuOpen, onMenuToggle }: MobileHeaderProps) {
   return (
-    <header className="xl:hidden fixed top-0 left-0 right-0 h-16 bg-[#EEEEEC] border-b border-gray-200 z-50 flex items-center justify-between px-4">
+    <header className="xl:hidden fixed top-0 left-0 right-0 h-16 bg-background border-b border-theme-medium z-50 flex items-center justify-between px-4">
       {/* CRM Name - Link to Dashboard */}
       <Link
         href="/"

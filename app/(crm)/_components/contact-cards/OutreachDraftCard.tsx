@@ -215,7 +215,7 @@ export default function OutreachDraftCard({
             {localDraft.trim() && contact.primaryEmail && (
               <Button
                 onClick={openGmailCompose}
-                variant="gradient-blue"
+                variant="link"
                 size="sm"
                 aria-label="Open this draft in Gmail"
                 className="whitespace-nowrap"

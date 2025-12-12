@@ -45,7 +45,7 @@ export default function BulkActionsBar({
               onClick={action.onClick}
               disabled={action.disabled}
               loading={action.loading}
-              variant={action.variant || "gradient-blue"}
+              variant={action.variant}
               size="sm"
               fullWidth
               className="sm:w-auto whitespace-nowrap shrink-0"

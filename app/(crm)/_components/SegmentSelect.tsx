@@ -173,7 +173,8 @@ export default function SegmentSelect({
           onBlur={handleInputBlur}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 pr-10 text-theme-darkest placeholder:text-gray-400"
+          data-no-autofocus
+          className="w-full px-4 py-2 border border-gray-200 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 pr-10 text-foreground placeholder:text-gray-400"
         />
         {inputValue && (
           <button
@@ -225,7 +226,7 @@ export default function SegmentSelect({
           />
           <div
             ref={dropdownRef}
-            className="absolute z-20 w-full mt-1 bg-[#EEEEEC] border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+            className="absolute z-20 w-full mt-1 bg-card-highlight-light border border-gray-200 rounded-sm shadow-lg max-h-60 overflow-y-auto"
           >
             {filteredSegments.length > 0 ? (
               <>
@@ -237,10 +238,10 @@ export default function SegmentSelect({
                       e.preventDefault(); // Prevent input blur
                       handleSelectSegment(segment, e);
                     }}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm ${
-                      index === highlightedIndex ? "bg-gray-100" : ""
+                    className={`w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-theme-darker hover:text-theme-lightest transition-colors ${
+                      index === highlightedIndex ? "bg-theme-darker text-theme-lightest" : ""
                     } ${
-                      segment === value ? "font-medium text-blue-600" : "text-theme-darker"
+                      segment === value ? "bg-theme-darker text-theme-lightest font-bold" : ""
                     }`}
                   >
                     {segment}
@@ -254,7 +255,7 @@ export default function SegmentSelect({
                         e.preventDefault(); // Prevent input blur
                         handleSelectSegment(inputValue.trim(), e);
                       }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm text-blue-600 font-medium"
+                      className="w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-theme-darker hover:text-theme-lightest transition-colors"
                     >
                       + Create &quot;{inputValue.trim()}&quot;
                     </button>
@@ -270,7 +271,7 @@ export default function SegmentSelect({
                       e.preventDefault(); // Prevent input blur
                       handleSelectSegment(inputValue.trim(), e);
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm text-blue-600 font-medium"
+                    className="w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-theme-darker hover:text-theme-lightest transition-colors"
                   >
                     + Create new segment: &quot;{inputValue.trim()}&quot;
                   </button>

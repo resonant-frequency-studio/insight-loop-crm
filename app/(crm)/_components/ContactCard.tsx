@@ -42,11 +42,11 @@ export default function ContactCard({
   const isTouchpointVariant = variant === "touchpoint-upcoming" || variant === "touchpoint-overdue";
   
   const getVariantStyles = () => {
-    if (isSelected) return "ring-2 ring-blue-500 bg-blue-50";
+    if (isSelected) return "ring-2 ring-blue-500 bg-card-active";
     
     switch (variant) {
       case "selected":
-        return "ring-2 ring-blue-500 bg-blue-50";
+        return "ring-2 ring-blue-500 bg-card-active";
       case "touchpoint-upcoming":
         return needsReminder ? "bg-card-upcoming border border-card-upcoming-dark" : "border border-theme-light";
       case "touchpoint-overdue":
@@ -70,9 +70,7 @@ export default function ContactCard({
 
   return (
     <div
-      className={`rounded-md p-4 transition-all duration-200 ${
-        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : getVariantStyles()
-      }`}
+      className={`rounded-sm p-4 transition-all duration-200 ${getVariantStyles()}`}
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
@@ -112,17 +110,17 @@ export default function ContactCard({
                   {isTouchpointVariant && (
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
                       {variant === "touchpoint-upcoming" && needsReminder && (
-                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-md whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-sm whitespace-nowrap">
                           Due Soon
                         </span>
                       )}
                       {variant === "touchpoint-overdue" && (
-                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-md whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-sm whitespace-nowrap">
                           Overdue
                         </span>
                       )}
                       {formatTouchpointDate() && (
-                        <span className={`text-xs font-medium px-2 py-1 rounded-md whitespace-nowrap ${
+                        <span className={`text-xs font-medium px-2 py-1 rounded-sm whitespace-nowrap ${
                           variant === "touchpoint-overdue"
                             ? "text-theme-darker border border-theme-medium"
                             : daysUntil !== null && daysUntil !== undefined && daysUntil <= 3
@@ -194,7 +192,7 @@ export default function ContactCard({
                       {contact.tags.slice(0, 3).map((tag, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
+                          className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-sm"
                         >
                           {tag}
                         </span>
@@ -212,7 +210,7 @@ export default function ContactCard({
               {/* Segment and Tags - Desktop: show on right */}
               <div className={`hidden xl:flex ${isTouchpointVariant ? 'items-center' : 'flex-col items-end'} gap-2 shrink-0 ${isTouchpointVariant ? 'ml-2' : 'max-w-[250px]'}`}>
                 {contact.segment && (
-                  <span className={`px-2 py-1 text-xs font-medium text-theme-medium rounded whitespace-nowrap border border-theme-medium`}>
+                  <span className={`px-2 py-1 text-xs font-medium text-theme-darkest rounded whitespace-nowrap border border-theme-dark`}>
                     {contact.segment}
                   </span>
                 )}
@@ -222,13 +220,13 @@ export default function ContactCard({
                     {contact.tags.slice(0, 2).map((tag, idx) => (
                       <span
                         key={idx}
-                        className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md"
+                        className="px-2 py-1 text-xs font-medium border border-card-tag text-card-tag-text rounded-sm"
                       >
                         {tag}
                       </span>
                     ))}
                     {contact.tags.length > 2 && (
-                      <span className="px-2 py-1 text-xs font-medium text-gray-500">
+                      <span className="px-2 py-1 text-xs font-medium text-theme-dark">
                         +{contact.tags.length - 2}
                       </span>
                     )}

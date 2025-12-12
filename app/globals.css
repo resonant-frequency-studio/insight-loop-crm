@@ -3,8 +3,11 @@
 :root {
   --background: #eeeeec;
   --foreground: #191919;
+  --card-active: rgba(59, 130, 246, 0.1);
   --card-light: #fafaf9;
   --card-dark: #292927;
+  --card-tag: rgba(59, 130, 246, 1);
+  --card-tag-text: rgba(59, 130, 246, 1);
   --card-upcoming: rgba(253, 153, 0, 0.03);
   --card-upcoming-dark: rgba(253, 153, 0, 0.15);
   --card-overdue: rgba(250, 43, 54, 0.03);
@@ -24,8 +27,11 @@
 [data-theme='dark'] {
   --background: #191919;
   --foreground: #eeeeec;
+  --card-active: rgba(59, 130, 246, 0.1);
   --card-light: #292927;
   --card-dark: #fafaf9;
+  --card-tag: rgba(59, 130, 246, 1);
+  --card-tag-text: #d4d1cc;
   --card-upcoming: rgba(253, 153, 0, 0.03);
   --card-upcoming-dark: rgba(253, 153, 0, 0.15);
   --card-overdue: rgba(250, 43, 54, 0.03);
@@ -46,8 +52,11 @@
   :root:not([data-theme]) {
     --background: #191919;
     --foreground: #eeeeec;
+    --card-active: rgba(59, 130, 246, 0.1);
     --card-light: #292927;
     --card-dark: #fafaf9;
+    --card-tag: rgba(59, 130, 246, 1);
+    --card-tag-text: #d4d1cc;
     --card-upcoming: rgba(253, 153, 0, 0.03);
     --card-upcoming-dark: rgba(253, 153, 0, 0.15);
     --card-overdue: rgba(250, 43, 54, 0.03);
@@ -67,8 +76,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card-active: var(--card-active);
   --color-card-light: var(--card-light);
   --color-card-dark: var(--card-dark);
+  --color-card-tag: var(--card-tag);
+  --color-card-tag-text: var(--card-tag-text);
   --color-card-upcoming: var(--card-upcoming);
   --color-card-upcoming-dark: var(--card-upcoming-dark);
   --color-card-overdue: var(--card-overdue);

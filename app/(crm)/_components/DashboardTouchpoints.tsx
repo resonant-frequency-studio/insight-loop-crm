@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
 import ContactCard from "./ContactCard";
 import { useContacts } from "@/hooks/useContacts";
@@ -441,17 +441,17 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
 export default function DashboardTouchpoints({ userId }: { userId: string }) {
   return (
-    <Suspense
+    <ThemedSuspense
       fallback={
         <Card padding="sm" className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-48 mb-4" />
+          <div className="h-6 bg-card-highlight-light rounded w-48 mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-md">
-                <div className="w-12 h-12 bg-gray-200 rounded-full shrink-0" />
+              <div key={i} className="flex items-center gap-4 p-4 bg-card-highlight-light rounded-sm">
+                <div className="w-12 h-12 bg-theme-light rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-5 bg-gray-200 rounded w-2/3" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-5 bg-theme-light rounded w-2/3" />
+                  <div className="h-4 bg-theme-light rounded w-1/2" />
                 </div>
               </div>
             ))}
@@ -460,7 +460,7 @@ export default function DashboardTouchpoints({ userId }: { userId: string }) {
       }
     >
       <TouchpointsContent userId={userId} />
-    </Suspense>
+    </ThemedSuspense>
   );
 }
 

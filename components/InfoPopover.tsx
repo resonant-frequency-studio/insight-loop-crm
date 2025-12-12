@@ -56,7 +56,7 @@ export default function InfoPopover({ content }: InfoPopoverProps) {
       {isOpen && (
         <div
           ref={popoverRef}
-          className={`absolute bottom-full mb-2 w-64 p-3 bg-card-highlight-light border border-gray-200 text-foreground text-[14px] rounded-md shadow-xl z-50 ${
+          className={`absolute bottom-full mb-2 w-64 p-3 bg-card-highlight-light border border-gray-200 text-foreground text-[14px] rounded-sm shadow-xl z-50 ${
             positionRight ? "right-0" : "left-0"
           }`}
         >

@@ -158,7 +158,7 @@ export default function ImportContactsPage() {
             </p>
             <Button
               onClick={downloadSampleCsv}
-              variant="secondary"
+              variant="outline"
               size="sm"
               fullWidth
               className="mb-4"
@@ -175,7 +175,7 @@ export default function ImportContactsPage() {
                 <p className="font-medium text-theme-darkest mb-2">Required columns:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Email</code> - Contact email address
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">Email</code> - Contact email address
                   </li>
                 </ul>
               </div>
@@ -183,24 +183,24 @@ export default function ImportContactsPage() {
                 <p className="font-medium text-theme-darkest mt-4 mb-2">Optional columns:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">FirstName</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">LastName</code>
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">FirstName</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">LastName</code>
                   </li>
                   <li>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Summary</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Notes</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Tags</code>
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">Summary</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">Notes</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">Tags</code>
                   </li>
                   <li>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">Segment</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">LeadSource</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">EngagementScore</code>
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">Segment</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">LeadSource</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">EngagementScore</code>
                   </li>
                   <li>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">NextTouchpointDate</code>,{" "}
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">NextTouchpointMessage</code>
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">NextTouchpointDate</code>,{" "}
+                    <code className="bg-theme-light text-foreground px-1.5 py-0.5 rounded text-xs font-mono">NextTouchpointMessage</code>
                   </li>
-                  <li className="text-xs text-gray-500 mt-2">And other CRM fields as needed</li>
+                  <li className="text-xs text-theme-darker mt-2">And other CRM fields as needed</li>
                 </ul>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function ImportContactsPage() {
 
         {/* Warning Message - Don't refresh or navigate away */}
         {isProcessing && (
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-sm">
             <div className="flex items-start gap-3">
               <svg
                 className="w-5 h-5 text-amber-600 mt-0.5 shrink-0"
@@ -347,7 +347,7 @@ export default function ImportContactsPage() {
         {/* Status Messages */}
         {status && (
           <div
-            className={`mt-6 p-4 rounded-md ${
+            className={`mt-6 p-4 rounded-sm ${
               hasError
                 ? "bg-red-50 border border-red-200"
                 : isSuccess
@@ -492,7 +492,7 @@ export default function ImportContactsPage() {
           How would you like to handle existing contacts?
         </p>
         <div className="space-y-3 mb-6">
-          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-sm cursor-pointer hover:bg-gray-50 transition-colors">
             <input
               type="radio"
               name="overwriteMode"
@@ -509,7 +509,7 @@ export default function ImportContactsPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-sm cursor-pointer hover:bg-gray-50 transition-colors">
             <input
               type="radio"
               name="overwriteMode"

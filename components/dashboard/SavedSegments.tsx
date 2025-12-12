@@ -41,7 +41,7 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
           <Link
             key={segment}
             href={`/contacts?segment=${encodeURIComponent(segment)}`}
-            className="block p-3 rounded-md border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+            className="block p-3 rounded-sm border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-theme-darkest">{segment}</span>

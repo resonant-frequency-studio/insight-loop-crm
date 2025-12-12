@@ -256,7 +256,7 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("all")}
             role="tab"
             aria-selected={filterStatus === "all"}
-            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-sm transition-all duration-200 border border-theme-medium ${
               filterStatus === "all"
                 ? "bg-theme-light"
                 : "hover:bg-theme-light hover:bg-opacity-10"
@@ -273,7 +273,7 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("pending")}
             role="tab"
             aria-selected={filterStatus === "pending"}
-            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-sm transition-all duration-200 border border-theme-medium ${
               filterStatus === "pending"
                 ? "bg-theme-light"
                 : "hover:bg-theme-light hover:bg-opacity-10"
@@ -290,7 +290,7 @@ export default function ActionItemsList({
             onClick={() => setFilterStatus("completed")}
             role="tab"
             aria-selected={filterStatus === "completed"}
-            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-md transition-all duration-200 border border-theme-medium ${
+            className={`cursor-pointer px-3 py-1.5 text-xs sm:text-sm text-foreground font-medium rounded-sm transition-all duration-200 border border-theme-medium ${
               filterStatus === "completed"
                 ? "bg-theme-light"
                 : "hover:bg-theme-light hover:bg-opacity-10"
@@ -308,7 +308,7 @@ export default function ActionItemsList({
 
       {/* Add new action item */}
       {isAdding ? (
-        <div className="p-3 rounded-md border border-gray-200 space-y-3">
+        <div className="p-3 rounded-sm border border-gray-200 space-y-3">
           <Textarea
             id="action-item-new-text"
             name="action-item-new-text"
@@ -333,7 +333,7 @@ export default function ActionItemsList({
                 onClick={handleAdd}
                 disabled={saving || !newText.trim()}
                 loading={saving}
-                variant="gradient-green"
+                variant="success"
                 size="sm"
                 error={addError}
               >
@@ -347,7 +347,7 @@ export default function ActionItemsList({
                   setAddError(null);
                 }}
                 disabled={saving}
-                variant="gradient-gray"
+                variant="outline"
                 size="sm"
               >
                 Cancel
@@ -358,7 +358,6 @@ export default function ActionItemsList({
       ) : (
         <Button
           onClick={() => setIsAdding(true)}
-          variant="gradient-blue"
           size="sm"
           fullWidth
           icon={

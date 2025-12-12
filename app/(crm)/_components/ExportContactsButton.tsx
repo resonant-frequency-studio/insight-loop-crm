@@ -84,8 +84,8 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
     <Button
       onClick={exportToCSV}
       disabled={disabled || contacts.length === 0}
-      variant="gradient-emerald"
-      size="md"
+      variant="success"
+      size="sm"
       icon={
         <svg
           className="w-5 h-5"
@@ -101,7 +101,7 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
           />
         </svg>
       }
-      className="w-full sm:w-auto"
+      className="w-full sm:w-auto shadow-[rgba(34,32,29,0.1)_0px_2px_4px]"
     >
       Export {contacts.length > 0 ? `(${contacts.length})` : ""}
     </Button>

@@ -163,7 +163,7 @@ describe("StatCard", () => {
 
       const { container } = renderWithProviders(<StatCard {...mockProps} />);
       // Card should have base card styles
-      const card = container.querySelector(".bg-card-light.rounded-xl");
+      const card = container.querySelector(".bg-card-light.rounded-sm");
       expect(card).toBeInTheDocument();
     });
   });

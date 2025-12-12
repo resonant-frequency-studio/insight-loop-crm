@@ -148,7 +148,7 @@ export default function ActionItemCard({
   };
 
   return (
-    <div className={`rounded-md p-3 sm:p-4 transition-all duration-200 min-w-0 overflow-hidden ${getVariantStyles()}`}>
+    <div className={`rounded-sm p-3 sm:p-4 transition-all duration-200 min-w-0 overflow-hidden ${getVariantStyles()}`}>
       {isEditing ? (
         <div className="space-y-3">
           <Textarea
@@ -258,7 +258,7 @@ export default function ActionItemCard({
           {!compact && (
             <Link
               href={`/contacts/${contactId}`}
-              className="flex items-center gap-2 group border border-gray-300 rounded-md px-3 py-2 hover:border-gray-400 transition-colors"
+              className="flex items-center gap-2 group border border-gray-300 rounded-sm px-3 py-2 hover:border-gray-400 transition-colors"
             >
               {/* Avatar */}
               <div className="shrink-0">

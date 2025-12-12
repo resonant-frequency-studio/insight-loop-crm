@@ -11,11 +11,11 @@ export default function ContactsLink({
   className = "",
   children = "Back to Contacts"
 }: ContactsLinkProps) {
-  const baseClasses = "transition-colors duration-200 font-medium";
+  const baseClasses = "transition-colors duration-200 font-medium cursor-pointer";
   
   const variantClasses = {
-    default: "flex items-center gap-2 px-4 py-2 text-theme-dark hover:text-theme-darkest hover:bg-gray-100 rounded-md",
-    error: "inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md",
+    default: "flex items-center gap-2 px-4 py-2 text-theme-darkest hover:text-theme-medium rounded-sm",
+    error: "inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-sm",
   };
 
   const iconSvg = (

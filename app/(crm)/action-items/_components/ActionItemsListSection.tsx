@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
@@ -11,6 +12,7 @@ import ActionItemCard from "../../_components/ActionItemCard";
 import { useUpdateActionItem, useDeleteActionItem } from "@/hooks/useActionItemMutations";
 import { useActionItemsFilters } from "./ActionItemsFiltersContext";
 import { EnrichedActionItem } from "../ActionItemsPageClient";
+import Pagination from "@/components/Pagination";
 
 interface ActionItemsListSectionProps {
   actionItems: EnrichedActionItem[];
@@ -272,15 +274,15 @@ export default function ActionItemsListSection({
       </Modal>
 
       <Card padding="md">
-        <Suspense
+        <ThemedSuspense
           fallback={
             <div>
-              <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse" />
+              <div className="h-6 bg-theme-light rounded w-40 mb-4 animate-pulse" />
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-gray-50 rounded-md p-4 animate-pulse">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
-                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div key={i} className="bg-card-highlight-light rounded-sm p-4 animate-pulse">
+                    <div className="h-5 bg-theme-light rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-theme-light rounded w-1/2" />
                   </div>
                 ))}
               </div>
@@ -396,38 +398,18 @@ export default function ActionItemsListSection({
               </div>
 
               {/* Pagination */}
-              {filteredItems.length > ITEMS_PER_PAGE && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 pt-4 mt-4">
-                  <div className="text-sm text-theme-darker">
-                    Showing {startIndex + 1} to {Math.min(endIndex, filteredItems.length)} of{" "}
-                    {filteredItems.length} {filteredItems.length === 1 ? "action item" : "action items"}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Previous
-                    </Button>
-                    <span className="flex items-center px-4 text-sm text-theme-darker">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredItems.length}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                itemLabel="action item"
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
-        </Suspense>
+        </ThemedSuspense>
       </Card>
     </>
   );

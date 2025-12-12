@@ -71,7 +71,7 @@ describe("Card", () => {
       const { container } = render(<Card className="custom-class">Content</Card>);
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass("custom-class");
-      expect(card).toHaveClass("bg-card-light", "rounded-xl"); // Base classes still present
+      expect(card).toHaveClass("bg-card-light", "rounded-sm"); // Base classes still present
     });
 
     it("does not apply padding class when className includes padding", () => {
@@ -104,8 +104,8 @@ describe("Card", () => {
       const { container } = render(<Card>Content</Card>);
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass("bg-card-light");
-      expect(card).toHaveClass("rounded-xl");
-      expect(card).toHaveClass("shadow-[0px_4px_12px_rgba(0,0,0,0.1)]");
+      expect(card).toHaveClass("rounded-sm");
+      expect(card).toHaveClass("shadow-[rgba(34,32,29,0.1)_0px_2px_4px]");
       expect(card).toHaveClass("border", "border-theme-lighter");
     });
   });
