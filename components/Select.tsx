@@ -98,7 +98,7 @@ export default function Select({ children, className = "", value, onChange, ...p
             aria-hidden="true"
           />
           <div 
-            className="absolute z-20 w-full top-full mt-1 bg-card-highlight-light border border-gray-200 rounded-sm shadow-lg max-h-60 overflow-y-auto"
+            className="absolute z-20 w-full top-full mt-1 bg-selected-background border border-gray-200 rounded-sm shadow-lg max-h-60 overflow-y-auto"
             role="listbox"
           >
             {options.map((option, index) => {
@@ -109,8 +109,8 @@ export default function Select({ children, className = "", value, onChange, ...p
                   key={index}
                   type="button"
                   onClick={() => handleOptionClick(optionValue)}
-                  className={`w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-theme-darker hover:text-theme-lightest transition-colors ${
-                    isSelected ? 'bg-theme-darker text-theme-lightest font-bold' : ''
+                  className={`w-full text-left px-4 py-2 text-sm text-foreground rounded-sm hover:bg-selected-active transition-colors ${
+                    isSelected ? 'bg-selected-active text-selected-foreground font-bold' : ''
                   }`}
                   role="option"
                   aria-selected={isSelected}
