@@ -74,14 +74,28 @@ npx playwright test tests/e2e/contact-editor.spec.ts
 
 ## Test Coverage
 
-The E2E tests cover all ContactEditor functionality:
+The E2E tests focus on **integration and end-to-end scenarios** that unit tests cannot cover:
 
-1. **Form Field Updates & Save** - Editing and saving contact fields
-2. **Touchpoint Status Actions** - Mark as contacted, skip, restore to pending
-3. **Archive/Unarchive Contact** - Toggling archive status
-4. **Delete Contact** - Deletion with confirmation
-5. **Outreach Draft Editor** - Saving and opening drafts in Gmail
-6. **Cross-Page Verification** - Ensuring changes reflect across pages
+### `contact-editor.spec.ts` - Cross-Page Integration Tests
+1. **Cross-Page Data Consistency** - Changes on one page reflect correctly on other pages
+2. **Cache Invalidation** - Verify cache updates work across pages
+3. **Multi-Page Workflows** - Complete user journeys spanning multiple pages
+
+### `contact-lifecycle.spec.ts` - Complete User Workflows
+1. **Full Contact Lifecycle** - Create → Edit → Archive → Unarchive → Delete
+2. **Touchpoint Management Workflow** - Create → View on Dashboard → Complete → Restore
+3. **Multi-Contact Operations** - Managing multiple contacts and verifying list updates
+
+### What We DON'T Test in E2E
+Component-level functionality is tested in unit tests:
+- Individual form field updates (tested in `BasicInfoCard.test.tsx`)
+- Touchpoint status button clicks (tested in component tests)
+- Archive/unarchive button interactions (tested in `ArchiveContactCard.test.tsx`)
+- Delete confirmation modals (tested in `DeleteContactCard.test.tsx`)
+- Action item CRUD operations (tested in component and API tests)
+- Outreach draft editing (tested in `OutreachDraftCard.test.tsx`)
+
+**Why?** Unit tests are faster, more reliable, and easier to maintain. E2E tests should focus on what only E2E can test: integration between pages and complete user workflows.
 
 ## Writing New Tests
 

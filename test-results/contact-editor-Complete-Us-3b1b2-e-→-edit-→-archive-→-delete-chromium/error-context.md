@@ -1,0 +1,189 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - link "Skip to main content" [ref=e13] [cursor=pointer]:
+      - /url: "#main-content"
+    - navigation [ref=e14]:
+      - heading "Insight Loop CRM" [level=2] [ref=e15]
+      - list [ref=e17]:
+        - listitem [ref=e18]:
+          - link "Dashboard" [ref=e19] [cursor=pointer]:
+            - /url: /
+            - img [ref=e20]
+            - text: Dashboard
+        - listitem [ref=e22]:
+          - generic [ref=e23]:
+            - link "Contacts" [ref=e24] [cursor=pointer]:
+              - /url: /contacts
+              - img [ref=e25]
+              - text: Contacts
+            - button "Toggle Contacts submenu" [ref=e27]:
+              - img [ref=e28]
+        - listitem [ref=e30]:
+          - link "Action Items" [ref=e31] [cursor=pointer]:
+            - /url: /action-items
+            - img [ref=e32]
+            - text: Action Items
+        - listitem [ref=e34]:
+          - button "Touchpoints" [ref=e35] [cursor=pointer]:
+            - img [ref=e36]
+            - text: Touchpoints
+            - img [ref=e38]
+        - listitem [ref=e40]:
+          - link "Charts" [ref=e41] [cursor=pointer]:
+            - /url: /charts
+            - img [ref=e42]
+            - text: Charts
+        - listitem [ref=e44]:
+          - link "Sync Status" [ref=e45] [cursor=pointer]:
+            - /url: /sync
+            - img [ref=e46]
+            - text: Sync Status
+        - listitem [ref=e48]:
+          - link "FAQ" [ref=e49] [cursor=pointer]:
+            - /url: /faq
+            - img [ref=e50]
+            - text: FAQ
+      - button "Switch to Dark Mode" [ref=e52] [cursor=pointer]:
+        - img [ref=e54]
+        - generic [ref=e60]: Dark Mode
+    - main [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - generic [ref=e65]: UT
+            - generic [ref=e66]:
+              - heading "Updated Lifecycle Test" [level=1] [ref=e67]
+              - paragraph [ref=e68]:
+                - img [ref=e69]
+                - generic [ref=e71]: test_lifecycle_1765667260266@test.example.com
+          - link "Back to Contacts" [ref=e73] [cursor=pointer]:
+            - /url: /contacts
+            - img [ref=e74]
+            - text: Back to Contacts
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - heading "Basic Information" [level=2] [ref=e81]:
+                - img [ref=e82]
+                - text: Basic Information
+              - generic [ref=e84]:
+                - generic [ref=e85]:
+                  - generic [ref=e86]:
+                    - generic [ref=e87]: First Name
+                    - textbox "First Name" [ref=e88]: Updated Lifecycle
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: Last Name
+                    - textbox "Last Name" [ref=e91]: Test
+                - generic [ref=e92]:
+                  - generic [ref=e93]: Company
+                  - textbox "Company" [ref=e94]
+                - generic [ref=e95]:
+                  - generic [ref=e96]: Email
+                  - textbox [disabled] [ref=e97]: test_lifecycle_1765667260266@test.example.com
+            - generic [ref=e98]:
+              - heading "Tags & Classification" [level=2] [ref=e100]:
+                - img [ref=e101]
+                - text: Tags & Classification
+              - paragraph [ref=e103]: Organize and categorize your contacts using tags, segments, and lead sources to better track relationships and tailor your communication strategies.
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - generic [ref=e106]:
+                    - text: Tags
+                    - button "More information" [ref=e108]:
+                      - generic [ref=e109]: i
+                  - textbox "tag1, tag2, tag3" [ref=e110]
+                  - paragraph [ref=e111]: Enter tags separated by commas. Spaces within tags are allowed (e.g., "School of Hard Knocks, Referral, VIP").
+                - generic [ref=e112]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]:
+                      - text: Segment
+                      - button "More information" [ref=e116]:
+                        - generic [ref=e117]: i
+                    - generic [ref=e120]:
+                      - textbox "Enter or select segment..." [ref=e121]
+                      - generic:
+                        - img
+                  - generic [ref=e122]:
+                    - generic [ref=e123]:
+                      - text: Lead Source
+                      - button "More information" [ref=e125]:
+                        - generic [ref=e126]: i
+                    - textbox "Enter lead source..." [ref=e127]
+            - generic [ref=e128]:
+              - heading "Action Items" [level=2] [ref=e129]
+              - paragraph [ref=e130]: Track tasks and follow-ups for this contact. Create action items with due dates to stay organized and never miss an important next step in your relationship.
+              - generic [ref=e131]:
+                - generic [ref=e132]:
+                  - heading "Action Items" [level=3] [ref=e134]
+                  - tablist [ref=e135]:
+                    - tab "All(0)" [selected] [ref=e136] [cursor=pointer]:
+                      - text: All
+                      - generic [ref=e137]: (0)
+                    - tab "Pending(0)" [ref=e138] [cursor=pointer]:
+                      - text: Pending
+                      - generic [ref=e139]: (0)
+                    - tab "Completed(0)" [ref=e140] [cursor=pointer]:
+                      - text: Completed
+                      - generic [ref=e141]: (0)
+                - button "Add Action Item" [ref=e143] [cursor=pointer]:
+                  - img [ref=e144]
+                  - text: Add Action Item
+                - paragraph [ref=e146]: No action items yet
+            - generic [ref=e147]:
+              - heading "Next Touchpoint" [level=2] [ref=e149]:
+                - img [ref=e150]
+                - text: Next Touchpoint
+              - paragraph [ref=e152]: Schedule and plan your next interaction with this contact. Set a date and add notes about what to discuss to maintain consistent, meaningful engagement.
+              - generic [ref=e153]:
+                - generic [ref=e154]:
+                  - generic [ref=e155]: Date
+                  - textbox "Date" [ref=e156]
+                - generic [ref=e157]:
+                  - generic [ref=e158]: Message
+                  - textbox "Message" [ref=e159]:
+                    - /placeholder: What should you discuss in the next touchpoint?
+            - generic [ref=e160]:
+              - heading "Outreach Draft" [level=2] [ref=e162]:
+                - img [ref=e163]
+                - generic [ref=e165]: Outreach Draft
+              - paragraph [ref=e166]: Draft and refine your email messages before sending. Your draft is automatically saved and can be opened directly in Gmail when ready to send.
+              - textbox "Write your outreach draft here..." [ref=e167]
+            - generic [ref=e168]:
+              - heading "Notes" [level=2] [ref=e170]:
+                - img [ref=e171]
+                - text: Notes
+              - textbox "Add notes about this contact..." [ref=e173]
+          - generic [ref=e174]:
+            - heading "Contact Insights" [level=2] [ref=e176]
+            - generic [ref=e177]:
+              - heading "Activity" [level=2] [ref=e178]
+              - generic [ref=e179]:
+                - generic [ref=e182]:
+                  - paragraph [ref=e183]: Last updated
+                  - paragraph [ref=e184]: December 13, 2025 at 3:07 PM
+                - generic [ref=e187]:
+                  - paragraph [ref=e188]: Created
+                  - paragraph [ref=e189]: December 13, 2025 at 3:07 PM
+            - button "Unarchive Contact" [ref=e192] [cursor=pointer]:
+              - img [ref=e193]
+              - text: Unarchive Contact
+            - button "Delete Contact" [disabled] [ref=e197]:
+              - img [ref=e198]
+              - text: Delete Contact
+  - generic [ref=e200]:
+    - img [ref=e202]
+    - button "Open Tanstack query devtools" [ref=e250] [cursor=pointer]:
+      - img [ref=e251]
+  - dialog "Delete Contact" [ref=e300]:
+    - heading "Delete Contact" [level=3] [ref=e301]
+    - paragraph [ref=e302]: Are you sure? Deleting this contact is final and cannot be undone.
+    - generic [ref=e303]:
+      - button "Cancel" [ref=e305] [cursor=pointer]
+      - button "Delete" [ref=e307] [cursor=pointer]
+```

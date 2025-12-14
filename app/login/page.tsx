@@ -104,7 +104,7 @@ function LoginContent() {
       <div className="w-full max-w-md">
         {/* Logo/Brand Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#212B36] rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#212B36] rounded-sm mb-6 shadow-lg">
             <svg
               className="w-12 h-12 text-white"
               fill="none"
@@ -119,10 +119,10 @@ function LoginContent() {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-3">
+          <h1 className="text-4xl font-bold text-gray-700 mb-3">
             {appConfig.crmName}
           </h1>
-          <p className="text-theme-dark text-lg">
+          <p className="text-gray-600 text-lg">
             Manage your contacts and relationships with ease
           </p>
         </div>
@@ -130,7 +130,7 @@ function LoginContent() {
         {/* Login Card */}
         <div className="bg-[#EEEEEC] rounded-2xl shadow-xl p-8 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-theme-darkest mb-2">
+            <h2 className="text-2xl font-semibold text-gray-700 mb-2">
               Welcome back
             </h2>
             <p className="text-gray-500">
@@ -150,7 +150,6 @@ function LoginContent() {
             onClick={handleLogin}
             disabled={loading}
             loading={loading}
-            variant="outline"
             size="lg"
             fullWidth
             icon={
@@ -165,7 +164,7 @@ function LoginContent() {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
             }
-            className="border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md"
+            className="border-2 shadow-sm hover:shadow-md"
             error={error}
           >
             Sign in with Google
@@ -196,7 +195,7 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-theme-darker">Contacts</p>
+            <p className="text-xs font-medium text-gray-600">Contacts</p>
           </div>
           <div className="p-4 bg-[#EEEEEC]/60 backdrop-blur-sm rounded-xl">
             <div className="w-10 h-10 bg-green-100 rounded-sm flex items-center justify-center mx-auto mb-2">
@@ -214,7 +213,7 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-theme-darker">Gmail Sync</p>
+            <p className="text-xs font-medium text-gray-600">Gmail Sync</p>
           </div>
           <div className="p-4 bg-[#EEEEEC]/60 backdrop-blur-sm rounded-xl">
             <div className="w-10 h-10 bg-purple-100 rounded-sm flex items-center justify-center mx-auto mb-2">
@@ -232,7 +231,7 @@ function LoginContent() {
                 />
               </svg>
             </div>
-            <p className="text-xs font-medium text-theme-darker">AI Insights</p>
+            <p className="text-xs font-medium text-gray-600">AI Insights</p>
           </div>
         </div>
       </div>
@@ -244,7 +243,7 @@ export default function LoginPage() {
   return (
     <ThemedSuspense fallback={
       <div className="min-h-screen bg-radial from-neutral-200 via-neutral-100 to-blue-100 flex items-center justify-center">
-        <div className="text-theme-dark">Loading...</div>
+        <div className="text-gray-600">Loading...</div>
       </div>
     }>
       <LoginContent />

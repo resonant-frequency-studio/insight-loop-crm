@@ -41,9 +41,6 @@ export function useContact(userId: string, contactId: string) {
       const list = queryClient.getQueryData<Contact[]>(["contacts", userId]);
       return list?.find((c) => c.contactId === contactId);
     },
-    // Uses global defaults: refetchOnWindowFocus: true, refetchOnMount: true
-    // Optional: uncomment for near real-time updates on contact detail page
-    // refetchInterval: 30_000, // Poll every 30s for "live-ish" UI
   });
 }
 

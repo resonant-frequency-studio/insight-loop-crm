@@ -347,12 +347,12 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const getLinkClasses = (isActive: boolean, isSaving: boolean) => {
     const baseClasses = "flex items-center px-4 py-3 rounded-sm transition-colors duration-200 font-medium";
     if (isSaving) {
-      return `${baseClasses} text-[#8d8a85] cursor-not-allowed pointer-events-none`;
+      return `${baseClasses} text-theme-medium cursor-not-allowed pointer-events-none`;
     }
     if (isActive) {
-      return `${baseClasses} bg-[#333330] text-[#fafaf9]`;
+      return `${baseClasses} bg-card-light text-foreground`;
     }
-    return `${baseClasses} text-[#ebe7e4] hover:bg-[#333330] hover:text-[#fafaf9]`;
+    return `${baseClasses} text-foreground hover:bg-card-light`;
   };
 
   return (
@@ -360,7 +360,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
       {/* Skip to main content link for accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-[#fafaf9] focus:rounded-sm focus:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-foreground focus:rounded-sm focus:font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         Skip to main content
       </a>
@@ -377,12 +377,12 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar - Fixed on desktop, overlay on mobile */}
       <nav
-        className={`w-full xl:w-64 bg-[#191918] p-6 border-r border-theme-light flex flex-col h-[calc(100dvh-4rem)] xl:h-screen fixed right-0 xl:left-0 top-16 xl:top-0 z-50 transition-transform duration-500 ease-in-out ${
+        className={`w-full xl:w-64 bg-background p-6 border-r border-theme-light shadow-lg flex flex-col h-[calc(100dvh-4rem)] xl:h-screen fixed right-0 xl:left-0 top-16 xl:top-0 z-50 transition-transform duration-500 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full xl:translate-x-0"
         }`}
       >
         {/* Title - Only show on desktop */}
-        <h2 className="hidden xl:block text-xl font-semibold mb-8 text-[#fafaf9]">{appConfig.crmName}</h2>
+        <h2 className="hidden xl:block text-xl font-semibold mb-8 text-foreground">{appConfig.crmName}</h2>
 
         {/* Scrollable menu content */}
         <div className="flex-1 overflow-y-auto -mx-6 px-6">
@@ -486,8 +486,8 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                       disabled={isSaving}
                       className={`p-2 -mr-2 rounded-sm transition-colors duration-200 ${
                         isSaving
-                          ? "text-[#8d8a85] cursor-not-allowed"
-                          : "text-[#ebe7e4] hover:bg-[#333330] hover:text-[#fafaf9]"
+                          ? "text-theme-medium cursor-not-allowed"
+                          : "text-foreground hover:bg-card-light"
                       }`}
                       aria-label="Toggle Contacts submenu"
                     >
@@ -563,18 +563,18 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         {showUserElements && (
           <div className="mt-auto space-y-3">
             {/* User Info Card */}
-            <div className="px-4 py-3 bg-[#333330] rounded-sm">
+            <div className="px-4 py-3 bg-card-highlight-light rounded-sm">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#191918] rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-[#fafaf9] font-semibold text-sm">
+                <div className="w-10 h-10 bg-theme-light rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-foreground font-semibold text-sm">
                     {user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[#fafaf9] font-medium text-sm truncate">
+                  <p className="text-foreground font-medium text-sm truncate">
                     {user?.displayName || "User"}
                   </p>
-                  <p className="text-[#8d8a85] text-xs truncate">
+                  <p className="text-theme-dark text-xs truncate">
                     {user?.email}
                   </p>
                 </div>
