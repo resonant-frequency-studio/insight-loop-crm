@@ -1,6 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * AI Insight data structure
@@ -17,7 +19,7 @@ export interface AiInsight {
  * Hook to fetch AI insights
  */
 export function useAiInsights(userId: string) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["ai-insights", userId],
     queryFn: async () => {
       const response = await fetch("/api/insights");
@@ -31,5 +33,18 @@ export function useAiInsights(userId: string) {
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes - insights don't need to update too frequently
   });
+
+  const uiMode = getUIMode();
+
+  // Override query result based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 

@@ -1,19 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Contact } from "@/types/firestore";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * Hook to fetch all contacts for a user
- * 
- * ⚠️ CRITICAL: Does NOT use placeholderData - it masks stale data and prevents React Query
- * from recognizing when fresh data arrives after invalidation.
- * 
- * placeholderData was causing React Query to return cached data even after invalidation,
- * because it overrides the query response with old cached values.
  */
 export function useContacts(userId: string, initialData?: Contact[]) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["contacts", userId],
     queryFn: async () => {
       // Force no-store to ensure fresh data from API (which also uses no-store)
@@ -33,5 +29,18 @@ export function useContacts(userId: string, initialData?: Contact[]) {
     // placeholderData was preventing React Query from recognizing fresh data
     initialData, // Only if SSR provides initial list
   });
+
+  const uiMode = getUIMode();
+
+  // Override query result based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 

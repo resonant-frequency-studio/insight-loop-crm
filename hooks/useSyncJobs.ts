@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { SyncJob } from "@/types/firestore";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * Hook to fetch the most recent sync job for a user
@@ -12,7 +14,7 @@ export function useSyncJobs(
   includeHistory: boolean = false,
   initialData?: SyncJob[] | SyncJob | null
 ) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["sync-jobs", userId, includeHistory ? "history" : "last"],
     queryFn: async () => {
       const url = includeHistory
@@ -33,5 +35,18 @@ export function useSyncJobs(
     initialData, // Only for true server-side initial data (not needed with HydrationBoundary)
     // Uses global defaults: refetchOnWindowFocus: true, refetchOnMount: true
   });
+
+  const uiMode = getUIMode();
+
+  // Override query result based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: includeHistory ? [] : null, isLoading: false };
+    }
+    return query;
+  }, [query, uiMode, includeHistory]);
 }
 
