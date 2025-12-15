@@ -150,14 +150,20 @@ function TouchpointsContent({ userId }: { userId: string }) {
     .sort((a, b) => a.touchpointDate.getTime() - b.touchpointDate.getTime())
     .slice(0, 3);
 
+  // Calculate 30 days ago for overdue touchpoint limit
+  const thirtyDaysAgo = new Date(serverTime);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   const contactsWithOverdueTouchpoints: ContactWithTouchpoint[] = contacts
     .filter((contact) => {
       if (contact.archived) return false;
       const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
       if (!touchpointDate) return false;
       const status = contact.touchpointStatus;
+      // Filter out completed, cancelled (skipped), and very old touchpoints
       if (status === "completed" || status === "cancelled") return false;
-      return touchpointDate < serverTime;
+      // Only show overdue touchpoints within the last 30 days
+      return touchpointDate < serverTime && touchpointDate >= thirtyDaysAgo;
     })
     .map((contact) => {
       const touchpointDate = getTouchpointDate(contact.nextTouchpointDate)!;
@@ -234,8 +240,10 @@ function TouchpointsContent({ userId }: { userId: string }) {
     const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
     if (!touchpointDate) return false;
     const status = contact.touchpointStatus;
+    // Filter out completed, cancelled (skipped), and very old touchpoints
     if (status === "completed" || status === "cancelled") return false;
-    return touchpointDate < serverTime;
+    // Only count overdue touchpoints within the last 30 days
+    return touchpointDate < serverTime && touchpointDate >= thirtyDaysAgo;
   }).length;
 
   const totalUpcomingCount = contacts.filter((contact) => {
@@ -288,7 +296,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
                     selectedTouchpointIds.has(c.id)
                   ) && [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].length > 0
                 }
-                onChange={(e) => {
+                onChange={() => {
                   const allTodayPriorities = [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints];
                   const allSelected = allTodayPriorities.every((c) => selectedTouchpointIds.has(c.id));
                   
@@ -317,7 +325,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
           {contactsWithTodayTouchpoints.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-medium text-theme-darker mb-3">Due Today</h3>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-4">
                 {contactsWithTodayTouchpoints.map((contact) => {
                   const isSelected = selectedTouchpointIds.has(contact.id);
                   return (
@@ -349,7 +357,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
                 <h3 className="text-sm font-medium text-red-700">Overdue</h3>
                 <ViewAllLink href="/touchpoints/overdue" />
               </div>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-4">
                 {contactsWithOverdueTouchpoints.map((contact) => {
                   const isSelected = selectedTouchpointIds.has(contact.id);
                   return (
@@ -427,7 +435,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
           {renderBulkActions(contactsWithUpcomingTouchpoints)}
 
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-4">
             {contactsWithUpcomingTouchpoints.map((contact) => {
               const isSelected = selectedTouchpointIds.has(contact.id);
               return (
@@ -459,7 +467,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
             <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
             <ViewAllLink href="/contacts" />
           </div>
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-4">
             {recentContacts.map((contact) => (
               <ContactCard key={contact.contactId} contact={{ ...contact, id: contact.contactId }} showArrow={true} userId={userId} />
             ))}

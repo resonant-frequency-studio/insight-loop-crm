@@ -446,7 +446,7 @@ export default function ImportContactsPage() {
                       </Button>
                     </Link>
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSelectedFileName(null);
@@ -532,7 +532,7 @@ export default function ImportContactsPage() {
             type="button"
             onClick={handleCancelModalWithReset}
             disabled={isImporting}
-            variant="secondary"
+            variant="outline"
             size="md"
           >
             Cancel

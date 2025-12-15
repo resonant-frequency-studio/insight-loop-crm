@@ -57,7 +57,7 @@ export default function DeleteContactCard({
           <Button
             onClick={() => setShowDeleteConfirm(false)}
             disabled={deleteContactMutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Cancel

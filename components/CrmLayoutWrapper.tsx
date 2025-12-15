@@ -382,7 +382,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Title - Only show on desktop */}
-        <h2 className="hidden xl:block text-xl font-semibold mb-8 text-foreground">{appConfig.crmName}</h2>
+        <h2 className="hidden xl:block text-base font-semibold mb-8 text-foreground">{appConfig.crmName}</h2>
 
         {/* Scrollable menu content */}
         <div className="flex-1 overflow-y-auto -mx-6 px-6">

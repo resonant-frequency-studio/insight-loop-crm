@@ -54,7 +54,13 @@ export async function POST(req: Request) {
       expiresIn,
     });
 
-    const response = NextResponse.json({ ok: true, userId: userCredential.user.uid });
+    // Return custom token in response so client can sign in client-side
+    // This is needed for client components that use useAuth hook
+    const response = NextResponse.json({ 
+      ok: true, 
+      userId: userCredential.user.uid,
+      customToken: customToken, // Include custom token for client-side auth
+    });
     response.cookies.set({
       name: "__session",
       value: sessionCookie,

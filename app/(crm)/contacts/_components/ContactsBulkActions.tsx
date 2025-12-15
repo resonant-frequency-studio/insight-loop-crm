@@ -282,7 +282,7 @@ export default function ContactsBulkActions({ userId, contacts }: ContactsBulkAc
                   {
                     label: "Unarchive",
                     onClick: () => handleBulkArchive(false),
-                    variant: "gradient-green" as const,
+                    variant: "secondary" as const,
                     disabled: bulkArchiveMutation.isPending,
                     loading: bulkArchiveMutation.isPending,
                     showCount: true,

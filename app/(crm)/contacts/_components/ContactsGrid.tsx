@@ -52,7 +52,7 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
             <p className="text-sm text-gray-500 mb-6">
               Try adjusting your search criteria or clear filters to see all contacts
             </p>
-            <Button onClick={onClearFilters} variant="gradient-blue" size="sm">
+            <Button onClick={onClearFilters} size="sm">
               Clear Filters
             </Button>
           </Card>
@@ -78,7 +78,19 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-3">
+            {/* Top Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredContacts.length}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              itemLabel="contact"
+              onPageChange={setCurrentPage}
+              hideItemCount={true}
+            />
+
+            <div className="grid grid-cols-1 gap-4">
               {paginatedContacts.map((contact) => {
                 const isSelected = selectedContactIds.has(contact.id);
                 return (

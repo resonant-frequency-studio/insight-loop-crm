@@ -34,7 +34,7 @@ export default function CleanupTouchpointsPage() {
 
   const handleCleanup = async () => {
     if (!confirm(
-      "This will skip ALL touchpoints overdue by more than 120 days. " +
+      "This will skip ALL touchpoints overdue by more than 30 days. " +
       "This action cannot be undone. Continue?"
     )) {
       return;
@@ -83,7 +83,7 @@ export default function CleanupTouchpointsPage() {
       <div>
         <h1 className="text-4xl font-bold text-theme-darkest mb-2">Cleanup Old Touchpoints</h1>
         <p className="text-theme-dark text-lg">
-          One-time script to skip touchpoints overdue by more than 120 days
+          One-time script to skip touchpoints overdue by more than 30 days
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default function CleanupTouchpointsPage() {
           <div>
             <h3 className="text-lg font-semibold text-yellow-900 mb-2">Warning</h3>
             <p className="text-sm text-yellow-800">
-              This script will mark all touchpoints overdue by more than 120 days as &quot;Skipped&quot;. 
+              This script will mark all touchpoints overdue by more than 30 days as &quot;Skipped&quot;. 
               This is a one-time cleanup operation. After running, this page and the API endpoint should be deleted.
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function CleanupTouchpointsPage() {
           <div>
             <h2 className="text-xl font-semibold text-theme-darkest mb-2">What this does:</h2>
             <ul className="list-disc list-inside space-y-1 text-theme-darker">
-              <li>Finds all contacts with touchpoints overdue by more than 120 days</li>
+              <li>Finds all contacts with touchpoints overdue by more than 30 days</li>
               <li>Only updates touchpoints that are still &quot;pending&quot; (not already completed/cancelled)</li>
               <li>Sets status to &quot;cancelled&quot; (Skip Touchpoint) with an auto-generated reason</li>
               <li>These touchpoints will disappear from your dashboard</li>

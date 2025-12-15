@@ -323,7 +323,6 @@ export default function CleanupTagsPage() {
               onClick={handleCleanup}
               disabled={running || selectedTags.size === 0}
               loading={running}
-              variant="gradient-blue"
               size="md"
             >
               {dryRun ? "Preview Changes" : "Remove Selected Tags"}

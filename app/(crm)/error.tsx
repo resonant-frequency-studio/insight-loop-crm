@@ -26,14 +26,14 @@ export default function CrmError({
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-sm p-6">
-          <h2 className="text-lg font-semibold text-red-900 mb-2">Something went wrong</h2>
+        <div className="bg-background border border-red-200 rounded-sm p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-2">Something went wrong</h2>
           <ErrorMessage
             message={error.message || "An unexpected error occurred"}
             dismissible={false}
           />
           <div className="mt-4 flex gap-2">
-            <Button onClick={reset} variant="success" size="sm">
+            <Button onClick={reset} variant="secondary" size="sm">
               Try again
             </Button>
             <Button

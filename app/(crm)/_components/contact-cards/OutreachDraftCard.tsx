@@ -177,7 +177,7 @@ export default function OutreachDraftCard({
         <div className="flex gap-3 justify-end">
           <Button
             onClick={() => setModalContent(null)}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             OK

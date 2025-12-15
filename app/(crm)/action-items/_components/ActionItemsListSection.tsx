@@ -256,7 +256,7 @@ export default function ActionItemsListSection({
           <Button
             onClick={handleDeleteCancel}
             disabled={deleteActionItemMutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Cancel
@@ -296,6 +296,18 @@ export default function ActionItemsListSection({
             <p className="text-gray-500 text-center py-8">No action items match your filters</p>
           ) : (
             <>
+              {/* Top Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredItems.length}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                itemLabel="action item"
+                onPageChange={setCurrentPage}
+                hideItemCount={true}
+              />
+
               <div className="space-y-3">
                 {paginatedItems.map((item) => {
                 const checkboxState = checkboxStates.get(item.actionItemId);

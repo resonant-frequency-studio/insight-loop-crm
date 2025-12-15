@@ -223,7 +223,7 @@ export default function ActionItemsList({
               setUpdateError(null);
             }}
             disabled={deleteActionItemMutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Cancel
@@ -333,7 +333,7 @@ export default function ActionItemsList({
                 onClick={handleAdd}
                 disabled={saving || !newText.trim()}
                 loading={saving}
-                variant="success"
+                variant="secondary"
                 size="sm"
                 error={addError}
               >

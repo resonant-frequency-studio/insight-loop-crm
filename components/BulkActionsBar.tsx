@@ -8,7 +8,7 @@ interface BulkAction {
   label: string;
   labelMobile?: string; // Optional shorter label for mobile
   onClick: () => void;
-  variant?: "gradient-green" | "gradient-gray" | "gradient-blue" | "gradient-emerald" | "primary" | "secondary" | "danger" | "success" | "outline" | "ghost";
+  variant?: "primary" | "danger" | "secondary" | "outline" | "link";
   icon?: ReactNode;
   disabled?: boolean;
   loading?: boolean;

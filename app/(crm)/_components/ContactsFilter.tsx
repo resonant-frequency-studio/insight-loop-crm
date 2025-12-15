@@ -230,7 +230,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
                               toggleTag(tag);
                               setTagSearch("");
                             }}
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             className="w-full text-left px-4 py-2 hover:bg-theme-darker hover:text-theme-lightest text-sm text-theme-darker justify-start"
                             role="option"
@@ -263,7 +263,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
                       {tag}
                       <Button
                         onClick={() => toggleTag(tag)}
-                        variant="ghost"
+                        variant="link"
                         size="sm"
                         className="p-0 w-auto h-auto hover:text-blue-900"
                         aria-label={`Remove ${tag} tag`}

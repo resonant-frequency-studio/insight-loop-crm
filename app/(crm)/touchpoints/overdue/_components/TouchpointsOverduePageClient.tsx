@@ -66,6 +66,10 @@ export default function TouchpointsOverduePageClient() {
     return null;
   };
 
+  // Calculate 30 days ago for overdue touchpoint limit
+  const thirtyDaysAgo = new Date(serverTime);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   // Filter and sort all overdue touchpoints
   const allOverdueTouchpoints: ContactWithTouchpoint[] = contacts
     .filter((contact) => {
@@ -73,8 +77,10 @@ export default function TouchpointsOverduePageClient() {
       const touchpointDate = getTouchpointDate(contact.nextTouchpointDate);
       if (!touchpointDate) return false;
       const status = contact.touchpointStatus;
+      // Filter out completed, cancelled (skipped), and very old touchpoints
       if (status === "completed" || status === "cancelled") return false;
-      return touchpointDate < serverTime;
+      // Only show overdue touchpoints within the last 30 days
+      return touchpointDate < serverTime && touchpointDate >= thirtyDaysAgo;
     })
     .map((contact) => {
       const touchpointDate = getTouchpointDate(contact.nextTouchpointDate)!;
@@ -111,7 +117,19 @@ export default function TouchpointsOverduePageClient() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 mb-6">
+            {/* Top Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={allOverdueTouchpoints.length}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              itemLabel="touchpoint"
+              onPageChange={setCurrentPage}
+              hideItemCount={true}
+            />
+
+            <div className="grid grid-cols-1 gap-4 mb-6">
               {paginatedTouchpoints.map((contact) => (
                 <ContactCard
                   key={contact.id}

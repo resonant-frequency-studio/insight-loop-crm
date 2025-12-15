@@ -24,7 +24,7 @@ export default function TouchpointBulkActions({
           label: "Mark as Contacted",
           labelMobile: "Mark Contacted",
           onClick: onMarkAsContacted,
-          variant: "success",
+          variant: "secondary",
           disabled: isLoading,
           loading: isLoading,
           showCount: true,
