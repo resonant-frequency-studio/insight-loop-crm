@@ -3,10 +3,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
-import SavingIndicator from "./SavingIndicator";
+import SaveButtonWithIndicator from "./SaveButtonWithIndicator";
 import Input from "@/components/Input";
 import { reportException } from "@/lib/error-reporting";
 import { Contact } from "@/types/firestore";
@@ -95,13 +94,18 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
     );
   };
 
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Autosave every 30 seconds when there are unsaved changes
+  useEffect(() => {
+    if (!hasChanges) return;
 
-  const handleBlur = () => {
-    if (hasChanges) {
-      debouncedSave();
-    }
-  };
+    const interval = setInterval(() => {
+      if (hasChanges) {
+        saveChanges();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasChanges, saveChanges]);
 
   if (!contact) {
     return (
@@ -130,7 +134,11 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
           </svg>
           Basic Information
         </h2>
-        <SavingIndicator status={saveStatus} />
+        <SaveButtonWithIndicator
+          saveStatus={saveStatus}
+          hasUnsavedChanges={hasChanges}
+          onSave={saveChanges}
+        />
       </div>
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -143,7 +151,6 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
               name="contact-first-name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              onBlur={handleBlur}
               placeholder="First Name"
             />
           </div>
@@ -156,7 +163,6 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
               name="contact-last-name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              onBlur={handleBlur}
               placeholder="Last Name"
             />
           </div>
@@ -170,7 +176,6 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
             name="contact-company"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
-            onBlur={handleBlur}
             placeholder="Company"
           />
         </div>

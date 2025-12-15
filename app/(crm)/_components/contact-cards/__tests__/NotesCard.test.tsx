@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import NotesCard from "../NotesCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import { useSavingState } from "@/contexts/SavingStateContext";
 import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import type { Contact } from "@/types/firestore";
@@ -10,23 +9,16 @@ import type { SavingStateContextType } from "@/contexts/SavingStateContext";
 
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
-jest.mock("@/hooks/useDebouncedSave");
 jest.mock("@/contexts/SavingStateContext");
-jest.mock("../SavingIndicator", () => ({
-  __esModule: true,
-  default: ({ status }: { status: string }) => <div data-testid="saving-indicator" data-status={status} />,
-}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
 const mockUseUpdateContact = useUpdateContact as jest.MockedFunction<typeof useUpdateContact>;
-const mockUseDebouncedSave = useDebouncedSave as jest.MockedFunction<typeof useDebouncedSave>;
 const mockUseSavingState = useSavingState as jest.MockedFunction<typeof useSavingState>;
 
 describe("NotesCard", () => {
   const mockUserId = "user-123";
   const mockContactId = "contact-123";
   const mockMutate = jest.fn();
-  const mockDebouncedSave = jest.fn();
   const mockRegisterSaveStatus = jest.fn();
   const mockUnregisterSaveStatus = jest.fn();
 
@@ -50,14 +42,6 @@ describe("NotesCard", () => {
         undefined
       ) as ReturnType<typeof useUpdateContact>
     );
-
-    // Mock useDebouncedSave to return a jest.fn() that immediately calls the save function
-    mockUseDebouncedSave.mockImplementation((saveFn: () => void) => {
-      const debouncedFn = jest.fn(() => {
-        saveFn();
-      });
-      return debouncedFn as typeof saveFn;
-    });
   });
 
   describe("Loading State", () => {
@@ -124,7 +108,7 @@ describe("NotesCard", () => {
       expect(textarea.value).toBe("Updated notes");
     });
 
-    it("calls debounced save on blur", async () => {
+    it("calls save when Save button is clicked", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         notes: "Initial notes",
@@ -143,15 +127,22 @@ describe("NotesCard", () => {
       
       const textarea = screen.getByPlaceholderText("Add notes about this contact...");
       fireEvent.change(textarea, { target: { value: "Updated notes" } });
-      fireEvent.blur(textarea);
       
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalled();
       });
     });
 
-    it("does not call debounced save on blur when there are no changes", () => {
+    it("disables Save button when there are no changes", () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         notes: "Initial notes",
@@ -163,10 +154,8 @@ describe("NotesCard", () => {
 
       render(<NotesCard contactId={mockContactId} userId={mockUserId} />);
       
-      const textarea = screen.getByPlaceholderText("Add notes about this contact...");
-      fireEvent.blur(textarea);
-      
-      expect(mockDebouncedSave).not.toHaveBeenCalled();
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      expect(saveButton).toBeDisabled();
     });
   });
 
@@ -190,9 +179,16 @@ describe("NotesCard", () => {
 
       const textarea = screen.getByPlaceholderText("Add notes about this contact...");
       fireEvent.change(textarea, { target: { value: "Updated notes" } });
-      fireEvent.blur(textarea);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -225,9 +221,16 @@ describe("NotesCard", () => {
 
       const textarea = screen.getByPlaceholderText("Add notes about this contact...");
       fireEvent.change(textarea, { target: { value: "" } });
-      fireEvent.blur(textarea);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -281,13 +284,6 @@ describe("NotesCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      let saveCallback: (() => void) | undefined;
-      
-      mockDebouncedSave.mockImplementation((callback) => {
-        saveCallback = callback;
-        return callback;
-      });
-
       mockMutate.mockImplementation((data, options) => {
         // Call onSuccess immediately to simulate successful mutation
         if (options?.onSuccess) {
@@ -299,19 +295,20 @@ describe("NotesCard", () => {
       
       const textarea = screen.getByPlaceholderText("Add notes about this contact...");
       fireEvent.change(textarea, { target: { value: "Updated notes" } });
-      fireEvent.blur(textarea);
 
-      // Trigger the save callback
-      await act(async () => {
-        if (saveCallback) {
-          saveCallback();
-        }
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+      
+      fireEvent.click(saveButton);
 
+      // Should show "Saving..." text during save
       await waitFor(() => {
-        const indicator = screen.getByTestId("saving-indicator");
-        expect(indicator.getAttribute("data-status")).toBe("saved");
-      }, { timeout: 3000 });
+        expect(screen.getByText("Saving...")).toBeInTheDocument();
+      });
     });
 
     it("shows error indicator on save failure", async () => {
@@ -324,13 +321,6 @@ describe("NotesCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      let saveCallback: (() => void) | undefined;
-      
-      mockDebouncedSave.mockImplementation((callback) => {
-        saveCallback = callback;
-        return callback;
-      });
-
       mockMutate.mockImplementation((data, options) => {
         // Call onError immediately to simulate failed mutation
         if (options?.onError) {
@@ -342,19 +332,20 @@ describe("NotesCard", () => {
       
       const textarea = screen.getByPlaceholderText("Add notes about this contact...");
       fireEvent.change(textarea, { target: { value: "Updated notes" } });
-      fireEvent.blur(textarea);
 
-      // Trigger the save callback
-      await act(async () => {
-        if (saveCallback) {
-          saveCallback();
-        }
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
       });
+      
+      fireEvent.click(saveButton);
 
+      // Should show "Saving..." text during save
       await waitFor(() => {
-        const indicator = screen.getByTestId("saving-indicator");
-        expect(indicator.getAttribute("data-status")).toBe("error");
-      }, { timeout: 3000 });
+        expect(screen.getByText("Saving...")).toBeInTheDocument();
+      });
     });
   });
 

@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
-import SavingIndicator from "./SavingIndicator";
+import SaveButtonWithIndicator from "./SaveButtonWithIndicator";
 import Textarea from "@/components/Textarea";
 import { reportException } from "@/lib/error-reporting";
 import { Contact } from "@/types/firestore";
@@ -86,13 +85,18 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
     );
   };
 
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Autosave every 30 seconds when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
 
-  const handleBlur = () => {
-    if (hasUnsavedChanges) {
-      debouncedSave();
-    }
-  };
+    const interval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveChanges();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasUnsavedChanges, saveChanges]);
 
   if (!contact) {
     return (
@@ -121,7 +125,11 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
           </svg>
           Notes
         </h2>
-        <SavingIndicator status={saveStatus} />
+        <SaveButtonWithIndicator
+          saveStatus={saveStatus}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSave={saveChanges}
+        />
       </div>
       <Textarea
         id="contact-notes"
@@ -129,7 +137,6 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
         rows={6}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        onBlur={handleBlur}
         placeholder="Add notes about this contact..."
       />
     </Card>

@@ -11,6 +11,7 @@ import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
 import { reportException } from "@/lib/error-reporting";
 import { SyncJob } from "@/types/firestore";
 import EmptyState from "@/components/dashboard/EmptyState";
+import Modal from "@/components/Modal";
 
 interface SyncPageClientProps {
   userId: string;
@@ -30,6 +31,9 @@ export default function SyncPageClient({
   const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Use real-time data if available, otherwise fall back to initial data
   const lastSync = realtimeLastSync || initialLastSync;
@@ -51,7 +55,35 @@ export default function SyncPageClient({
 
     try {
       const response = await fetch("/api/gmail/sync?type=auto");
-      const data = await response.json();
+      
+      // Check if response is OK before parsing JSON
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = `Sync failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Parse JSON response with error handling
+      let data;
+      try {
+        const text = await response.text();
+        if (!text || text.trim() === "") {
+          throw new Error("Empty response from server");
+        }
+        data = JSON.parse(text);
+      } catch (parseError) {
+        if (parseError instanceof SyntaxError) {
+          throw new Error("Invalid response from server. Please try again.");
+        }
+        throw parseError;
+      }
 
       if (!data.ok) {
         const errorMessage = data.error || "Sync failed";
@@ -90,6 +122,41 @@ export default function SyncPageClient({
     return "Invalid date";
   };
 
+  const handleClearHistory = async () => {
+    setClearingHistory(true);
+    setClearError(null);
+    setShowClearConfirm(false);
+
+    try {
+      const response = await fetch("/api/sync-jobs/clear", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to clear sync history");
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || "Failed to clear sync history");
+      }
+
+      // History will update automatically via real-time listener
+      setClearError(null);
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      setClearError(errorMessage);
+      reportException(error, {
+        context: "Clear sync history error",
+        tags: { component: "SyncPageClient" },
+      });
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "complete":
@@ -107,6 +174,38 @@ export default function SyncPageClient({
 
   return (
     <div className="space-y-8">
+      {/* Clear History Confirmation Modal */}
+      <Modal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear Sync History"
+        closeOnBackdropClick={!clearingHistory}
+      >
+        <p className="text-theme-dark mb-6">
+          Are you sure you want to clear sync history? This will keep only the most recent sync job. This action cannot be undone.
+        </p>
+        <div className="flex gap-3 justify-end">
+          <Button
+            onClick={() => setShowClearConfirm(false)}
+            disabled={clearingHistory}
+            variant="outline"
+            size="sm"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleClearHistory}
+            disabled={clearingHistory}
+            loading={clearingHistory}
+            variant="danger"
+            size="sm"
+            error={clearError}
+          >
+            Clear History
+          </Button>
+        </div>
+      </Modal>
+
       {/* Sync Now Button - Static, renders immediately */}
       <div className="flex justify-end">
         <Button
@@ -114,6 +213,7 @@ export default function SyncPageClient({
           disabled={syncing}
           loading={syncing}
           size="sm"
+          variant="secondary"
           icon={
             <svg
               className="w-5 h-5"
@@ -217,11 +317,21 @@ export default function SyncPageClient({
                 </div>
               )}
             </div>
-            {lastSync.errorMessage && (
+                {lastSync.errorMessage && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-sm">
-                <p className="text-sm text-red-800">
+                <p className="text-sm text-red-800 mb-2">
                   <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
                 </p>
+                {(lastSync.errorMessage.includes("reconnect your Gmail account") || 
+                  lastSync.errorMessage.includes("Gmail access token") ||
+                  lastSync.errorMessage.includes("Gmail authentication")) && (
+                  <a
+                    href="/api/oauth/gmail/start?redirect=/sync"
+                    className="text-sm text-red-600 hover:text-red-800 underline font-medium"
+                  >
+                    Reconnect Gmail Account →
+                  </a>
+                )}
               </div>
             )}
           </Card>
@@ -229,7 +339,44 @@ export default function SyncPageClient({
 
         {/* Sync History */}
         <Card padding="md">
-          <h2 className="text-xl font-semibold text-theme-darkest mb-4">Sync History</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-theme-darkest">Sync History</h2>
+            {syncHistory.length > 1 && (
+              <Button
+                onClick={() => setShowClearConfirm(true)}
+                disabled={clearingHistory}
+                size="sm"
+                variant="outline"
+                icon={
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                }
+              >
+                Clear History
+              </Button>
+            )}
+          </div>
+          
+          {clearError && (
+            <ErrorMessage
+              message={clearError}
+              dismissible
+              onDismiss={() => setClearError(null)}
+              className="mb-4"
+            />
+          )}
+
           {syncHistory.length === 0 ? (
             <p className="text-theme-medium text-center py-8">No sync history available yet</p>
           ) : (

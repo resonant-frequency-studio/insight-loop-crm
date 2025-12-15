@@ -25,11 +25,11 @@ import { validateTestUserId } from "./helpers/validation";
  * Component-level functionality (form fields, buttons, modals) is tested
  * in unit tests and not duplicated here.
  * 
- * Note: Contact forms use auto-save on blur (debounced), not manual save buttons.
+ * Note: Contact forms use explicit Save buttons for saving changes.
  */
 
 /**
- * Helper to edit and save a field using auto-save on blur
+ * Helper to edit and save a field using the Save button
  */
 async function editFieldAndSave(page: Page, selector: string, newValue: string) {
   const input = page.locator(selector).first();
@@ -43,10 +43,14 @@ async function editFieldAndSave(page: Page, selector: string, newValue: string) 
   await input.fill(newValue);
   await page.waitForTimeout(100); // Small delay after fill
   
-  // Trigger blur to trigger auto-save
-  await input.blur();
+  // Find and click the Save button (should be enabled after making changes)
+  const saveButton = page.locator('button:has-text("Save")').first();
+  await saveButton.waitFor({ state: "visible" });
+  await saveButton.waitFor({ state: "attached" });
+  await page.waitForTimeout(100); // Small delay to ensure button is enabled
+  await saveButton.click();
   
-  // Wait for save to complete (debounce 500ms + save operation + buffer)
+  // Wait for save to complete (save operation + buffer)
   await page.waitForTimeout(2000);
 }
 
@@ -148,11 +152,11 @@ test.describe("Cross-Page Data Consistency", () => {
     });
 
     try {
-      // Step 1: Edit contact on detail page (auto-saves on blur)
+      // Step 1: Edit contact on detail page (saves via Save button)
       await authenticatedPage.goto(`/contacts/${contactId}`);
       await authenticatedPage.waitForURL(/\/contacts\/.+/);
 
-      // Edit first name - will auto-save on blur
+      // Edit first name - will save when Save button is clicked
       await Promise.all([
         editFieldAndSave(authenticatedPage, 'input#contact-first-name, input[id*="contact-first"], input[placeholder="First Name"]', "Updated"),
         authenticatedPage.waitForResponse(

@@ -32,7 +32,7 @@ describe("Button", () => {
     });
 
     it("renders all size variants correctly", () => {
-      const sizes: ButtonSize[] = ["sm", "md", "lg"];
+      const sizes: ButtonSize[] = ["xs", "sm", "md", "lg"];
 
       sizes.forEach((size) => {
         const { unmount } = render(<Button size={size}>{size}</Button>);
@@ -40,6 +40,12 @@ describe("Button", () => {
         expect(button).toBeInTheDocument();
         unmount();
       });
+    });
+
+    it("renders xs size with correct styling", () => {
+      render(<Button size="xs">Extra Small</Button>);
+      const button = screen.getByRole("button", { name: /extra small/i });
+      expect(button).toHaveClass("px-2", "py-1", "text-sm");
     });
   });
 

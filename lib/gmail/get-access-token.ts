@@ -29,12 +29,30 @@ export async function getAccessToken(userId: string) {
   const tokens = await res.json();
 
   if (!tokens.access_token) {
-    reportException(new Error("Could not refresh access token"), {
+    // Check for specific error types
+    const errorType = tokens.error;
+    const errorDescription = tokens.error_description || "";
+    
+    let errorMessage = "Could not refresh access token.";
+    if (errorType === "invalid_grant") {
+      if (errorDescription.includes("expired") || errorDescription.includes("revoked")) {
+        errorMessage = "Gmail access token has expired or been revoked. Please reconnect your Gmail account.";
+      } else {
+        errorMessage = "Gmail authentication failed. Please reconnect your Gmail account.";
+      }
+    }
+    
+    reportException(new Error(errorMessage), {
       context: "Token refresh failed",
       tags: { component: "get-access-token", userId },
-      extra: { tokenResponse: tokens },
+      extra: { tokenResponse: tokens, errorType, errorDescription },
     });
-    throw new Error("Could not refresh access token.");
+    
+    // Create a custom error with the user-friendly message
+        const error = new Error(errorMessage);
+        (error as Error & { code?: string; requiresReauth?: boolean }).code = errorType;
+        (error as Error & { code?: string; requiresReauth?: boolean }).requiresReauth = errorType === "invalid_grant";
+        throw error;
   }
 
   await doc.ref.update({

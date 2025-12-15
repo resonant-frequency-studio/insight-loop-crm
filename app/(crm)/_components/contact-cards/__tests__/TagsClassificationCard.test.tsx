@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import TagsClassificationCard from "../TagsClassificationCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import { useSavingState } from "@/contexts/SavingStateContext";
 import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import type { Contact } from "@/types/firestore";
@@ -10,7 +9,6 @@ import type { SavingStateContextType } from "@/contexts/SavingStateContext";
 
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
-jest.mock("@/hooks/useDebouncedSave");
 jest.mock("@/contexts/SavingStateContext");
 jest.mock("../../SegmentSelect", () => ({
   __esModule: true,
@@ -24,21 +22,15 @@ jest.mock("../../SegmentSelect", () => ({
     </div>
   ),
 }));
-jest.mock("../SavingIndicator", () => ({
-  __esModule: true,
-  default: ({ status }: { status: string }) => <div data-testid="saving-indicator" data-status={status} />,
-}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
 const mockUseUpdateContact = useUpdateContact as jest.MockedFunction<typeof useUpdateContact>;
-const mockUseDebouncedSave = useDebouncedSave as jest.MockedFunction<typeof useDebouncedSave>;
 const mockUseSavingState = useSavingState as jest.MockedFunction<typeof useSavingState>;
 
 describe("TagsClassificationCard", () => {
   const mockUserId = "user-123";
   const mockContactId = "contact-123";
   const mockMutate = jest.fn();
-  const mockDebouncedSave = jest.fn();
   const mockRegisterSaveStatus = jest.fn();
   const mockUnregisterSaveStatus = jest.fn();
 
@@ -62,14 +54,6 @@ describe("TagsClassificationCard", () => {
         undefined
       ) as ReturnType<typeof useUpdateContact>
     );
-
-    // Mock useDebouncedSave to return a jest.fn() that immediately calls the save function
-    mockUseDebouncedSave.mockImplementation((saveFn: () => void) => {
-      const debouncedFn = jest.fn(() => {
-        saveFn();
-      });
-      return debouncedFn as typeof saveFn;
-    });
   });
 
   describe("Loading State", () => {
@@ -227,9 +211,16 @@ describe("TagsClassificationCard", () => {
       
       const tagsInput = screen.getByPlaceholderText("tag1, tag2, tag3");
       fireEvent.change(tagsInput, { target: { value: "Tag1, Tag2" } });
-      fireEvent.blur(tagsInput);
       
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalled();
       });
@@ -256,9 +247,16 @@ describe("TagsClassificationCard", () => {
 
       const tagsInput = screen.getByPlaceholderText("tag1, tag2, tag3");
       fireEvent.change(tagsInput, { target: { value: "Tag1, Tag2, Tag3" } });
-      fireEvent.blur(tagsInput);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -284,18 +282,11 @@ describe("TagsClassificationCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      let saveCallback: (() => void) | undefined;
-      mockDebouncedSave.mockImplementation((callback) => {
-        saveCallback = callback;
-        return callback;
-      });
-
       render(<TagsClassificationCard contactId={mockContactId} userId={mockUserId} />);
       
-      // Don't make any changes
-      if (saveCallback) {
-        saveCallback();
-      }
+      // Don't make any changes - Save button should be disabled
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      expect(saveButton).toBeDisabled();
 
       // Should not call mutate if there are no changes
       expect(mockMutate).not.toHaveBeenCalled();

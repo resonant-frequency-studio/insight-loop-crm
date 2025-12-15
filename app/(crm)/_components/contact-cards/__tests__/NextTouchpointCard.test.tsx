@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import NextTouchpointCard from "../NextTouchpointCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import { useSavingState } from "@/contexts/SavingStateContext";
 import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import { Timestamp } from "firebase/firestore";
@@ -10,7 +9,6 @@ import type { Contact } from "@/types/firestore";
 
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
-jest.mock("@/hooks/useDebouncedSave");
 jest.mock("@/contexts/SavingStateContext");
 jest.mock("../../TouchpointStatusActions", () => ({
   __esModule: true,
@@ -20,14 +18,9 @@ jest.mock("../../TouchpointStatusActions", () => ({
     </div>
   ),
 }));
-jest.mock("../SavingIndicator", () => ({
-  __esModule: true,
-  default: ({ status }: { status: string }) => <div data-testid="saving-indicator" data-status={status} />,
-}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
 const mockUseUpdateContact = useUpdateContact as jest.MockedFunction<typeof useUpdateContact>;
-const mockUseDebouncedSave = useDebouncedSave as jest.MockedFunction<typeof useDebouncedSave>;
 const mockUseSavingState = useSavingState as jest.MockedFunction<typeof useSavingState>;
 
 describe("NextTouchpointCard", () => {
@@ -53,14 +46,6 @@ describe("NextTouchpointCard", () => {
         mockMutateAsync
       ) as ReturnType<typeof useUpdateContact>
     );
-
-    // Mock useDebouncedSave to return a jest.fn() that immediately calls the save function
-    mockUseDebouncedSave.mockImplementation((saveFn: () => void) => {
-      const debouncedFn = jest.fn(() => {
-        saveFn();
-      });
-      return debouncedFn as ReturnType<typeof useDebouncedSave<() => void>>;
-    });
   });
 
   describe("Loading State", () => {
@@ -170,7 +155,7 @@ describe("NextTouchpointCard", () => {
       expect(messageTextarea.value).toBe("Updated message");
     });
 
-    it("calls debounced save on blur", async () => {
+    it("calls save when Save button is clicked", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         nextTouchpointDate: Timestamp.fromDate(new Date("2024-01-15")),
@@ -188,9 +173,16 @@ describe("NextTouchpointCard", () => {
       });
       
       fireEvent.change(dateInput, { target: { value: "2024-01-20" } });
-      fireEvent.blur(dateInput);
       
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalled();
       });
@@ -217,9 +209,16 @@ describe("NextTouchpointCard", () => {
       });
       
       fireEvent.change(dateInput, { target: { value: "2024-01-20" } });
-      fireEvent.blur(dateInput);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -250,10 +249,11 @@ describe("NextTouchpointCard", () => {
         expect(dateInput).toBeInTheDocument();
       });
       
-      // Don't make any changes - just render the component
+      // Don't make any changes - Save button should be disabled
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      expect(saveButton).toBeDisabled();
+      
       // The save function should not be called if there are no changes
-      // Since we mock useDebouncedSave to immediately call the save function,
-      // we verify that mutate is not called (because hasChanges would be false)
       expect(mockMutate).not.toHaveBeenCalled();
     });
   });

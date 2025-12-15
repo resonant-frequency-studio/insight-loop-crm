@@ -53,6 +53,7 @@ async function createSyncJob(
 
 /**
  * Update sync job status
+ * Uses set with merge to handle cases where document might not exist yet
  */
 async function updateSyncJob(
   userId: string,
@@ -64,15 +65,23 @@ async function updateSyncJob(
     Object.entries(updates).filter(([_, value]) => value !== undefined)
   );
   
-  await adminDb
+  const docRef = adminDb
     .collection("users")
     .doc(userId)
     .collection("syncJobs")
-    .doc(syncJobId)
-    .update({
+    .doc(syncJobId);
+  
+  // Use set with merge instead of update to handle cases where document doesn't exist
+  // This ensures we can update the job even if creation failed or was interrupted
+  await docRef.set(
+    {
+      syncJobId,
+      userId,
       ...cleanUpdates,
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    },
+    { merge: true }
+  );
 }
 
 /**
@@ -98,6 +107,8 @@ export async function runSyncJob(
 ): Promise<SyncJobResult> {
   const { userId, type = "auto", syncJobId } = options;
   const jobId = syncJobId || `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  let syncJobCreated = false;
+  let syncType: "initial" | "incremental" = "initial";
 
   try {
     // Check if sync is already running
@@ -111,11 +122,11 @@ export async function runSyncJob(
       };
     }
 
-    // Get access token
+    // Get access token first (may throw if token is expired/revoked)
+    // This validates we can proceed before creating the sync job
     const accessToken = await getAccessToken(userId);
 
     // Determine sync type
-    let syncType: "initial" | "incremental" = "initial";
     if (type === "auto") {
       const settings = await getUserSyncSettings(adminDb, userId);
       syncType =
@@ -127,8 +138,9 @@ export async function runSyncJob(
       syncType = type;
     }
 
-    // Create sync job document
+    // Create sync job document after validation passes
     await createSyncJob(userId, syncType, jobId);
+    syncJobCreated = true;
 
     // Get sync settings for incremental sync
     const settings = await getUserSyncSettings(adminDb, userId);
@@ -144,6 +156,16 @@ export async function runSyncJob(
           settings.lastSyncHistoryId
         );
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // If it's an authentication scope issue, don't fall back - throw it so user can reconnect
+        if (errorMessage.includes("insufficient authentication scopes") || 
+            errorMessage.includes("insufficient authentication") ||
+            errorMessage.includes("Gmail authentication scopes are insufficient") ||
+            errorMessage.includes("reconnect your Gmail account")) {
+          throw error;
+        }
+        
         // Fallback to full sync if incremental fails (e.g., historyId invalid)
         console.warn(
           `Incremental sync failed, falling back to full sync: ${error}`
@@ -184,15 +206,23 @@ export async function runSyncJob(
       errors: syncResult.errors.length > 0 ? syncResult.errors : undefined,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error occurred";
+    let errorMessage = "Unknown error occurred";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
 
-    // Update sync job as error
+    // Update sync job as error (or create it if it wasn't created yet)
     try {
       await updateSyncJob(userId, jobId, {
+        syncJobId: jobId,
+        userId,
+        type: syncType || "initial",
         status: "error",
+        startedAt: syncJobCreated ? undefined : FieldValue.serverTimestamp(),
         finishedAt: FieldValue.serverTimestamp(),
         errorMessage,
+        processedThreads: 0,
+        processedMessages: 0,
       });
     } catch (updateError) {
       reportException(updateError, {
