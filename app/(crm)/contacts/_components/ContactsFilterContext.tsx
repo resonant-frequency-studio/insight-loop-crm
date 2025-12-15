@@ -12,6 +12,7 @@ interface ContactsFilterContextValue {
   // Filter state
   filteredContacts: ContactWithId[];
   totalContactsCount: number;
+  isLoading?: boolean;
   hasActiveFilters: boolean;
   showArchived: boolean;
   setShowArchived: (value: boolean) => void;
@@ -65,12 +66,14 @@ interface ContactsFilterProviderProps {
   children: ReactNode;
   contacts: ContactWithId[];
   itemsPerPage?: number;
+  isLoading?: boolean;
 }
 
 export function ContactsFilterProvider({
   children,
   contacts,
   itemsPerPage = 20,
+  isLoading = false,
 }: ContactsFilterProviderProps) {
   const filterState = useContactsPageFilters({
     contacts,
@@ -81,6 +84,7 @@ export function ContactsFilterProvider({
     <ContactsFilterContext.Provider value={{
       ...filterState,
       totalContactsCount: contacts.length,
+      isLoading,
     }}>
       {children}
     </ContactsFilterContext.Provider>

@@ -16,6 +16,7 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
   const {
     filteredContacts,
     totalContactsCount,
+    isLoading,
     onClearFilters,
     currentPage,
     setCurrentPage,
@@ -31,7 +32,7 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
 
   return (
     <Card padding="md">
-      <ThemedSuspense>
+      <ThemedSuspense isLoading={isLoading}>
         {filteredContacts.length === 0 && totalContactsCount > 0 ? (
           <Card padding="xl" className="text-center">
             <svg

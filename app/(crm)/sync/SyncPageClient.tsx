@@ -26,14 +26,19 @@ export default function SyncPageClient({
   const { user } = useAuth();
   const effectiveUserId = userId || user?.uid || "";
   // Use real-time hook for updates
-  const { lastSync: realtimeLastSync, syncHistory: realtimeSyncHistory, error } = useSyncStatus(userId);
-  const { data: contacts = [] } = useContacts(effectiveUserId);
+  const { lastSync: realtimeLastSync, syncHistory: realtimeSyncHistory, error, loading: syncLoading } = useSyncStatus(userId);
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Use real-time data if available, otherwise fall back to initial data
   const lastSync = realtimeLastSync || initialLastSync;
   const syncHistory = realtimeSyncHistory.length > 0 ? realtimeSyncHistory : initialSyncHistory;
+  
+  // Show loading state if either is loading (suspense mode)
+  if (contactsLoading || syncLoading) {
+    return <ThemedSuspense isLoading={true} variant="sync" />;
+  }
   
   // Show empty state if no contacts
   if (contacts.length === 0) {

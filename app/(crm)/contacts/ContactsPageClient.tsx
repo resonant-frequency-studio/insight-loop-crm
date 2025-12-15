@@ -73,7 +73,7 @@ function ContactsPageHeader({ contacts }: { contacts: ContactWithId[] }) {
 export default function ContactsPageClient({
   userId,
 }: ContactsPageClientProps) {
-  const { data: contactsData = [] } = useContacts(userId);
+  const { data: contactsData = [], isLoading } = useContacts(userId);
   const contacts: ContactWithId[] = useMemo(() => {
     return contactsData.map((contact) => ({
       ...contact,
@@ -83,12 +83,14 @@ export default function ContactsPageClient({
     }));
   }, [contactsData]);
 
+  // When loading (suspense mode), render structure but let ThemedSuspense show loading
+  // We need to provide context even when loading so components don't crash
   return (
-    <ContactsFilterProvider contacts={contacts} itemsPerPage={ITEMS_PER_PAGE}>
+    <ContactsFilterProvider contacts={contacts} itemsPerPage={ITEMS_PER_PAGE} isLoading={isLoading}>
       <div className="space-y-6">
         <ContactsPageHeader contacts={contacts} />
-        <ContactsFilter contacts={contacts} />
-        <ContactsBulkActions userId={userId} contacts={contacts} />
+        {!isLoading && <ContactsFilter contacts={contacts} />}
+        {!isLoading && <ContactsBulkActions userId={userId} contacts={contacts} />}
         <ContactsGrid userId={userId} />
       </div>
     </ContactsFilterProvider>

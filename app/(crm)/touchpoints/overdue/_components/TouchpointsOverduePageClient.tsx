@@ -9,6 +9,7 @@ import { Contact } from "@/types/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import Pagination from "@/components/Pagination";
 import EmptyState from "@/components/dashboard/EmptyState";
+import ThemedSuspense from "@/components/ThemedSuspense";
 
 interface ContactWithTouchpoint extends Contact {
   id: string;
@@ -22,12 +23,35 @@ const ITEMS_PER_PAGE = 20;
 export default function TouchpointsOverduePageClient() {
   const { user } = useAuth();
   const userId = user?.uid || "";
-  const { data: contacts = [] } = useContacts(userId);
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts(userId);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Show loading state if contacts are loading (suspense mode)
+  if (contactsLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Overdue Touchpoints</h1>
+          <p className="text-theme-dark text-lg">Loading touchpoints...</p>
+        </div>
+        <Card padding="md">
+          <ThemedSuspense isLoading={true} variant="list" />
+        </Card>
+      </div>
+    );
+  }
   
   // Show empty state if no contacts
   if (contacts.length === 0) {
-    return <EmptyState wrapInCard={true} size="lg" />;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Overdue Touchpoints</h1>
+          <p className="text-theme-dark text-lg">Touchpoints that need your attention</p>
+        </div>
+        <EmptyState wrapInCard={true} size="lg" />
+      </div>
+    );
   }
 
   const serverTime = new Date();

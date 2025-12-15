@@ -24,10 +24,22 @@ interface ContactWithTouchpoint extends Contact {
 
 function TouchpointsContent({ userId }: { userId: string }) {
   const { user } = useAuth();
-  const { data: contacts = [] } = useContacts(userId);
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts(userId);
   const [selectedTouchpointIds, setSelectedTouchpointIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const updateTouchpointStatusMutation = useUpdateTouchpointStatus(user?.uid);
+  
+  // Show loading state if contacts are loading (suspense mode)
+  if (contactsLoading) {
+    return (
+      <Card padding="sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
+        </div>
+        <ThemedSuspense isLoading={true} variant="list" />
+      </Card>
+    );
+  }
 
   const toggleTouchpointSelection = (contactId: string) => {
     setSelectedTouchpointIds((prev) => {
