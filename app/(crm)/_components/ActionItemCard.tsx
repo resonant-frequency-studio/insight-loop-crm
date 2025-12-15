@@ -180,7 +180,7 @@ export default function ActionItemCard({
             <Button
               onClick={handleCancelEdit}
               disabled={disabled}
-              variant="secondary"
+              variant="outline"
               size="sm"
             >
               Cancel
@@ -204,7 +204,7 @@ export default function ActionItemCard({
                 <Button
                   onClick={() => setIsEditing(true)}
                   disabled={disabled}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   className="p-1 text-gray-400 hover:text-blue-600"
                   title="Edit"
@@ -229,7 +229,7 @@ export default function ActionItemCard({
                 <Button
                   onClick={onDelete}
                   disabled={disabled}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   className="p-1 text-gray-400 hover:text-red-600"
                   title="Delete"

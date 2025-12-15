@@ -275,14 +275,15 @@ test.describe("Complete User Workflows", () => {
     ]);
 
     await expect(authenticatedPage.getByRole('heading', { name: 'Contacts' })).toBeVisible();
-    await expect(authenticatedPage.getByText("Lifecycle Test")).toBeVisible();
+    // Check for contact in list using link (more specific than getByText)
+    await expect(authenticatedPage.getByRole('link', { name: 'Lifecycle Test' })).toBeVisible();
 
     // Go to the contact detail page
     await authenticatedPage.getByRole('link', { name: 'Lifecycle Test' }).click();
     await authenticatedPage.waitForURL(/\/contacts\/.+/);
 
-    // Verify the contact details
-    await expect(authenticatedPage.getByText("Lifecycle Test")).toBeVisible();
+    // Verify the contact details (use heading to avoid route announcer)
+    await expect(authenticatedPage.getByRole('heading', { name: 'Lifecycle Test' })).toBeVisible();
     
     // archive the contact
     const archiveButton = authenticatedPage.locator('button:has-text("Archive Contact")').first();
@@ -304,14 +305,15 @@ test.describe("Complete User Workflows", () => {
     await authenticatedPage.waitForURL(/\/contacts/);
     await expect(authenticatedPage.locator('text="No contacts match your filters"')).toBeVisible();
     await authenticatedPage.getByLabel("Show archived contacts").click();
-    await expect(authenticatedPage.getByText("Lifecycle Test")).toBeVisible();
+    // Check for contact in list using link (more specific than getByText)
+    await expect(authenticatedPage.getByRole('link', { name: 'Lifecycle Test' })).toBeVisible();
 
     // Go to the contact detail page
     await authenticatedPage.getByRole('link', { name: 'Lifecycle Test' }).click();
     await authenticatedPage.waitForURL(/\/contacts\/.+/);
 
-    // Verify the contact details
-    await expect(authenticatedPage.getByText("Lifecycle Test")).toBeVisible();
+    // Verify the contact details (use heading to avoid route announcer)
+    await expect(authenticatedPage.getByRole('heading', { name: 'Lifecycle Test' })).toBeVisible();
 
      // delete the contact
      const deleteContactButton = authenticatedPage.locator('button:has-text("Delete Contact")').first();

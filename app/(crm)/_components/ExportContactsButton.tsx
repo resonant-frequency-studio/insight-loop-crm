@@ -84,7 +84,7 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
     <Button
       onClick={exportToCSV}
       disabled={disabled || contacts.length === 0}
-      variant="success"
+      variant="secondary"
       size="sm"
       icon={
         <svg

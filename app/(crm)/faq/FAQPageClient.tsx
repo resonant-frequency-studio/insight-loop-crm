@@ -43,7 +43,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => setSelectedCategory(null)}
-            variant={selectedCategory === null ? "primary" : "secondary"}
+            variant={selectedCategory === null ? "primary" : "outline"}
             size="sm"
           >
             All Categories
@@ -55,7 +55,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
                 setSelectedCategory(category);
                 setOpenIndex(null);
               }}
-              variant={selectedCategory === category ? "primary" : "secondary"}
+              variant={selectedCategory === category ? "primary" : "outline"}
               size="sm"
             >
               {category}
@@ -78,7 +78,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
             >
               <Button
                 onClick={() => toggleFAQ(actualIndex)}
-                variant="ghost"
+                variant="outline"
                 className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 group"
               >
                 <div className="flex-1">

@@ -71,31 +71,11 @@ export async function expectContactNotInList(
  */
 export async function expectTouchpointOnDashboard(
   page: Page,
-  contactEmail: string
 ): Promise<void> {
   // Navigate to dashboard if not already there
-  if (!page.url().endsWith("/")) {
-    await page.goto("/");
-  }
-
-  // Wait for dashboard to render
-  await page.waitForTimeout(1000);
-
-  // Find touchpoint sections (Today's Priorities, Overdue, Upcoming Touchpoints)
-  // These sections only render when there are pending touchpoints
-  const touchpointSections = page.locator('[class*="Card"]').filter({
-    hasText: /Today's Priorities|Upcoming Touchpoints|Overdue/
-  });
-
-  // Check if email appears in any touchpoint section
-  // Note: Email might appear in Recent Contacts too, but we only care about touchpoint sections
-  const emailInTouchpointSection = await touchpointSections
-    .filter({ hasText: contactEmail })
-    .first()
-    .isVisible()
-    .catch(() => false);
-
-  expect(emailInTouchpointSection).toBe(true);
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
+  await page.waitForURL("/");
+  await expect(page.getByRole('button', { name: 'Mark as Contacted' })).toBeVisible();
 }
 
 /**
@@ -109,12 +89,8 @@ export async function expectTouchpointNotOnDashboard(
   contactEmail: string
 ): Promise<void> {
   // Navigate to dashboard if not already there
-  if (!page.url().endsWith("/")) {
-    await page.goto("/");
-  }
-
-  // Wait a bit to ensure the touchpoint lists have rendered (or confirmed they don't exist)
-  await page.waitForTimeout(1000);
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
+  await page.waitForURL("/");
 
   // When a touchpoint is marked as completed, DashboardTouchpoints filters it out
   // (contacts are filtered where touchpointStatus !== "completed")

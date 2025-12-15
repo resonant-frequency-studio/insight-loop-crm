@@ -99,7 +99,7 @@ export default function TouchpointStatusActions({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {currentStatus !== "completed" && (
             <Button
-              variant="success"
+              variant="secondary"
               onClick={() => setShowCompleteModal(true)}
               disabled={mutation.isPending}
               className="flex-1 cursor-pointer sm:flex-none px-3 py-2 sm:px-2 sm:py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 sm:gap-1"
@@ -216,7 +216,7 @@ export default function TouchpointStatusActions({
               onClick={() => handleUpdateStatus("completed", reason)}
               disabled={mutation.isPending}
               loading={mutation.isPending}
-              variant="success"
+              variant="secondary"
               size="sm"
             >
               Mark as Contacted
@@ -322,7 +322,7 @@ export default function TouchpointStatusActions({
           <Button
             onClick={() => setShowCompleteModal(true)}
             disabled={mutation.isPending}
-            variant="success"
+            variant="secondary"
             size="sm"
           >
             Mark as Contacted
@@ -414,7 +414,7 @@ export default function TouchpointStatusActions({
               setError(null);
             }}
             disabled={mutation.isPending}
-            variant="secondary"
+            variant="outline"
             size="sm"
           >
             Cancel
@@ -423,7 +423,7 @@ export default function TouchpointStatusActions({
             onClick={() => handleUpdateStatus("completed", reason)}
             disabled={mutation.isPending}
             loading={mutation.isPending}
-            variant="success"
+            variant="secondary"
             size="sm"
           >
             Mark Completed

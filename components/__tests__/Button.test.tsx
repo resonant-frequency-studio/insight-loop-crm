@@ -15,16 +15,10 @@ describe("Button", () => {
     it("renders all variant styles correctly", () => {
       const variants: ButtonVariant[] = [
         "primary",
-        "secondary",
         "danger",
-        "success",
+        "secondary",
         "outline",
-        "ghost",
         "link",
-        "gradient-blue",
-        "gradient-gray",
-        "gradient-green",
-        "gradient-emerald",
       ];
 
       variants.forEach((variant) => {

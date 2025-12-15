@@ -5,16 +5,10 @@ import { ErrorMessage } from "./ErrorMessage";
 
 export type ButtonVariant =
   | "primary"
-  | "secondary"
   | "danger"
-  | "success"
+  | "secondary"
   | "outline"
-  | "ghost"
-  | "link"
-  | "gradient-blue"
-  | "gradient-gray"
-  | "gradient-green"
-  | "gradient-emerald";
+  | "link";
 
 export type ButtonSize = "sm" | "md" | "lg";
 
@@ -33,25 +27,13 @@ export interface ButtonProps
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "bg-blue-600 border-2 border-blue-600 text-[#eeeeec] hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400",
-  secondary:
-    "bg-theme-light text-foreground hover:bg-theme-medium focus:ring-gray-500 disabled:bg-gray-400",
   danger:
     "bg-red-600 text-[#eeeeec] hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400",
-  success:
+  secondary:
     "bg-emerald-600 text-white border-2 border-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500 disabled:bg-emerald-400",
   outline:
     "bg-transparent border-2 border-theme-dark text-theme-darker hover:bg-theme-light focus:ring-gray-500 disabled:border-gray-300 disabled:text-gray-400",
-  ghost:
-    "bg-transparent text-theme-darker hover:bg-gray-100 focus:ring-gray-500 disabled:text-gray-400",
   link: "bg-transparent text-blue-600 hover:text-blue-700 underline focus:ring-blue-500 disabled:text-blue-400",
-  "gradient-blue":
-    "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
-  "gradient-gray":
-    "bg-gradient-to-r from-gray-500 to-theme-dark hover:from-theme-dark hover:to-theme-darker text-background shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
-  "gradient-green":
-    "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
-  "gradient-emerald":
-    "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-[#eeeeec] shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

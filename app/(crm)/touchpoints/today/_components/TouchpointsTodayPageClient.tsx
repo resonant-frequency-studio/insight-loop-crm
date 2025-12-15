@@ -115,7 +115,19 @@ export default function TouchpointsTodayPageClient() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 mb-6">
+            {/* Top Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={allTodayTouchpoints.length}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              itemLabel="touchpoint"
+              onPageChange={setCurrentPage}
+              hideItemCount={true}
+            />
+
+            <div className="grid grid-cols-1 gap-4 mb-6">
               {paginatedTouchpoints.map((contact) => (
                 <ContactCard
                   key={contact.id}
