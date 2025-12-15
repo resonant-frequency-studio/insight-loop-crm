@@ -3,6 +3,7 @@
 import ThemedSuspense from "@/components/ThemedSuspense";
 import StatCard from "./StatCard";
 import { useDashboardStats, DashboardStats } from "@/hooks/useDashboardStats";
+import Skeleton from "@/components/Skeleton";
 
 function DashboardStatsContent({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
   const { data: stats, isLoading } = useDashboardStats(userId, initialStats);
@@ -13,10 +14,10 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-4" />
-            <div className="h-8 bg-gray-200 rounded w-16 mb-1" />
-            <div className="h-4 bg-gray-200 rounded w-32" />
+          <div key={i} className="bg-card-highlight-light rounded-xl shadow p-6">
+            <Skeleton height="h-4" width="w-24" className="mb-4" />
+            <Skeleton height="h-8" width="w-16" className="mb-1" />
+            <Skeleton height="h-4" width="w-32" />
           </div>
         ))}
       </div>
@@ -53,6 +54,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
           </svg>
         }
         getValue={(stats) => stats?.totalContacts ?? 0}
+        showEmptyMessage={true}
       />
       <StatCard
         userId={userId}

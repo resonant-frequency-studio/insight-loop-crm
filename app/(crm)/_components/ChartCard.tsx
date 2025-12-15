@@ -3,6 +3,8 @@
 import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import EmptyState from "@/components/dashboard/EmptyState";
+import Skeleton from "@/components/Skeleton";
 
 interface ChartCardProps {
   userId: string;
@@ -17,7 +19,21 @@ interface ChartContentProps {
 
 function ChartContent({ userId, children }: ChartContentProps) {
   const { data: stats } = useDashboardStats(userId);
-  if (!stats) return <div className="h-64 bg-gray-200 rounded animate-pulse" />;
+  if (!stats) return <Skeleton width="w-full" height="h-64" />;
+  
+  // Show empty state when no contacts
+  if (stats.totalContacts === 0) {
+    return (
+      <EmptyState
+        message="No data to display yet"
+        description="Import contacts to see charts and analytics"
+        showActions={true}
+        wrapInCard={false}
+        size="sm"
+      />
+    );
+  }
+  
   return <>{children(stats)}</>;
 }
 

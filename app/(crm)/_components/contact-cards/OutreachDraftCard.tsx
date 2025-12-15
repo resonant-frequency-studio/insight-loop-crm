@@ -7,6 +7,7 @@ import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
 import SavingIndicator from "./SavingIndicator";
 import { Button } from "@/components/Button";
+import Skeleton from "@/components/Skeleton";
 import Modal from "@/components/Modal";
 import Textarea from "@/components/Textarea";
 import { reportException } from "@/lib/error-reporting";
@@ -155,7 +156,7 @@ export default function OutreachDraftCard({
   if (!contact) {
     return (
       <Card padding="md">
-        <div className="h-32 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-32" width="w-full" />
       </Card>
     );
   }

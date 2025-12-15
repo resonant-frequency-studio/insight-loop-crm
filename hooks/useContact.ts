@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Contact } from "@/types/firestore";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * Hook to fetch a single contact for a user
@@ -14,7 +16,7 @@ import { Contact } from "@/types/firestore";
 export function useContact(userId: string, contactId: string) {
   const queryClient = useQueryClient();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["contact", userId, contactId],
     queryFn: async () => {
       const response = await fetch(`/api/contacts/${encodeURIComponent(contactId)}`);
@@ -41,9 +43,19 @@ export function useContact(userId: string, contactId: string) {
       const list = queryClient.getQueryData<Contact[]>(["contacts", userId]);
       return list?.find((c) => c.contactId === contactId);
     },
-    // Uses global defaults: refetchOnWindowFocus: true, refetchOnMount: true
-    // Optional: uncomment for near real-time updates on contact detail page
-    // refetchInterval: 30_000, // Poll every 30s for "live-ish" UI
   });
+
+  const uiMode = getUIMode();
+
+  // Override query result based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: undefined, isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 

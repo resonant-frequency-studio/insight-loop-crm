@@ -1,8 +1,11 @@
 "use client";
 
 import { usePipelineCounts } from "@/hooks/usePipelineCounts";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import Card from "@/components/Card";
 import Link from "next/link";
+import EmptyState from "@/components/dashboard/EmptyState";
+import Skeleton from "@/components/Skeleton";
 
 interface SavedSegmentsProps {
   userId: string;
@@ -10,6 +13,7 @@ interface SavedSegmentsProps {
 
 export default function SavedSegments({ userId }: SavedSegmentsProps) {
   const { data: counts, isLoading } = usePipelineCounts(userId);
+  const { data: stats } = useDashboardStats(userId);
 
   if (isLoading || !counts) {
     return (
@@ -17,7 +21,7 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
         <h3 className="text-lg font-semibold text-theme-darkest mb-4">Saved Segments</h3>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-gray-200 animate-pulse rounded" />
+            <Skeleton key={i} height="h-12" />
           ))}
         </div>
       </Card>
@@ -28,6 +32,22 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
   const topSegments = Object.entries(counts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
+
+  // Show empty state when no contacts
+  if (stats && stats.totalContacts === 0) {
+    return (
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold text-theme-darkest mb-4">Saved Segments</h3>
+        <EmptyState
+          message="No segments yet"
+          description="Import contacts to see saved segments"
+          showActions={false}
+          wrapInCard={false}
+          size="sm"
+        />
+      </Card>
+    );
+  }
 
   if (topSegments.length === 0) {
     return null; // Don't show if no segments

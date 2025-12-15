@@ -1,6 +1,7 @@
 "use client";
 
 import { useContact } from "@/hooks/useContact";
+import Skeleton from "@/components/Skeleton";
 import BasicInfoCard from "./contact-cards/BasicInfoCard";
 import TagsClassificationCard from "./contact-cards/TagsClassificationCard";
 import ActionItemsCard from "./contact-cards/ActionItemsCard";
@@ -35,7 +36,7 @@ export default function ContactEditor({
   if (!contact && !initialContact) {
     return (
       <div className="space-y-6">
-        <div className="h-96 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-96" width="w-full" />
       </div>
     );
   }

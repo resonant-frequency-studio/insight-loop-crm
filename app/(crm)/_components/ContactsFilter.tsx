@@ -60,6 +60,11 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
 
   const hasActiveFilters = selectedSegment || selectedTags.length > 0 || emailSearch.trim() || firstNameSearch.trim() || lastNameSearch.trim() || companySearch.trim() || !!customFilter;
 
+  // Hide filter component when no contacts
+  if (contacts.length === 0) {
+    return null;
+  }
+
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">

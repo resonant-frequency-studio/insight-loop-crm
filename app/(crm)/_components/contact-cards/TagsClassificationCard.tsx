@@ -5,6 +5,7 @@ import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
 import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import InfoPopover from "@/components/InfoPopover";
 import SavingIndicator from "./SavingIndicator";
 import SegmentSelect from "../SegmentSelect";
@@ -136,7 +137,7 @@ export default function TagsClassificationCard({
   if (!contact) {
     return (
       <Card padding="md">
-        <div className="h-48 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-48" width="w-full" />
       </Card>
     );
   }

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useArchiveContact } from "@/hooks/useContactMutations";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import { Button } from "@/components/Button";
 import { extractErrorMessage } from "@/components/ErrorMessage";
 import { reportException } from "@/lib/error-reporting";
@@ -81,7 +82,7 @@ export default function ArchiveContactCard({
   if (!contact) {
     return (
       <Card padding="md">
-        <div className="h-16 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-16" width="w-full" />
       </Card>
     );
   }

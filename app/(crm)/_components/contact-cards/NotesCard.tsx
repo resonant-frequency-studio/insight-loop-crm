@@ -5,6 +5,7 @@ import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
 import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import SavingIndicator from "./SavingIndicator";
 import Textarea from "@/components/Textarea";
 import { reportException } from "@/lib/error-reporting";
@@ -96,7 +97,7 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
   if (!contact) {
     return (
       <Card padding="md">
-        <div className="h-32 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-32" width="w-full" />
       </Card>
     );
   }

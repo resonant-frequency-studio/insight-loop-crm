@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { SyncJob } from "@/types/firestore";
 import { reportException } from "@/lib/error-reporting";
+import { getUIMode } from "@/lib/ui-mode";
 
 interface UseSyncStatusReturn {
   lastSync: SyncJob | null;
@@ -18,6 +19,7 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
   const [syncHistory, setSyncHistory] = useState<SyncJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const uiMode = getUIMode();
 
   useEffect(() => {
     if (!userId) {
@@ -98,6 +100,15 @@ export function useSyncStatus(userId: string | null): UseSyncStatusReturn {
     }
   }, [userId]);
 
-  return { lastSync, syncHistory, loading, error };
+  // Override return values based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { lastSync: null, syncHistory: [], loading: true, error: null };
+    }
+    if (uiMode === "empty") {
+      return { lastSync: null, syncHistory: [], loading: false, error: null };
+    }
+    return { lastSync, syncHistory, loading, error };
+  }, [lastSync, syncHistory, loading, error, uiMode]);
 }
 

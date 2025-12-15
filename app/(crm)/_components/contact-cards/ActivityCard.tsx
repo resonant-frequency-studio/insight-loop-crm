@@ -2,6 +2,7 @@
 
 import { useContact } from "@/hooks/useContact";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import { formatContactDate } from "@/util/contact-utils";
 
 interface ActivityCardProps {
@@ -15,7 +16,7 @@ export default function ActivityCard({ contactId, userId }: ActivityCardProps) {
   if (!contact) {
     return (
       <Card padding="md">
-        <div className="h-32 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-32" width="w-full" />
       </Card>
     );
   }

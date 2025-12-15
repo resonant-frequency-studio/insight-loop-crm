@@ -2,6 +2,7 @@
 
 import { useContact } from "@/hooks/useContact";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import ActionItemsList from "../ActionItemsList";
 import type { ActionItem, Contact } from "@/types/firestore";
 
@@ -24,7 +25,7 @@ export default function ActionItemsCard({
   if (!displayContact) {
     return (
       <Card padding="md">
-        <div className="h-96 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-96" width="w-full" />
       </Card>
     );
   }

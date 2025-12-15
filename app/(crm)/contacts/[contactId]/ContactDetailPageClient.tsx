@@ -7,6 +7,7 @@ import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { ActionItem } from "@/types/firestore";
 import { useContact } from "@/hooks/useContact";
 import { useActionItems } from "@/hooks/useActionItems";
+import Skeleton from "@/components/Skeleton";
 
 interface ContactDetailPageClientProps {
   contactDocumentId: string;
@@ -36,8 +37,8 @@ function ContactDetailContent({
   if (!contact) {
     return (
       <div className="space-y-6">
-        <div className="h-20 bg-gray-200 rounded animate-pulse" />
-        <div className="h-96 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-20" width="w-full" />
+        <Skeleton height="h-96" width="w-full" />
       </div>
     );
   }

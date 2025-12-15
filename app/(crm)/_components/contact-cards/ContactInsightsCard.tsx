@@ -2,6 +2,7 @@
 
 import { useContact } from "@/hooks/useContact";
 import Card from "@/components/Card";
+import Skeleton from "@/components/Skeleton";
 import InfoPopover from "@/components/InfoPopover";
 import { formatContactDate } from "@/util/contact-utils";
 import type { Contact } from "@/types/firestore";
@@ -23,7 +24,7 @@ export default function ContactInsightsCard({
   if (!displayContact) {
     return (
       <Card padding="md">
-        <div className="h-96 bg-gray-200 rounded animate-pulse" />
+        <Skeleton height="h-96" width="w-full" />
       </Card>
     );
   }

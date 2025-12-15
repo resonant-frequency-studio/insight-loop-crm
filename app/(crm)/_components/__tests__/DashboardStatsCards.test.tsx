@@ -49,8 +49,12 @@ describe("DashboardStatsCards", () => {
     } as unknown as UseQueryResult<DashboardStats, Error>);
 
     const { container } = renderWithProviders(<DashboardStatsCards userId="user-1" />);
+    // Each card has 3 skeleton elements (title, value, description), so 3 cards = 9 skeletons
     const skeletons = container.querySelectorAll(".animate-pulse");
-    expect(skeletons.length).toBe(3);
+    expect(skeletons.length).toBe(9);
+    // Verify we have 3 card containers
+    const cardContainers = container.querySelectorAll(".bg-card-highlight-light.rounded-xl");
+    expect(cardContainers.length).toBe(3);
   });
 
   it("renders all three stat cards when data is available", () => {

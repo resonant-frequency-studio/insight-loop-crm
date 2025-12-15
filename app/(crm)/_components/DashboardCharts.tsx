@@ -8,6 +8,7 @@ import EngagementChart from "./charts/EngagementChart";
 import TopTagsChart from "./charts/TopTagsChart";
 import SentimentChart from "./charts/SentimentChart";
 import { useDashboardStats, DashboardStats } from "@/hooks/useDashboardStats";
+import Skeleton from "@/components/Skeleton";
 
 function DashboardChartsContent({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
   const { data: stats, isLoading } = useDashboardStats(userId, initialStats);
@@ -18,9 +19,9 @@ function DashboardChartsContent({ userId, initialStats }: { userId: string; init
     return (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-[#EEEEEC] rounded-xl shadow p-6 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-40 mb-4" />
-            <div className="h-64 bg-gray-200 rounded" />
+          <div key={i} className="bg-card-highlight-light rounded-xl shadow p-6">
+            <Skeleton height="h-6" width="w-40" className="mb-4" />
+            <Skeleton height="h-64" width="w-full" />
           </div>
         ))}
       </div>

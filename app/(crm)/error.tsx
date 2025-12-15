@@ -33,12 +33,11 @@ export default function CrmError({
             dismissible={false}
           />
           <div className="mt-4 flex gap-2">
-            <Button onClick={reset} variant="gradient-blue" size="sm">
+            <Button onClick={reset} variant="success" size="sm">
               Try again
             </Button>
             <Button
               onClick={() => (window.location.href = "/")}
-              variant="gradient-gray"
               size="sm"
             >
               Go to Dashboard

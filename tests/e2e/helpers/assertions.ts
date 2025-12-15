@@ -65,48 +65,80 @@ export async function expectContactNotInList(
 
 /**
  * Verifies a touchpoint appears on the Dashboard
+ * Checks that the contact email is visible within touchpoint sections
+ * (Today's Priorities, Overdue, Upcoming Touchpoints)
+ * Note: Email always exists on contacts, so we check specifically within touchpoint sections
  */
 export async function expectTouchpointOnDashboard(
   page: Page,
   contactEmail: string
 ): Promise<void> {
-  await page.goto("/");
+  // Navigate to dashboard if not already there
+  if (!page.url().endsWith("/")) {
+    await page.goto("/");
+  }
 
-  // Wait for dashboard to load
-  await page.waitForSelector('text="Upcoming Touchpoints", text="Overdue Touchpoints"', {
-    timeout: 10000,
+  // Wait for dashboard to render
+  await page.waitForTimeout(1000);
+
+  // Find touchpoint sections (Today's Priorities, Overdue, Upcoming Touchpoints)
+  // These sections only render when there are pending touchpoints
+  const touchpointSections = page.locator('[class*="Card"]').filter({
+    hasText: /Today's Priorities|Upcoming Touchpoints|Overdue/
   });
 
-  const emailVisible = await page
-    .getByText(contactEmail, { exact: false })
+  // Check if email appears in any touchpoint section
+  // Note: Email might appear in Recent Contacts too, but we only care about touchpoint sections
+  const emailInTouchpointSection = await touchpointSections
+    .filter({ hasText: contactEmail })
+    .first()
     .isVisible()
     .catch(() => false);
 
-  expect(emailVisible).toBe(true);
+  expect(emailInTouchpointSection).toBe(true);
 }
 
 /**
  * Verifies a touchpoint does NOT appear on the Dashboard
+ * Specifically checks within touchpoint sections (Today's Priorities, Overdue, Upcoming)
+ * Note: The email might still appear elsewhere on the dashboard (Recent Contacts, stats, etc.), 
+ * but it should NOT appear in touchpoint sections when the touchpoint is completed
  */
 export async function expectTouchpointNotOnDashboard(
   page: Page,
   contactEmail: string
 ): Promise<void> {
-  await page.goto("/");
+  // Navigate to dashboard if not already there
+  if (!page.url().endsWith("/")) {
+    await page.goto("/");
+  }
 
-  await page.waitForSelector('text="Upcoming Touchpoints", text="Overdue Touchpoints"', {
-    timeout: 10000,
-  });
-
-  // Wait a bit to ensure the list has rendered
+  // Wait a bit to ensure the touchpoint lists have rendered (or confirmed they don't exist)
   await page.waitForTimeout(1000);
 
-  const emailVisible = await page
-    .getByText(contactEmail, { exact: false })
-    .isVisible()
-    .catch(() => false);
+  // When a touchpoint is marked as completed, DashboardTouchpoints filters it out
+  // (contacts are filtered where touchpointStatus !== "completed")
+  // The touchpoint sections may not exist at all if all touchpoints are completed
+  
+  // Check if touchpoint sections exist
+  const touchpointSections = page.locator('[class*="Card"]').filter({
+    hasText: /Today's Priorities|Upcoming Touchpoints|Overdue/
+  });
+  const hasTouchpointSections = await touchpointSections.count() > 0;
 
-  expect(emailVisible).toBe(false);
+  if (hasTouchpointSections) {
+    // If sections exist, verify the email is NOT in any touchpoint section
+    const emailInTouchpointSection = await touchpointSections
+      .filter({ hasText: contactEmail })
+      .first()
+      .isVisible()
+      .catch(() => false);
+    
+    expect(emailInTouchpointSection).toBe(false);
+  } else {
+    // If no touchpoint sections exist, that's fine - the touchpoint is properly filtered out
+    // The email might still appear in Recent Contacts, but that's expected
+  }
 }
 
 /**
@@ -117,7 +149,7 @@ export async function expectTouchpointStatus(
   status: "pending" | "completed" | "cancelled"
 ): Promise<void> {
   const statusTexts = {
-    pending: "Pending",
+    pending: "Mark as Contacted",
     completed: "Contacted",
     cancelled: "Skipped",
   };

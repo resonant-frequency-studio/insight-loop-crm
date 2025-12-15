@@ -1,8 +1,11 @@
 "use client";
 
 import { usePipelineCounts } from "@/hooks/usePipelineCounts";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import Card from "@/components/Card";
 import Link from "next/link";
+import EmptyState from "@/components/dashboard/EmptyState";
+import Skeleton from "@/components/Skeleton";
 
 interface PipelineSnapshotProps {
   userId: string;
@@ -10,6 +13,7 @@ interface PipelineSnapshotProps {
 
 export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
   const { data: counts, isLoading } = usePipelineCounts(userId);
+  const { data: stats } = useDashboardStats(userId);
 
   if (isLoading || !counts) {
     return (
@@ -17,7 +21,7 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
         <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 animate-pulse rounded" />
+            <Skeleton key={i} height="h-20" />
           ))}
         </div>
       </Card>
@@ -39,6 +43,22 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
     ];
     return colors[index % colors.length];
   };
+
+  // Show empty state when no contacts
+  if (stats && stats.totalContacts === 0) {
+    return (
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
+        <EmptyState
+          message="No segments yet"
+          description="Import contacts to see your pipeline"
+          showActions={false}
+          wrapInCard={false}
+          size="sm"
+        />
+      </Card>
+    );
+  }
 
   if (topSegments.length === 0) {
     return (

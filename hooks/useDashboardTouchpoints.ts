@@ -1,13 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { ContactWithTouchpoint } from "@/lib/touchpoints-server";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * Hook to fetch today's touchpoints (up to 3)
  */
 export function useDashboardTodayTouchpoints(userId: string) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["dashboard-touchpoints", userId, "today"],
     queryFn: async () => {
       const response = await fetch("/api/touchpoints/today?limit=3");
@@ -21,13 +23,25 @@ export function useDashboardTodayTouchpoints(userId: string) {
     enabled: !!userId,
     staleTime: 1000 * 30, // 30 seconds
   });
+
+  const uiMode = getUIMode();
+
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 
 /**
  * Hook to fetch overdue touchpoints (up to 3)
  */
 export function useDashboardOverdueTouchpoints(userId: string) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["dashboard-touchpoints", userId, "overdue"],
     queryFn: async () => {
       const response = await fetch("/api/touchpoints/overdue?limit=3");
@@ -41,13 +55,25 @@ export function useDashboardOverdueTouchpoints(userId: string) {
     enabled: !!userId,
     staleTime: 1000 * 30, // 30 seconds
   });
+
+  const uiMode = getUIMode();
+
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 
 /**
  * Hook to fetch upcoming touchpoints (up to 3)
  */
 export function useDashboardUpcomingTouchpoints(userId: string) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ["dashboard-touchpoints", userId, "upcoming"],
     queryFn: async () => {
       const response = await fetch("/api/touchpoints/upcoming?limit=3");
@@ -61,5 +87,17 @@ export function useDashboardUpcomingTouchpoints(userId: string) {
     enabled: !!userId,
     staleTime: 1000 * 30, // 30 seconds
   });
+
+  const uiMode = getUIMode();
+
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 

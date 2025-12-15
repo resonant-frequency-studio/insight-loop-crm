@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { ActionItem } from "@/types/firestore";
+import { getUIMode } from "@/lib/ui-mode";
 
 /**
  * Hook to fetch action items
@@ -27,7 +29,7 @@ export function useActionItems(
     ? ["action-items", userId, contactId]
     : ["action-items", userId];
 
-  return useQuery({
+  const query = useQuery({
     queryKey,
     queryFn: async () => {
       if (contactId) {
@@ -66,5 +68,18 @@ export function useActionItems(
     },
     // Uses global defaults: staleTime: 0, refetchOnWindowFocus: true, refetchOnMount: true
   });
+
+  const uiMode = getUIMode();
+
+  // Override query result based on UI mode
+  return useMemo(() => {
+    if (uiMode === "suspense") {
+      return { ...query, data: undefined, isLoading: true };
+    }
+    if (uiMode === "empty") {
+      return { ...query, data: [], isLoading: false };
+    }
+    return query;
+  }, [query, uiMode]);
 }
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getDaysUntilTouchpoint } from "@/util/date-utils-server";
 import { Contact } from "@/types/firestore";
 import DashboardPageClient from "../DashboardPageClient";
+import ThemedSuspense from "@/components/ThemedSuspense";
 
 interface ContactWithTouchpoint extends Contact {
   id: string;
@@ -21,13 +22,21 @@ export default function DashboardPageClientWrapper({ userId }: { userId: string 
   // Only fallback to client auth if userId prop is empty (E2E mode)
   const effectiveUserId = userId || (!authLoading && user?.uid ? user.uid : "");
   
-  const { data: contacts = [] } = useContacts(effectiveUserId);
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
   const { data: stats, isLoading: statsLoading } = useDashboardStats(effectiveUserId);
 
-  // Show loading if we don't have userId yet OR if stats are loading
+  // Show loading if we don't have userId yet OR if stats/contacts are loading (suspense mode)
   // In production, this should only be true briefly during initial render
-  if (!effectiveUserId || (statsLoading && !stats)) {
-    return null; // Suspense will handle loading
+  if (!effectiveUserId || (statsLoading && !stats) || (contactsLoading && contacts.length === 0)) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Welcome back!</h1>
+          <p className="text-theme-dark text-lg">Loading dashboard...</p>
+        </div>
+        <ThemedSuspense isLoading={true} variant="dashboard" />
+      </div>
+    );
   }
 
   // Use consistent server time for all calculations

@@ -9,6 +9,7 @@ import { Button } from "@/components/Button";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 import Textarea from "@/components/Textarea";
 import Input from "@/components/Input";
+import Skeleton from "@/components/Skeleton";
 
 interface ActionItemCardProps {
   actionItem: ActionItem;
@@ -270,7 +271,7 @@ export default function ActionItemCard({
               {/* Contact Info */}
               <div className="flex-1 min-w-0">
                 {contactLoading || displayName === null ? (
-                  <div className="h-[38px] bg-gray-200 rounded w-24 animate-pulse" />
+                  <Skeleton height="h-[38px]" width="w-24" />
                 ) : (
                   <>
                     <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors truncate ${

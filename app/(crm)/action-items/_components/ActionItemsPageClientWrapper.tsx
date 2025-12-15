@@ -2,10 +2,13 @@
 
 import { useActionItems } from "@/hooks/useActionItems";
 import { useAuth } from "@/hooks/useAuth";
+import { useContacts } from "@/hooks/useContacts";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { computeIsOverdue, getDateCategory } from "@/util/date-utils-server";
 import { ActionItem, Contact } from "@/types/firestore";
 import ActionItemsPageClient from "../ActionItemsPageClient";
+import EmptyState from "@/components/dashboard/EmptyState";
+import ThemedSuspense from "@/components/ThemedSuspense";
 
 interface EnrichedActionItem extends ActionItem {
   contactId: string;
@@ -33,7 +36,34 @@ export default function ActionItemsPageClientWrapper({ userId }: { userId: strin
   // In E2E mode, it might be empty, so we wait for auth to load and use user?.uid
   const effectiveUserId = userId || (authLoading ? "" : user?.uid || "");
   // React Query automatically uses prefetched data from HydrationBoundary
-  const { data: actionItems = [] } = useActionItems(effectiveUserId);
+  const { data: actionItems = [], isLoading: actionItemsLoading } = useActionItems(effectiveUserId);
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
+  
+  // Show loading state if either is loading (suspense mode)
+  if (contactsLoading || actionItemsLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
+          <p className="text-theme-dark text-lg">Manage tasks and action items across all your contacts</p>
+        </div>
+        <ThemedSuspense isLoading={true} variant="default" />
+      </div>
+    );
+  }
+  
+  // Show empty state if no contacts
+  if (contacts.length === 0) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
+          <p className="text-theme-dark text-lg">Manage tasks and action items across all your contacts</p>
+        </div>
+        <EmptyState wrapInCard={true} size="lg" />
+      </div>
+    );
+  }
 
   // Use consistent server time for all calculations
   const serverTime = new Date();

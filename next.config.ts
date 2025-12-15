@@ -1,8 +1,18 @@
 import {withSentryConfig} from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+// In test mode, prevent Next.js from loading .env.local by not using it
+// This ensures .env.test.local takes precedence when loaded via env-cmd
+const isTest = process.env.NODE_ENV === "test";
+
 const nextConfig: NextConfig = {
   /* config options here */
+  // In test mode, we rely on env-cmd to inject vars from .env.test.local
+  // This prevents conflicts with .env.local
+  ...(isTest && {
+    // Next.js doesn't have a direct option to disable .env.local loading,
+    // but env-cmd injects vars before Next.js starts, so they take precedence
+  }),
 };
 
 export default withSentryConfig(nextConfig, {
