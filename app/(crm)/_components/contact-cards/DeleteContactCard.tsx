@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useDeleteContact } from "@/hooks/useContactMutations";
 import Modal from "@/components/Modal";
 import Card from "@/components/Card";
@@ -16,7 +15,6 @@ interface DeleteContactCardProps {
 export default function DeleteContactCard({
   contactId,
 }: DeleteContactCardProps) {
-  const router = useRouter();
   const deleteContactMutation = useDeleteContact();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -25,7 +23,13 @@ export default function DeleteContactCard({
     setDeleteError(null);
     deleteContactMutation.mutate(contactId, {
       onSuccess: () => {
-        router.push("/contacts");
+        // Close modal immediately
+        setShowDeleteConfirm(false);
+        
+        // Use window.location for hard navigation to avoid race conditions
+        // with query invalidation causing refetches before redirect completes
+        // This is especially important when deleting the last contact (edge case)
+        window.location.href = "/contacts";
       },
       onError: (error) => {
         reportException(error, {

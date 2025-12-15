@@ -9,13 +9,18 @@ import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 
 export default function NewContactPage() {
-  const { user, loading, form, updateField, saving, error, handleSave } = useNewContactPage();
+  const { user, loading, form, updateField, saving, error, handleSave, hasValidSession } = useNewContactPage();
 
   if (loading) {
     return <Loading />;
   }
 
-  if (!user) return null;
+  // In production, require Firebase user (normal flow)
+  // In test mode, allow rendering if session cookie check succeeded (hasValidSession === true)
+  // Otherwise, don't render the form (prevents showing form to unauthenticated users)
+  if (!user && hasValidSession !== true) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
