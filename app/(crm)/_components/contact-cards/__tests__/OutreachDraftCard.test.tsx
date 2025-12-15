@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import OutreachDraftCard from "../OutreachDraftCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import { useSavingState } from "@/contexts/SavingStateContext";
 import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import type { Contact } from "@/types/firestore";
@@ -10,23 +9,16 @@ import type { SavingStateContextType } from "@/contexts/SavingStateContext";
 
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
-jest.mock("@/hooks/useDebouncedSave");
 jest.mock("@/contexts/SavingStateContext");
-jest.mock("../SavingIndicator", () => ({
-  __esModule: true,
-  default: ({ status }: { status: string }) => <div data-testid="saving-indicator" data-status={status} />,
-}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
 const mockUseUpdateContact = useUpdateContact as jest.MockedFunction<typeof useUpdateContact>;
-const mockUseDebouncedSave = useDebouncedSave as jest.MockedFunction<typeof useDebouncedSave>;
 const mockUseSavingState = useSavingState as jest.MockedFunction<typeof useSavingState>;
 
 describe("OutreachDraftCard", () => {
   const mockUserId = "user-123";
   const mockContactId = "contact-123";
   const mockMutate = jest.fn();
-  const mockDebouncedSave = jest.fn();
   const mockRegisterSaveStatus = jest.fn();
   const mockUnregisterSaveStatus = jest.fn();
 
@@ -50,14 +42,6 @@ describe("OutreachDraftCard", () => {
         undefined
       ) as ReturnType<typeof useUpdateContact>
     );
-
-    // Mock useDebouncedSave to return a jest.fn() that immediately calls the save function
-    mockUseDebouncedSave.mockImplementation((saveFn: () => void) => {
-      const debouncedFn = jest.fn(() => {
-        saveFn();
-      });
-      return debouncedFn as typeof saveFn;
-    });
   });
 
   describe("Loading State", () => {
@@ -128,7 +112,7 @@ describe("OutreachDraftCard", () => {
       expect(textarea.value).toBe("Updated draft text");
     });
 
-    it("calls debounced save on blur", async () => {
+    it("calls save when Save button is clicked", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         outreachDraft: "Initial draft",
@@ -147,16 +131,22 @@ describe("OutreachDraftCard", () => {
 
       const textarea = screen.getByPlaceholderText("Write your outreach draft here...");
       fireEvent.change(textarea, { target: { value: "Updated draft" } });
-      fireEvent.blur(textarea);
       
-      // Since useDebouncedSave is mocked to immediately call the save function,
-      // we should see the mutation called
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalled();
       });
     });
 
-    it("does not call debounced save on blur when there are no changes", () => {
+    it("disables Save button when there are no changes", () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         outreachDraft: "Initial draft",
@@ -168,10 +158,8 @@ describe("OutreachDraftCard", () => {
 
       render(<OutreachDraftCard contactId={mockContactId} userId={mockUserId} />);
       
-      const textarea = screen.getByPlaceholderText("Write your outreach draft here...");
-      fireEvent.blur(textarea);
-      
-      expect(mockDebouncedSave).not.toHaveBeenCalled();
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      expect(saveButton).toBeDisabled();
     });
   });
 
@@ -195,9 +183,16 @@ describe("OutreachDraftCard", () => {
 
       const textarea = screen.getByPlaceholderText("Write your outreach draft here...");
       fireEvent.change(textarea, { target: { value: "Updated draft text" } });
-      fireEvent.blur(textarea);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -230,9 +225,16 @@ describe("OutreachDraftCard", () => {
 
       const textarea = screen.getByPlaceholderText("Write your outreach draft here...");
       fireEvent.change(textarea, { target: { value: "" } });
-      fireEvent.blur(textarea);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {

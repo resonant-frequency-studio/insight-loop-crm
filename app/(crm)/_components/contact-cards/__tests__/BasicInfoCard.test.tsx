@@ -2,23 +2,16 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import BasicInfoCard from "../BasicInfoCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import { useSavingState } from "@/contexts/SavingStateContext";
 import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import type { Contact } from "@/types/firestore";
 
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
-jest.mock("@/hooks/useDebouncedSave");
 jest.mock("@/contexts/SavingStateContext");
-jest.mock("../SavingIndicator", () => ({
-  __esModule: true,
-  default: ({ status }: { status: string }) => <div data-testid="saving-indicator" data-status={status} />,
-}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
 const mockUseUpdateContact = useUpdateContact as jest.MockedFunction<typeof useUpdateContact>;
-const mockUseDebouncedSave = useDebouncedSave as jest.MockedFunction<typeof useDebouncedSave>;
 const mockUseSavingState = useSavingState as jest.MockedFunction<typeof useSavingState>;
 
 describe("BasicInfoCard", () => {
@@ -44,14 +37,6 @@ describe("BasicInfoCard", () => {
         mockMutateAsync
       ) as ReturnType<typeof useUpdateContact>
     );
-
-    // Mock useDebouncedSave to return a jest.fn() that immediately calls the save function
-    mockUseDebouncedSave.mockImplementation((saveFn: () => void) => {
-      const debouncedFn = jest.fn(() => {
-        saveFn();
-      });
-      return debouncedFn as ReturnType<typeof useDebouncedSave<() => void>>;
-    });
   });
 
   describe("Loading State", () => {
@@ -209,7 +194,7 @@ describe("BasicInfoCard", () => {
       expect(companyInput.value).toBe("New Company");
     });
 
-    it("calls debounced save on blur", async () => {
+    it("calls save when Save button is clicked", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         firstName: "John",
@@ -219,7 +204,7 @@ describe("BasicInfoCard", () => {
 
       render(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
       
-      // Wait for input to be rendered (using placeholder since labels aren't associated)
+      // Wait for input to be rendered
       const firstNameInput = await waitFor(() => {
         const input = screen.getByPlaceholderText("First Name");
         expect(input).toBeInTheDocument();
@@ -227,15 +212,22 @@ describe("BasicInfoCard", () => {
       });
       
       fireEvent.change(firstNameInput, { target: { value: "Jane" } });
-      fireEvent.blur(firstNameInput);
       
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Wait for Save button to be enabled
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalled();
       });
     });
 
-    it("does not call debounced save on blur when there are no changes", async () => {
+    it("disables Save button when there are no changes", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         firstName: "John",
@@ -245,17 +237,12 @@ describe("BasicInfoCard", () => {
 
       render(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
       
-      // Wait for input to be rendered (using placeholder since labels aren't associated)
+      // Wait for Save button to be rendered
       await waitFor(() => {
-        const firstNameInput = screen.getByPlaceholderText("First Name");
-        expect(firstNameInput).toBeInTheDocument();
+        const saveButton = screen.getByRole("button", { name: /save/i });
+        expect(saveButton).toBeInTheDocument();
+        expect(saveButton).toBeDisabled();
       });
-      
-      const firstNameInput = screen.getByPlaceholderText("First Name");
-      fireEvent.blur(firstNameInput);
-      
-      // Should not call mutate if there are no changes
-      expect(mockMutate).not.toHaveBeenCalled();
     });
   });
 
@@ -281,9 +268,16 @@ describe("BasicInfoCard", () => {
       });
 
       fireEvent.change(firstNameInput, { target: { value: "Jane" } });
-      fireEvent.blur(firstNameInput);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -320,9 +314,16 @@ describe("BasicInfoCard", () => {
       });
 
       fireEvent.change(firstNameInput, { target: { value: "" } });
-      fireEvent.blur(firstNameInput);
 
-      // The blur should trigger debouncedSave which should immediately call the save function
+      // Click Save button
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+
       await waitFor(() => {
         expect(mockMutate).toHaveBeenCalledWith(
           {
@@ -338,17 +339,32 @@ describe("BasicInfoCard", () => {
   });
 
   describe("Save Status", () => {
-    it("shows saving indicator during save", () => {
+    it("shows saving text during save", async () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
+        firstName: "John",
       });
 
       mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
 
       render(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
       
-      const indicator = screen.getByTestId("saving-indicator");
-      expect(indicator.getAttribute("data-status")).toBe("idle");
+      // Make a change and click Save
+      const firstNameInput = await waitFor(() => screen.getByPlaceholderText("First Name"));
+      fireEvent.change(firstNameInput, { target: { value: "Jane" } });
+      
+      const saveButton = await waitFor(() => {
+        const button = screen.getByRole("button", { name: /save/i });
+        expect(button).not.toBeDisabled();
+        return button;
+      });
+      
+      fireEvent.click(saveButton);
+      
+      // Should show "Saving..." text
+      await waitFor(() => {
+        expect(screen.getByText("Saving...")).toBeInTheDocument();
+      });
     });
 
     it("only saves when there are unsaved changes", async () => {
@@ -368,9 +384,12 @@ describe("BasicInfoCard", () => {
       
       // Don't make any changes - just render the component
       // The save function should not be called if there are no changes
-      // Since we mock useDebouncedSave to immediately call the save function,
-      // we verify that mutate is not called (because hasChanges would be false)
+      // Verify that mutate is not called (because hasChanges would be false)
       expect(mockMutate).not.toHaveBeenCalled();
+      
+      // Save button should be disabled
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      expect(saveButton).toBeDisabled();
     });
   });
 

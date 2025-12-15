@@ -230,9 +230,9 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
                               toggleTag(tag);
                               setTagSearch("");
                             }}
-                            variant="outline"
+                            variant="link"
                             size="sm"
-                            className="w-full text-left px-4 py-2 hover:bg-theme-darker hover:text-theme-lightest text-sm text-theme-darker justify-start"
+                            className="w-full text-left px-4 py-2 no-underline! hover:bg-selected-active hover:text-selected-foreground text-sm text-foreground justify-start"
                             role="option"
                             aria-selected="false"
                           >

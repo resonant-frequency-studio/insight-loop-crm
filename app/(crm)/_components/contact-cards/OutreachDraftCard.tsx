@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
-import SavingIndicator from "./SavingIndicator";
+import SaveButtonWithIndicator from "./SaveButtonWithIndicator";
 import { Button } from "@/components/Button";
 import Skeleton from "@/components/Skeleton";
 import Modal from "@/components/Modal";
@@ -89,13 +88,18 @@ export default function OutreachDraftCard({
     );
   };
 
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Autosave every 30 seconds when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
 
-  const handleBlur = () => {
-    if (hasUnsavedChanges) {
-      debouncedSave();
-    }
-  };
+    const interval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveChanges();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasUnsavedChanges, saveChanges]);
 
   const openGmailCompose = () => {
     if (!contact?.primaryEmail) {
@@ -186,13 +190,8 @@ export default function OutreachDraftCard({
       </Modal>
 
       <Card padding="md" className="relative">
-        {/* Saving Indicator - Mobile: absolute right, Desktop: in flex container */}
-        <div className="absolute top-6 right-6 xl:hidden">
-          <SavingIndicator status={saveStatus} />
-        </div>
-        
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mb-2">
-          <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2 pr-20 xl:pr-0">
+          <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
             <svg
               className="w-5 h-5 text-gray-400 shrink-0"
               fill="none"
@@ -209,10 +208,11 @@ export default function OutreachDraftCard({
             <span className="truncate">Outreach Draft</span>
           </h2>
           <div className="flex items-center gap-3 shrink-0">
-            {/* Saving Indicator - Desktop only */}
-            <div className="hidden xl:block">
-              <SavingIndicator status={saveStatus} />
-            </div>
+            <SaveButtonWithIndicator
+              saveStatus={saveStatus}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onSave={saveChanges}
+            />
             {localDraft.trim() && contact.primaryEmail && (
               <Button
                 onClick={openGmailCompose}
@@ -251,7 +251,6 @@ export default function OutreachDraftCard({
         name="outreach-draft"
         value={localDraft}
         onChange={(e) => setLocalDraft(e.target.value)}
-        onBlur={handleBlur}
         placeholder="Write your outreach draft here..."
         className="min-h-[120px] text-foreground resize-y font-sans text-sm leading-relaxed"
       />

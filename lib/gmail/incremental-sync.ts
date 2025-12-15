@@ -112,8 +112,19 @@ export async function performIncrementalSync(
 
     if (!historyRes.ok) {
       const errorData = await historyRes.json().catch(() => ({}));
+      const errorMessage = errorData.error?.message || historyRes.statusText;
+      
+      // Check for insufficient scopes error
+      if (errorMessage.includes("insufficient authentication scopes") || 
+          errorMessage.includes("insufficient authentication") ||
+          historyRes.status === 403) {
+        throw new Error(
+          "Gmail authentication scopes are insufficient. Please reconnect your Gmail account to grant the necessary permissions."
+        );
+      }
+      
       throw new Error(
-        `History API error: ${errorData.error?.message || historyRes.statusText}`
+        `History API error: ${errorMessage}`
       );
     }
 

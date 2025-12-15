@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
 import InfoPopover from "@/components/InfoPopover";
-import SavingIndicator from "./SavingIndicator";
+import SaveButtonWithIndicator from "./SaveButtonWithIndicator";
 import SegmentSelect from "../SegmentSelect";
 import { reportException } from "@/lib/error-reporting";
 import { useSavingState } from "@/contexts/SavingStateContext";
@@ -105,7 +104,18 @@ export default function TagsClassificationCard({
     );
   };
 
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Autosave every 30 seconds when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const interval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveChanges();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasUnsavedChanges, saveChanges]);
 
   // Parse tags input string into tags array
   const parseTags = (input: string): string[] => {
@@ -123,15 +133,6 @@ export default function TagsClassificationCard({
     // Normalize the input on blur (remove extra spaces, etc.)
     const normalized = tags.join(", ");
     setTagsInput(normalized);
-    if (hasUnsavedChanges) {
-      debouncedSave();
-    }
-  };
-
-  const handleBlur = () => {
-    if (hasUnsavedChanges) {
-      debouncedSave();
-    }
   };
 
   if (!contact) {
@@ -161,7 +162,11 @@ export default function TagsClassificationCard({
           </svg>
           Tags & Classification
         </h2>
-        <SavingIndicator status={saveStatus} />
+        <SaveButtonWithIndicator
+          saveStatus={saveStatus}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSave={saveChanges}
+        />
       </div>
       <p className="text-sm text-theme-dark mb-4">
         Organize and categorize your contacts using tags, segments, and lead sources to better track relationships and tailor your communication strategies.
@@ -202,14 +207,12 @@ export default function TagsClassificationCard({
               Segment
               <InfoPopover content="A segment categorizes contacts into distinct groups based on shared characteristics such as company size, industry, customer type, or market segment. This helps you tailor your communication and sales strategies to different groups." />
             </label>
-            <div onBlur={handleBlur}>
-              <SegmentSelect
-                value={segment}
-                onChange={(value) => setSegment(value)}
-                existingSegments={uniqueSegments}
-                placeholder="Enter or select segment..."
-              />
-            </div>
+            <SegmentSelect
+              value={segment}
+              onChange={(value) => setSegment(value)}
+              existingSegments={uniqueSegments}
+              placeholder="Enter or select segment..."
+            />
           </div>
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-theme-darker mb-2">
@@ -222,7 +225,6 @@ export default function TagsClassificationCard({
               name="contact-lead-source"
               value={leadSource}
               onChange={(e) => setLeadSource(e.target.value)}
-              onBlur={handleBlur}
               placeholder="Enter lead source..."
             />
           </div>

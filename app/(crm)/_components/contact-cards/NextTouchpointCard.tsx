@@ -4,10 +4,9 @@ import { Timestamp } from "firebase/firestore";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";
-import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
-import SavingIndicator from "./SavingIndicator";
+import SaveButtonWithIndicator from "./SaveButtonWithIndicator";
 import TouchpointStatusActions from "../TouchpointStatusActions";
 import Textarea from "@/components/Textarea";
 import { formatContactDate, getDisplayName } from "@/util/contact-utils";
@@ -113,13 +112,18 @@ export default function NextTouchpointCard({
     );
   };
 
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Autosave every 30 seconds when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
 
-  const handleBlur = () => {
-    if (hasUnsavedChanges) {
-      debouncedSave();
-    }
-  };
+    const interval = setInterval(() => {
+      if (hasUnsavedChanges) {
+        saveChanges();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasUnsavedChanges, saveChanges]);
 
   if (!contact) {
     return (
@@ -148,7 +152,11 @@ export default function NextTouchpointCard({
           </svg>
           Next Touchpoint
         </h2>
-        <SavingIndicator status={saveStatus} />
+        <SaveButtonWithIndicator
+          saveStatus={saveStatus}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSave={saveChanges}
+        />
       </div>
       <p className="text-sm text-theme-dark mb-4">
         Schedule and plan your next interaction with this contact. Set a date and add notes about what to discuss to maintain consistent, meaningful engagement.
@@ -171,7 +179,6 @@ export default function NextTouchpointCard({
                 setNextTouchpointDate("");
               }
             }}
-            onBlur={handleBlur}
           />
         </div>
         <div>
@@ -184,7 +191,6 @@ export default function NextTouchpointCard({
             rows={3}
             value={nextTouchpointMessage}
             onChange={(e) => setNextTouchpointMessage(e.target.value)}
-            onBlur={handleBlur}
             placeholder="What should you discuss in the next touchpoint?"
           />
         </div>

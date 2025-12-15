@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { runSyncJob } from "@/lib/gmail/sync-job-runner";
 import { getUserId } from "@/lib/auth-utils";
 import { reportException } from "@/lib/error-reporting";
-import { toUserFriendlyError } from "@/components/ErrorMessage";
+import { toUserFriendlyError } from "@/lib/error-utils";
 
 /**
  * GET /api/gmail/sync
@@ -48,12 +48,24 @@ export async function GET(req: Request) {
       errors: result.errors,
     });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    
     reportException(err, {
       context: "Gmail sync error",
       tags: { component: "gmail-sync-api" },
+      extra: { originalError: errorMessage },
     });
+    
+    // Preserve Gmail-specific error messages
+    const friendlyError = toUserFriendlyError(err);
+    
     return NextResponse.json(
-      { ok: false, error: toUserFriendlyError(err) },
+      { 
+        ok: false, 
+        error: friendlyError,
+        // Include original error in development for debugging
+        ...(process.env.NODE_ENV === "development" && { debug: errorMessage })
+      },
       { status: 500 }
     );
   }
