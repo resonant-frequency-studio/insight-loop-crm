@@ -96,6 +96,8 @@ export function useNewContactPage() {
       };
     } else if (user) {
       // User is set, no need to check session
+      // This setState is intentional cleanup when user changes - safe to do synchronously
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasValidSession(null);
       setCheckingSession(false);
     }

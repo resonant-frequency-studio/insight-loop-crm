@@ -51,6 +51,8 @@ describe("GET /api/contacts/[contactId]", () => {
       primaryEmail: "test@example.com",
       firstName: "Test",
       lastName: "User",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
     };
     mockGetContactForUser.mockResolvedValue(mockContact);
 
@@ -79,6 +81,8 @@ describe("GET /api/contacts/[contactId]", () => {
     const mockContact = {
       contactId: "contact@example.com",
       primaryEmail: "contact@example.com",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
     };
     mockGetContactForUser.mockResolvedValue(mockContact);
 
@@ -108,6 +112,8 @@ describe("PATCH /api/contacts/[contactId]", () => {
     primaryEmail: "test@example.com",
     firstName: "Test",
     lastName: "User",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
   };
 
   beforeEach(() => {
@@ -355,6 +361,8 @@ describe("DELETE /api/contacts/[contactId]", () => {
     primaryEmail: "test@example.com",
     firstName: "Test",
     lastName: "User",
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
   };
 
   beforeEach(() => {

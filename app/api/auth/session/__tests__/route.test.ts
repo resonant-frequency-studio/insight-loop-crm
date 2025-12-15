@@ -4,10 +4,20 @@ jest.mock("@/lib/firebase-admin", () => ({
     createSessionCookie: jest.fn(),
   },
 }));
+
+interface MockResponse {
+  json: () => Promise<unknown>;
+  status: number;
+  ok: boolean;
+  cookies: {
+    set: jest.Mock;
+  };
+}
+
 jest.mock("next/server", () => ({
   NextResponse: {
     json: jest.fn((body, init) => {
-      const mockResponse = {
+      const mockResponse: MockResponse = {
         json: async () => body,
         status: init?.status || 200,
         ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
@@ -31,7 +41,12 @@ describe("POST /api/auth/session", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAdminAuth.createSessionCookie.mockResolvedValue(mockSessionCookie);
-    process.env.NODE_ENV = "test";
+    // Use Object.defineProperty to make NODE_ENV writable in tests
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+    });
   });
 
   describe("Input validation", () => {
@@ -85,7 +100,11 @@ describe("POST /api/auth/session", () => {
     });
 
     it("should set cookie with correct properties in test/development", async () => {
-      process.env.NODE_ENV = "test";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "test",
+        writable: true,
+        configurable: true,
+      });
       const mockIdToken = "mock-id-token";
       const req = new Request("http://localhost/api/auth/session", {
         method: "POST",
@@ -93,8 +112,8 @@ describe("POST /api/auth/session", () => {
         body: JSON.stringify({ idToken: mockIdToken }),
       });
 
-      const response = await POST(req);
-      const setCookieSpy = (response as any).cookies.set;
+      const response = (await POST(req)) as unknown as MockResponse;
+      const setCookieSpy = response.cookies.set;
 
       expect(setCookieSpy).toHaveBeenCalledWith({
         name: "__session",
@@ -108,7 +127,11 @@ describe("POST /api/auth/session", () => {
     });
 
     it("should set cookie with secure flag in production", async () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "production",
+        writable: true,
+        configurable: true,
+      });
       const mockIdToken = "mock-id-token";
       const req = new Request("http://localhost/api/auth/session", {
         method: "POST",
@@ -116,8 +139,8 @@ describe("POST /api/auth/session", () => {
         body: JSON.stringify({ idToken: mockIdToken }),
       });
 
-      const response = await POST(req);
-      const setCookieSpy = (response as any).cookies.set;
+      const response = (await POST(req)) as unknown as MockResponse;
+      const setCookieSpy = response.cookies.set;
 
       expect(setCookieSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -160,7 +183,11 @@ describe("POST /api/auth/session", () => {
 describe("DELETE /api/auth/session", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.NODE_ENV = "test";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+    });
   });
 
   it("should clear session cookie successfully", async () => {
@@ -172,8 +199,8 @@ describe("DELETE /api/auth/session", () => {
   });
 
   it("should set cookie to empty with maxAge 0", async () => {
-    const response = await DELETE();
-    const setCookieSpy = (response as any).cookies.set;
+    const response = (await DELETE()) as unknown as MockResponse;
+    const setCookieSpy = response.cookies.set;
 
     expect(setCookieSpy).toHaveBeenCalledWith({
       name: "__session",
@@ -186,9 +213,13 @@ describe("DELETE /api/auth/session", () => {
   });
 
   it("should set secure flag in production", async () => {
-    process.env.NODE_ENV = "production";
-    const response = await DELETE();
-    const setCookieSpy = (response as any).cookies.set;
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "production",
+      writable: true,
+      configurable: true,
+    });
+    const response = (await DELETE()) as unknown as MockResponse;
+    const setCookieSpy = response.cookies.set;
 
     expect(setCookieSpy).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -198,9 +229,13 @@ describe("DELETE /api/auth/session", () => {
   });
 
   it("should not set secure flag in development/test", async () => {
-    process.env.NODE_ENV = "development";
-    const response = await DELETE();
-    const setCookieSpy = (response as any).cookies.set;
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "development",
+      writable: true,
+      configurable: true,
+    });
+    const response = (await DELETE()) as unknown as MockResponse;
+    const setCookieSpy = response.cookies.set;
 
     expect(setCookieSpy).toHaveBeenCalledWith(
       expect.objectContaining({

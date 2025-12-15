@@ -33,7 +33,11 @@ describe("GET /api/action-items/all", () => {
     jest.clearAllMocks();
     mockGetUserId.mockResolvedValue(mockUserId);
     // Reset NODE_ENV to test
-    process.env.NODE_ENV = "test";
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value: "test",
+      writable: true,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
@@ -49,6 +53,8 @@ describe("GET /api/action-items/all", () => {
           userId: mockUserId,
           text: "Follow up with client",
           status: "pending" as const,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
           contactFirstName: "John",
           contactLastName: "Doe",
           contactEmail: "john@example.com",
@@ -59,6 +65,8 @@ describe("GET /api/action-items/all", () => {
           userId: mockUserId,
           text: "Send proposal",
           status: "completed" as const,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
           contactFirstName: "Jane",
           contactLastName: "Smith",
           contactEmail: "jane@example.com",
@@ -86,7 +94,11 @@ describe("GET /api/action-items/all", () => {
     });
 
     it("should include debug info in development mode", async () => {
-      process.env.NODE_ENV = "development";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "development",
+        writable: true,
+        configurable: true,
+      });
       const mockActionItems = [
         {
           actionItemId: "action1",
@@ -94,6 +106,8 @@ describe("GET /api/action-items/all", () => {
           userId: mockUserId,
           text: "Follow up",
           status: "pending" as const,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
       ];
       mockGetAllActionItemsForUser.mockResolvedValue(mockActionItems);
@@ -109,7 +123,11 @@ describe("GET /api/action-items/all", () => {
     });
 
     it("should not include debug info in production mode", async () => {
-      process.env.NODE_ENV = "production";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "production",
+        writable: true,
+        configurable: true,
+      });
       const mockActionItems = [
         {
           actionItemId: "action1",
@@ -117,6 +135,8 @@ describe("GET /api/action-items/all", () => {
           userId: mockUserId,
           text: "Follow up",
           status: "pending" as const,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
       ];
       mockGetAllActionItemsForUser.mockResolvedValue(mockActionItems);
@@ -130,7 +150,11 @@ describe("GET /api/action-items/all", () => {
     });
 
     it("should not include debug info in test mode", async () => {
-      process.env.NODE_ENV = "test";
+      Object.defineProperty(process.env, "NODE_ENV", {
+        value: "test",
+        writable: true,
+        configurable: true,
+      });
       const mockActionItems = [
         {
           actionItemId: "action1",
@@ -138,6 +162,8 @@ describe("GET /api/action-items/all", () => {
           userId: mockUserId,
           text: "Follow up",
           status: "pending" as const,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
         },
       ];
       mockGetAllActionItemsForUser.mockResolvedValue(mockActionItems);
