@@ -86,6 +86,7 @@ export interface Contact {
   export interface SyncJob {
     syncJobId: string;
     userId: string;
+    service: "gmail" | "calendar"; // Which service this sync job is for
   
     type: "initial" | "incremental";
     status: "pending" | "running" | "complete" | "error";
@@ -93,10 +94,14 @@ export interface Contact {
     startedAt: unknown;
     finishedAt?: unknown | null;
   
-    processedThreads: number;
-    processedMessages: number;
-  
+    // Gmail-specific fields
+    processedThreads?: number;
+    processedMessages?: number;
     gmailQuery?: string | null;
+  
+    // Calendar-specific fields
+    processedEvents?: number;
+  
     errorMessage?: string | null;
   }
 
@@ -113,5 +118,33 @@ export interface Contact {
     
     createdAt: unknown;
     updatedAt: unknown;
+  }
+
+  export interface CalendarEvent {
+    eventId: string;
+    googleEventId: string;
+    userId: string;
+    
+    // Event details
+    title: string;
+    description?: string | null;
+    startTime: unknown; // Firestore timestamp
+    endTime: unknown;
+    location?: string | null;
+    attendees?: Array<{ email: string; displayName?: string }>;
+    
+    // Sync metadata
+    lastSyncedAt: unknown;
+    etag?: string; // For future conflict detection
+    
+    createdAt: unknown;
+    updatedAt: unknown;
+  }
+
+  export interface CalendarSyncSettings {
+    userId: string;
+    lastSyncToken?: string | null; // Google Calendar syncToken for incremental sync
+    lastSyncAt?: unknown | null;
+    calendarId?: string; // Default: 'primary'
   }
   

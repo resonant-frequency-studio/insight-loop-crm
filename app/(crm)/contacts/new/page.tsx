@@ -314,7 +314,7 @@ export default function NewContactPage() {
               loading={saving}
               variant="secondary"
               size="md"
-              className="shadow-[rgba(34,32,29,0.1)_0px_2px_4px]
+              className="shadow-sm
 "
               icon={
                 <svg

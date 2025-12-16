@@ -105,7 +105,7 @@ describe("Card", () => {
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass("bg-card-light");
       expect(card).toHaveClass("rounded-sm");
-      expect(card).toHaveClass("shadow-[rgba(34,32,29,0.1)_0px_2px_4px]");
+      expect(card).toHaveClass("shadow-sm");
       expect(card).toHaveClass("border", "border-theme-lighter");
     });
   });

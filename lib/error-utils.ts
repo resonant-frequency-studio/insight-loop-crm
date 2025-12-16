@@ -50,6 +50,19 @@ export function extractErrorMessage(error: unknown): string {
     return "Network error. Please check your connection and try again.";
   }
   
+  // Calendar API errors - check these FIRST before generic permission errors
+  // Preserve specific, user-friendly Calendar error messages
+  if (errorMessage.includes("Calendar access not granted") ||
+      errorMessage.includes("reconnect your Google account with Calendar permissions") ||
+      errorMessage.includes("Calendar scope missing") ||
+      errorMessage.includes("Calendar authentication scopes are insufficient") ||
+      errorMessage.includes("Google Calendar API has not been used") ||
+      errorMessage.includes("calendar-json.googleapis.com") ||
+      errorMessage.includes("Enable it by visiting")) {
+    // These are already user-friendly, preserve them
+    return errorMessage;
+  }
+
   // Gmail API errors - check these FIRST before generic permission errors
   // Preserve specific, user-friendly Gmail error messages
   if (errorMessage.includes("reconnect your Gmail account") ||

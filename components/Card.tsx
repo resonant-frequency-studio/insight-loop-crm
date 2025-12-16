@@ -22,7 +22,7 @@ export default function Card({
     responsive: "p-3 xl:p-6",
   };
 
-  const baseClasses = "bg-card-light rounded-sm shadow-[rgba(34,32,29,0.1)_0px_2px_4px] border border-theme-lighter";
+  const baseClasses = "bg-card-light rounded-sm shadow-sm border border-theme-lighter";
   const paddingClass = padding === "none" || className.includes("p-") ? "" : paddingClasses[padding];
   const hoverClasses = hover ? "hover:shadow-[0px_6px_16px_rgba(0,0,0,0.15)] transition-shadow duration-200" : "";
 

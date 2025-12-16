@@ -101,7 +101,7 @@ export default function ExportContactsButton({ contacts, disabled = false }: Exp
           />
         </svg>
       }
-      className="w-full sm:w-auto shadow-[rgba(34,32,29,0.1)_0px_2px_4px]"
+      className="w-full sm:w-auto shadow-sm"
     >
       Export {contacts.length > 0 ? `(${contacts.length})` : ""}
     </Button>

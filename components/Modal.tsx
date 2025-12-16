@@ -10,6 +10,8 @@ interface ModalProps {
   title?: string;
   showBackdrop?: boolean;
   closeOnBackdropClick?: boolean;
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
+  className?: string;
 }
 
 export default function Modal({
@@ -19,7 +21,16 @@ export default function Modal({
   title,
   showBackdrop = true,
   closeOnBackdropClick = true,
+  maxWidth = "md",
+  className = "",
 }: ModalProps) {
+  const maxWidthClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+    xl: "max-w-xl",
+    "2xl": "max-w-2xl",
+  };
   const modalRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
@@ -153,7 +164,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className="relative bg-background rounded-xl shadow-xl p-6 max-w-md w-full mx-4 z-10 border border-theme-light focus:outline-none"
+        className={`relative bg-background rounded-xl shadow-xl p-6 ${maxWidthClasses[maxWidth]} w-full mx-4 z-10 border border-theme-light focus:outline-none ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (

@@ -5,8 +5,8 @@ import { isPlaywrightTest } from "@/util/test-utils";
 import SyncData from "./_components/SyncData";
 
 export const metadata: Metadata = {
-  title: "Gmail Sync Status | Insight Loop CRM",
-  description: "Monitor your email synchronization status and history",
+  title: "Google Sync Status | Insight Loop CRM",
+  description: "Monitor your Gmail and Calendar synchronization status and history",
 };
 
 export default async function SyncStatusPage() {
@@ -24,9 +24,9 @@ export default async function SyncStatusPage() {
       {/* Static Header - renders immediately */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Gmail Sync Status</h1>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Google Sync Status</h1>
           <p className="text-theme-dark text-lg">
-            Monitor your email synchronization status and history
+            Monitor your Gmail and Calendar synchronization status and history
           </p>
         </div>
       </div>

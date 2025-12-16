@@ -7,7 +7,7 @@
   --card-light: #fafaf9;
   --card-dark: #292927;
   --card-tag: rgba(59, 130, 246, 1);
-  --card-tag-text: rgba(59, 130, 246, 1);
+  --card-tag-text: #eeeeec;
   --card-upcoming: rgba(253, 153, 0, 0.03);
   --card-upcoming-dark: rgba(253, 153, 0, 0.15);
   --card-overdue: rgba(250, 43, 54, 0.03);
@@ -34,7 +34,7 @@
   --card-light: #292927;
   --card-dark: #fafaf9;
   --card-tag: rgba(59, 130, 246, 1);
-  --card-tag-text: #d4d1cc;
+  --card-tag-text: #eeeeec;
   --card-upcoming: rgba(253, 153, 0, 0.03);
   --card-upcoming-dark: rgba(253, 153, 0, 0.15);
   --card-overdue: rgba(250, 43, 54, 0.03);
@@ -62,7 +62,7 @@
     --card-light: #292927;
     --card-dark: #fafaf9;
     --card-tag: rgba(59, 130, 246, 1);
-    --card-tag-text: #d4d1cc;
+    --card-tag-text: #eeeeec;
     --card-upcoming: rgba(253, 153, 0, 0.03);
     --card-upcoming-dark: rgba(253, 153, 0, 0.15);
     --card-overdue: rgba(250, 43, 54, 0.03);
@@ -223,4 +223,3 @@ input[type="date"] {
     color-scheme: dark;
   }
 }
-

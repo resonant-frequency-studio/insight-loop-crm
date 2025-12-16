@@ -1,0 +1,588 @@
+/* Calendar Styles - Consolidated from globals.css */
+
+/* ============================================
+   Calendar Container & Base Styles
+   ============================================ */
+.rbc-calendar {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  border-radius: 0.125rem; /* rounded-sm */
+}
+
+/* ============================================
+   Calendar Header
+   ============================================ */
+.rbc-header {
+  background: var(--selected-background);
+  border-bottom: 1px solid var(--theme-light);
+  color: var(--foreground);
+  padding: 0.25rem;
+  font-weight: 500;
+}
+
+[data-theme='dark'] .rbc-header {
+  background: var(--selected-background);
+  border-bottom-color: var(--theme-light);
+}
+
+/* ============================================
+   Day Cells & Grid
+   ============================================ */
+.rbc-today {
+  background: var(--selected-active);
+}
+
+[data-theme='dark'] .rbc-today {
+  background: var(--selected-active);
+}
+
+.rbc-day-bg {
+  border-color: var(--theme-light);
+}
+
+[data-theme='dark'] .rbc-day-bg {
+  border-color: var(--theme-light);
+}
+
+.rbc-off-range-bg {
+  background: var(--card-highlight-light);
+  opacity: 0.5;
+}
+
+[data-theme='dark'] .rbc-off-range-bg {
+  background: var(--card-highlight-dark);
+  opacity: 0.3;
+}
+
+.rbc-date-cell {
+  color: var(--foreground);
+  padding: 0.5rem;
+  font-weight: 500;
+}
+
+/* Month view date cells - more compact */
+.rbc-month-view .rbc-date-cell {
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.rbc-date-cell > a {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.rbc-date-cell.rbc-off-range-bg > a {
+  color: var(--theme-medium);
+  opacity: 0.6;
+}
+
+/* ============================================
+   Time View Styles
+   ============================================ */
+.rbc-time-slot {
+  border-top-color: var(--theme-light);
+}
+
+[data-theme='dark'] .rbc-time-slot {
+  border-top-color: var(--theme-light);
+}
+
+.rbc-time-header-content {
+  border-left-color: var(--theme-light);
+}
+
+[data-theme='dark'] .rbc-time-header-content {
+  border-left-color: var(--theme-light);
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid var(--theme-light);
+}
+
+.rbc-time-content {
+  border-top: 2px solid var(--theme-light);
+}
+
+.rbc-current-time-indicator {
+  background: var(--card-tag);
+}
+
+/* ============================================
+   Positioning & Containment
+   ============================================ */
+.rbc-row-segment {
+  position: relative !important;
+}
+
+.rbc-day-slot {
+  position: relative !important;
+}
+
+/* Time column - positioning context for events container */
+.rbc-time-column {
+  position: relative !important;
+}
+
+/* Timeslot group - fills height but shouldn't push events container */
+.rbc-timeslot-group {
+  position: relative;
+}
+
+.rbc-date-cell,
+.rbc-day-bg,
+.rbc-time-slot {
+  position: relative !important;
+}
+
+.rbc-month-row,
+.rbc-month-row-segment {
+  position: relative;
+}
+
+.rbc-month-view .rbc-row-segment,
+.rbc-time-view .rbc-row-segment {
+  position: relative !important;
+  overflow: visible;
+}
+
+/* Events container - must be absolutely positioned to overlay time slots */
+.rbc-day-slot .rbc-events-container {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: visible;
+  pointer-events: none; /* Allow clicks to pass through to time slots */
+}
+
+/* Events themselves need pointer events to be clickable */
+.rbc-day-slot .rbc-events-container .rbc-event {
+  pointer-events: auto;
+}
+
+.rbc-month-row .rbc-row-content,
+.rbc-time-slot .rbc-events-container {
+  position: relative;
+  overflow: visible;
+  height: 100%;
+}
+
+/* ============================================
+   Events - Base Styles
+   ============================================ */
+.rbc-event {
+  background: var(--card-tag);
+  color: var(--card-tag-text);
+  border: none;
+  border-radius: 0.125rem; /* rounded-sm */
+  padding: 0.25rem 0.5rem;
+  min-height: 1.5rem;
+  overflow: hidden !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.3;
+  /* position is set per view type - relative for month, absolute for time view */
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: opacity 0.2s ease;
+  /* width is set per view type - don't set globally */
+  /* contain is only for month view to prevent layout issues */
+}
+
+/* Remove contain for time view events as it interferes with absolute positioning */
+.rbc-time-view .rbc-event {
+  contain: none !important;
+}
+
+.rbc-event:hover {
+  opacity: 0.9;
+}
+
+.rbc-event-selected,
+.rbc-event:focus,
+.rbc-event:active {
+  overflow: hidden !important;
+  outline: 2px solid var(--card-tag);
+  outline-offset: 2px;
+}
+
+.rbc-event * {
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   Event Content
+   ============================================ */
+.rbc-event-content {
+  color: var(--card-tag-text);
+  overflow: hidden !important;
+  white-space: normal !important;
+  word-wrap: break-word;
+  word-break: break-word;
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  height: auto;
+  min-height: 100%;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+.rbc-event-content span,
+.rbc-event span {
+  display: inline;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+.rbc-event-label {
+  display: none !important;
+}
+
+.rbc-event-content-wrapper,
+.rbc-event-content-wrapper * {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   Month View - Google Calendar Style
+   ============================================ */
+.rbc-month-view {
+  border: none;
+  max-height: 600px; /* Match the calendar height set in component */
+  overflow: hidden;
+}
+
+/* Month row - ensure consistent height */
+.rbc-month-row {
+  border-bottom: 1px solid var(--theme-light);
+  min-height: 100px; /* Minimum height for day cells */
+}
+
+/* Day cells - proper height and overflow handling */
+.rbc-day-bg {
+  border-left: 1px solid var(--theme-light);
+  min-height: 100px;
+}
+
+.rbc-day-bg:first-child {
+  border-left: none;
+}
+
+
+/* Row content - contains events, needs overflow control */
+.rbc-month-row .rbc-row-content {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Row segment - contains events for a specific day */
+.rbc-month-view .rbc-row-segment {
+  position: relative !important;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.125rem 0.25rem;
+}
+
+/* Month view events - compact, Google Calendar style */
+.rbc-month-view .rbc-event {
+  min-height: 1.25rem;
+  max-height: 1.5rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.5rem;
+  line-height: 1.25;
+  position: relative !important;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0.125rem;
+  border-radius: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rbc-month-view .rbc-event:last-child {
+  margin-bottom: 0;
+}
+
+.rbc-month-view .rbc-event-content {
+  font-size: 0.5rem;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+.rbc-month-view .rbc-event.rbc-selected {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Hide overflow indicator if react-big-calendar adds one */
+.rbc-month-view .rbc-row-segment .rbc-event-content::after {
+  display: none;
+}
+
+/* Ensure day cells don't grow beyond viewport */
+.rbc-month-view .rbc-day-bg {
+  overflow: hidden;
+}
+
+/* Add subtle hover effect */
+.rbc-month-view .rbc-event:hover {
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+/* ============================================
+   Time View Events
+   ============================================ */
+.rbc-time-view {
+  border: none;
+}
+
+/* Events in time view (week/day) - positioned by react-big-calendar inline styles */
+.rbc-time-view .rbc-day-slot .rbc-event,
+.rbc-time-view .rbc-time-slot .rbc-event {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0;
+  width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  white-space: normal !important;
+  box-sizing: border-box;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  /* top and height are set by react-big-calendar via inline styles - don't override */
+}
+
+.rbc-time-view .rbc-event-content {
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.rbc-time-view .rbc-event-content {
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+/* ============================================
+   All-Day Events
+   ============================================ */
+.rbc-allday-cell .rbc-event,
+.rbc-event.rbc-selected {
+  position: absolute;
+  left: 0;
+  right: auto;
+  width: auto;
+  max-width: 100%;
+  overflow: hidden !important;
+}
+
+/* ============================================
+   Toolbar
+   ============================================ */
+.rbc-toolbar {
+  padding: 0.75rem;
+  background: var(--selected-background);
+  border-bottom: 1px solid var(--theme-light);
+  border-radius: 0.125rem 0.125rem 0 0;
+}
+
+[data-theme='dark'] .rbc-toolbar {
+  background: var(--selected-background);
+  border-bottom-color: var(--theme-light);
+}
+
+.rbc-toolbar button {
+  background: transparent;
+  border: 1px solid var(--theme-darker);
+  color: var(--foreground);
+  border-radius: 0.125rem; /* rounded-sm */
+  padding: 0.375rem 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.rbc-toolbar button:hover {
+  background: var(--selected-active);
+  border-color: var(--theme-medium);
+  color: var(--foreground);
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  background: transparent;
+  border-color: var(--card-tag);
+  color: var(--card-tag);
+  box-shadow: 0 0 0 1px var(--card-tag);
+}
+
+[data-theme='dark'] .rbc-toolbar button {
+  background: transparent;
+  border-color: var(--theme-darker);
+  color: var(--foreground);
+}
+
+[data-theme='dark'] .rbc-toolbar button:hover {
+  background: var(--card-highlight-light);
+  border-color: var(--theme-medium);
+  color: var(--foreground);
+}
+
+[data-theme='dark'] .rbc-toolbar button:active,
+[data-theme='dark'] .rbc-toolbar button.rbc-active {
+  background: transparent;
+  border-color: var(--card-tag);
+  color: var(--card-tag);
+  box-shadow: 0 0 0 1px var(--card-tag);
+}
+
+/* ============================================
+   Button Groups
+   ============================================ */
+.rbc-btn-group button {
+  background: transparent;
+  border: 1px solid var(--theme-darker);
+  color: var(--foreground);
+  border-radius: 0.125rem;
+  padding: 0.375rem 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.rbc-btn-group button:hover {
+  background: var(--selected-active);
+  border-color: var(--theme-medium);
+  color: var(--foreground);
+}
+
+[data-theme='dark'] .rbc-btn-group button {
+  background: transparent;
+  border-color: var(--theme-darker);
+  color: var(--foreground);
+}
+
+[data-theme='dark'] .rbc-btn-group button:hover {
+  background: var(--card-highlight-light);
+  border-color: var(--theme-medium);
+  color: var(--foreground);
+}
+
+.rbc-btn-group button.rbc-active {
+  background: transparent;
+  border-color: var(--card-tag);
+  color: var(--card-tag) !important;
+  box-shadow: 0 0 0 1px var(--card-tag);
+}
+
+[data-theme='dark'] .rbc-btn-group button.rbc-active {
+  background: transparent !important;
+  border-color: var(--card-tag);
+  color: var(--card-tag);
+  box-shadow: 0 0 0 1px var(--card-tag);
+}
+
+[data-theme='dark'] .rbc-btn-group button.rbc-active:hover {
+  background: var(--theme-medium);
+  border-color: var(--theme-medium);
+  color: var(--foreground);
+}
+
+/* ============================================
+   Calendar Event Card (Modal Content)
+   ============================================ */
+.calendar-event-card,
+.calendar-event-card * {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.calendar-event-card a,
+.calendar-event-card p {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.calendar-event-card a {
+  color: var(--card-tag);
+  text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.calendar-event-card a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+[data-theme='dark'] .calendar-event-card a {
+  color: #60a5fa; /* blue-400 */
+}
+
+[data-theme='light'] .calendar-event-card a {
+  color: #2563eb; /* blue-600 */
+}
+
+.calendar-event-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 8rem);
+  color: var(--foreground);
+}
+
+.calendar-event-card > div:last-child {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-light) transparent;
+}
+
+.calendar-event-card > div:last-child::-webkit-scrollbar {
+  width: 8px;
+}
+
+.calendar-event-card > div:last-child::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-event-card > div:last-child::-webkit-scrollbar-thumb {
+  background-color: var(--theme-light);
+  border-radius: 4px;
+}
+
+.calendar-event-card > div:last-child::-webkit-scrollbar-thumb:hover {
+  background-color: var(--theme-medium);
+}
+

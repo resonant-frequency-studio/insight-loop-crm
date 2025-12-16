@@ -31,6 +31,8 @@ export default function SyncPageClient({
   const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
+  const [calendarSyncError, setCalendarSyncError] = useState<string | null>(null);
   const [clearingHistory, setClearingHistory] = useState(false);
   const [clearError, setClearError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -206,8 +208,8 @@ export default function SyncPageClient({
         </div>
       </Modal>
 
-      {/* Sync Now Button - Static, renders immediately */}
-      <div className="flex justify-end">
+      {/* Sync Gmail Button - Static, renders immediately */}
+      <div className="flex justify-end w-full">
         <Button
           onClick={handleManualSync}
           disabled={syncing}
@@ -230,7 +232,52 @@ export default function SyncPageClient({
             </svg>
           }
         >
-          Sync Now
+          Sync Gmail
+        </Button>
+      </div>
+
+      {/* Sync Calendar Button - Static, renders immediately */}
+      <div className="flex justify-end w-full">
+        <Button
+          onClick={async () => {
+            setSyncingCalendar(true);
+            setCalendarSyncError(null);
+            try {
+              const response = await fetch('/api/calendar/sync', { 
+                method: 'POST',
+                credentials: 'include',
+              });
+              const data = await response.json();
+              if (!data.ok) {
+                setCalendarSyncError(data.error || 'Failed to sync calendar');
+              }
+            } catch (err) {
+              setCalendarSyncError(err instanceof Error ? err.message : 'Failed to sync calendar');
+            } finally {
+              setSyncingCalendar(false);
+            }
+          }}
+          disabled={syncingCalendar}
+          loading={syncingCalendar}
+          size="sm"
+          variant="secondary"
+          icon={
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          }
+        >
+          Sync Calendar
         </Button>
       </div>
 
@@ -240,6 +287,14 @@ export default function SyncPageClient({
           message={syncError}
           dismissible
           onDismiss={() => setSyncError(null)}
+        />
+      )}
+
+      {calendarSyncError && (
+        <ErrorMessage
+          message={calendarSyncError}
+          dismissible
+          onDismiss={() => setCalendarSyncError(null)}
         />
       )}
 
@@ -279,63 +334,125 @@ export default function SyncPageClient({
           </div>
         }
       >
-        {/* Last Sync Status */}
-        {lastSync && (
-          <Card padding="md">
-            <h2 className="text-xl font-semibold text-theme-darkest mb-4">Last Sync</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm font-medium text-theme-medium mb-1">Status</p>
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                    lastSync.status
-                  )}`}
-                >
-                  {lastSync.status.charAt(0).toUpperCase() + lastSync.status.slice(1)}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-theme-medium mb-1">Started At</p>
-                <p className="text-theme-darkest">{formatDate(lastSync.startedAt)}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-theme-medium mb-1">Type</p>
-                <p className="text-theme-darkest capitalize">{lastSync.type || "auto"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-theme-medium mb-1">Threads Processed</p>
-                <p className="text-2xl font-bold text-theme-darkest">{lastSync.processedThreads || 0}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-theme-medium mb-1">Messages Processed</p>
-                <p className="text-2xl font-bold text-theme-darkest">{lastSync.processedMessages || 0}</p>
-              </div>
-              {lastSync.finishedAt != null && (
-                <div>
-                  <p className="text-sm font-medium text-theme-medium mb-1">Finished At</p>
-                  <p className="text-theme-darkest">{formatDate(lastSync.finishedAt)}</p>
-                </div>
+        {/* Last Sync Status - Show both Gmail and Calendar */}
+        {(() => {
+          const lastGmailSync = syncHistory.find(job => job.service === "gmail" || !job.service) || lastSync;
+          const lastCalendarSync = syncHistory.find(job => job.service === "calendar");
+          
+          return (
+            <>
+              {lastGmailSync && (
+                <Card padding="md">
+                  <h2 className="text-xl font-semibold text-theme-darkest mb-4">Last Gmail Sync</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Status</p>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                          lastGmailSync.status
+                        )}`}
+                      >
+                        {lastGmailSync.status.charAt(0).toUpperCase() + lastGmailSync.status.slice(1)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Started At</p>
+                      <p className="text-theme-darkest">{formatDate(lastGmailSync.startedAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Type</p>
+                      <p className="text-theme-darkest capitalize">{lastGmailSync.type || "auto"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Threads Processed</p>
+                      <p className="text-2xl font-bold text-theme-darkest">{lastGmailSync.processedThreads || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Messages Processed</p>
+                      <p className="text-2xl font-bold text-theme-darkest">{lastGmailSync.processedMessages || 0}</p>
+                    </div>
+                    {lastGmailSync.finishedAt != null && (
+                      <div>
+                        <p className="text-sm font-medium text-theme-medium mb-1">Finished At</p>
+                        <p className="text-theme-darkest">{formatDate(lastGmailSync.finishedAt)}</p>
+                      </div>
+                    )}
+                  </div>
+                  {lastGmailSync.errorMessage && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-sm">
+                      <p className="text-sm text-red-800 mb-2">
+                        <strong>Error:</strong> {extractErrorMessage(lastGmailSync.errorMessage)}
+                      </p>
+                      {(lastGmailSync.errorMessage.includes("reconnect your Gmail account") || 
+                        lastGmailSync.errorMessage.includes("Gmail access token") ||
+                        lastGmailSync.errorMessage.includes("Gmail authentication")) && (
+                        <a
+                          href="/api/oauth/gmail/start?redirect=/sync"
+                          className="text-sm text-red-600 hover:text-red-800 underline font-medium"
+                        >
+                          Reconnect Gmail Account →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </Card>
               )}
-            </div>
-                {lastSync.errorMessage && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-sm">
-                <p className="text-sm text-red-800 mb-2">
-                  <strong>Error:</strong> {extractErrorMessage(lastSync.errorMessage)}
-                </p>
-                {(lastSync.errorMessage.includes("reconnect your Gmail account") || 
-                  lastSync.errorMessage.includes("Gmail access token") ||
-                  lastSync.errorMessage.includes("Gmail authentication")) && (
-                  <a
-                    href="/api/oauth/gmail/start?redirect=/sync"
-                    className="text-sm text-red-600 hover:text-red-800 underline font-medium"
-                  >
-                    Reconnect Gmail Account →
-                  </a>
-                )}
-              </div>
-            )}
-          </Card>
-        )}
+
+              {lastCalendarSync && (
+                <Card padding="md">
+                  <h2 className="text-xl font-semibold text-theme-darkest mb-4">Last Calendar Sync</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Status</p>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                          lastCalendarSync.status
+                        )}`}
+                      >
+                        {lastCalendarSync.status.charAt(0).toUpperCase() + lastCalendarSync.status.slice(1)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Started At</p>
+                      <p className="text-theme-darkest">{formatDate(lastCalendarSync.startedAt)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Type</p>
+                      <p className="text-theme-darkest capitalize">{lastCalendarSync.type || "initial"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-theme-medium mb-1">Events Processed</p>
+                      <p className="text-2xl font-bold text-theme-darkest">{lastCalendarSync.processedEvents || 0}</p>
+                    </div>
+                    {lastCalendarSync.finishedAt != null && (
+                      <div>
+                        <p className="text-sm font-medium text-theme-medium mb-1">Finished At</p>
+                        <p className="text-theme-darkest">{formatDate(lastCalendarSync.finishedAt)}</p>
+                      </div>
+                    )}
+                  </div>
+                  {lastCalendarSync.errorMessage && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-sm">
+                      <p className="text-sm text-red-800 mb-2">
+                        <strong>Error:</strong> {extractErrorMessage(lastCalendarSync.errorMessage)}
+                      </p>
+                      {(lastCalendarSync.errorMessage.includes("Calendar access not granted") || 
+                        lastCalendarSync.errorMessage.includes("reconnect your Google account with Calendar") ||
+                        lastCalendarSync.errorMessage.includes("Calendar scope")) && (
+                        <a
+                          href="/api/oauth/gmail/start?redirect=/sync"
+                          className="text-sm text-red-600 hover:text-red-800 underline font-medium"
+                        >
+                          Reconnect Google Account →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              )}
+            </>
+          );
+        })()}
 
         {/* Sync History */}
         <Card padding="md">
@@ -381,43 +498,70 @@ export default function SyncPageClient({
             <p className="text-theme-medium text-center py-8">No sync history available yet</p>
           ) : (
             <div className="space-y-3">
-              {syncHistory.map((job) => (
-                <div
-                  key={job.syncJobId}
-                  className="flex items-center justify-between p-4 bg-card-highlight-light rounded-sm"
-                >
-                  <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-theme-medium mb-1">Started</p>
-                      <p className="text-sm font-medium text-theme-darkest">
-                        {formatDate(job.startedAt)}
-                      </p>
+              {syncHistory.map((job) => {
+                const isGmail = job.service === "gmail" || !job.service;
+                const isCalendar = job.service === "calendar";
+                
+                return (
+                  <div
+                    key={job.syncJobId}
+                    className="flex items-center justify-between p-4 bg-card-highlight-light rounded-sm"
+                  >
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div>
+                        <p className="text-xs text-theme-medium mb-1">Service</p>
+                        <p className="text-sm font-medium text-theme-darkest capitalize">
+                          {isGmail ? "Gmail" : isCalendar ? "Calendar" : "Unknown"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-theme-medium mb-1">Started</p>
+                        <p className="text-sm font-medium text-theme-darkest">
+                          {formatDate(job.startedAt)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-theme-medium mb-1">Status</p>
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
+                            job.status
+                          )}`}
+                        >
+                          {job.status}
+                        </span>
+                      </div>
+                      {isGmail ? (
+                        <>
+                          <div>
+                            <p className="text-xs text-theme-medium mb-1">Threads</p>
+                            <p className="text-sm font-medium text-theme-darkest">
+                              {job.processedThreads || 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-theme-medium mb-1">Messages</p>
+                            <p className="text-sm font-medium text-theme-darkest">
+                              {job.processedMessages || 0}
+                            </p>
+                          </div>
+                        </>
+                      ) : isCalendar ? (
+                        <div>
+                          <p className="text-xs text-theme-medium mb-1">Events</p>
+                          <p className="text-sm font-medium text-theme-darkest">
+                            {job.processedEvents || 0}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
-                    <div>
-                      <p className="text-xs text-theme-medium mb-1">Status</p>
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium border ${getStatusColor(
-                          job.status
-                        )}`}
-                      >
-                        {job.status}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-theme-medium mb-1">Threads</p>
-                      <p className="text-sm font-medium text-theme-darkest">
-                        {job.processedThreads || 0}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-theme-medium mb-1">Messages</p>
-                      <p className="text-sm font-medium text-theme-darkest">
-                        {job.processedMessages || 0}
-                      </p>
-                    </div>
+                    {job.errorMessage && (
+                      <div className="ml-4 text-xs text-red-600 max-w-xs">
+                        {extractErrorMessage(job.errorMessage)}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>

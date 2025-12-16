@@ -49,7 +49,7 @@ function ContactsPageHeader({ contacts }: { contacts: ContactWithId[] }) {
           <Button
             size="sm"
             fullWidth
-            className="whitespace-nowrap shadow-[rgba(34,32,29,0.1)_0px_2px_4px]
+            className="whitespace-nowrap shadow-sm
 "
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

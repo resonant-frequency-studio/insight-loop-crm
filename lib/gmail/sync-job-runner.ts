@@ -43,6 +43,7 @@ async function createSyncJob(
     .set({
       syncJobId,
       userId,
+      service: "gmail",
       type,
       status: "running",
       startedAt: FieldValue.serverTimestamp(),
@@ -216,6 +217,7 @@ export async function runSyncJob(
       await updateSyncJob(userId, jobId, {
         syncJobId: jobId,
         userId,
+        service: "gmail",
         type: syncType || "initial",
         status: "error",
         startedAt: syncJobCreated ? undefined : FieldValue.serverTimestamp(),
