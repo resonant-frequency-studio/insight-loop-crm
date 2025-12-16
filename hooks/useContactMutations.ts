@@ -378,7 +378,7 @@ export function useUpdateTouchpointStatus(userId?: string) {
       if (!userId) return;
       queryClient.invalidateQueries({ queryKey: ["contact", userId, vars.contactId] });
       queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-stats"], exact: false });
     },
   });
 }

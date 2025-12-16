@@ -436,6 +436,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                             <Link
                               href={subLink.href}
                               onClick={handleLinkClick}
+                              prefetch={true}
                               className={getLinkClasses(isActive(subLink.href), isSaving)}
                             >
                               <svg
@@ -466,6 +467,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                     <Link
                       href={link.href}
                       onClick={handleLinkClick}
+                      prefetch={true}
                       className={`${getLinkClasses(isContactsActive, isSaving)} flex-1`}
                     >
                       <svg
@@ -515,6 +517,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                           <Link
                             href={subLink.href}
                             onClick={handleLinkClick}
+                            prefetch={true}
                             className={getLinkClasses(isActive(subLink.href), isSaving)}
                           >
                             <svg
@@ -541,6 +544,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
                 <Link
                   href={link.href}
                   onClick={handleLinkClick}
+                  prefetch={link.href !== "#"}
                   className={getLinkClasses(linkIsActive, isSaving)}
                 >
                   <svg

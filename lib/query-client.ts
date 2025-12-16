@@ -9,11 +9,11 @@ export const getQueryClient = cache(() => {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 0, // Always considered stale - data is instantly usable but always eligible for refetch
+        staleTime: 30 * 1000, // 30 seconds - data is fresh for 30s, then eligible for background refetch
         gcTime: 5 * 60 * 1000, // 5 minutes - keep in memory for 5 min after last use
         refetchOnWindowFocus: true, // Refresh when user returns to tab
         refetchOnReconnect: true, // Refresh when network reconnects
-        refetchOnMount: true, // Refetch on mount if data is stale
+        refetchOnMount: true, // Refetch if data is stale (e.g., after invalidation). Fresh data (within staleTime) won't refetch
         retry: 1, // Only retry once on failure
       },
     },
