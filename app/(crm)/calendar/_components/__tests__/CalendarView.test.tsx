@@ -6,17 +6,16 @@ import { CalendarEvent } from "@/types/firestore";
 
 // Mock react-big-calendar
 jest.mock("react-big-calendar", () => {
-  const React = require("react");
   return {
-    Calendar: ({ events, eventPropGetter }: any) => {
+    Calendar: ({ events, eventPropGetter }: { events: Array<{ title: string; className?: string }>; eventPropGetter?: (event: { title: string }) => { className?: string } }) => {
       // Test eventPropGetter by applying it to events
-      const styledEvents = events.map((event: any) => {
+      const styledEvents = events.map((event) => {
         const props = eventPropGetter ? eventPropGetter(event) : {};
         return { ...event, ...props };
       });
       return (
         <div data-testid="calendar">
-          {styledEvents.map((event: any, idx: number) => (
+          {styledEvents.map((event, idx: number) => (
             <div key={idx} data-testid={`event-${idx}`} className={event.className || ""}>
               {event.title}
             </div>
