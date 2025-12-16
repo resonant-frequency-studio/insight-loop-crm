@@ -7,6 +7,8 @@ import { getCalendarEventsForUser } from "@/lib/calendar/get-calendar-events-ser
 import { adminDb } from "@/lib/firebase-admin";
 import { reportException } from "@/lib/error-reporting";
 import { toUserFriendlyError } from "@/lib/error-utils";
+import { getAllContactsForUserUncached } from "@/lib/contacts-server";
+import { Contact } from "@/types/firestore";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -110,11 +112,26 @@ export async function GET(req: Request) {
       hasNextPage: !!googleEvents.nextPageToken,
     });
 
-    // Sync to Firestore
+    // Fetch contacts for matching
+    let contacts: Contact[] = [];
+    try {
+      contacts = await getAllContactsForUserUncached(userId);
+      console.log('[Calendar API] Fetched contacts for matching:', contacts.length);
+    } catch (error) {
+      // Log but don't fail sync if contacts fetch fails
+      console.error('[Calendar API] Failed to fetch contacts for matching:', error);
+      reportException(error, {
+        context: "Fetching contacts for calendar event matching",
+        tags: { component: "calendar-events-api", userId },
+      });
+    }
+
+    // Sync to Firestore with contact matching
     const syncResult = await syncCalendarEventsToFirestore(
       adminDb,
       userId,
-      googleEvents.items
+      googleEvents.items,
+      contacts
     );
 
     console.log('[Calendar API] Sync result:', syncResult);

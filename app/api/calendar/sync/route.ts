@@ -7,6 +7,8 @@ import { reportException } from "@/lib/error-reporting";
 import { adminDb } from "@/lib/firebase-admin";
 import { toUserFriendlyError } from "@/lib/error-utils";
 import { FieldValue } from "firebase-admin/firestore";
+import { getAllContactsForUserUncached } from "@/lib/contacts-server";
+import { Contact } from "@/types/firestore";
 
 /**
  * POST /api/calendar/sync
@@ -53,11 +55,26 @@ export async function POST() {
       timeMax
     );
 
-    // Sync to Firestore
+    // Fetch contacts for matching
+    let contacts: Contact[] = [];
+    try {
+      contacts = await getAllContactsForUserUncached(userId);
+      console.log('[Calendar Sync API] Fetched contacts for matching:', contacts.length);
+    } catch (error) {
+      // Log but don't fail sync if contacts fetch fails
+      console.error('[Calendar Sync API] Failed to fetch contacts for matching:', error);
+      reportException(error, {
+        context: "Fetching contacts for calendar event matching",
+        tags: { component: "calendar-sync-api", userId },
+      });
+    }
+
+    // Sync to Firestore with contact matching
     const syncResult = await syncCalendarEventsToFirestore(
       adminDb,
       userId,
-      googleEvents.items
+      googleEvents.items,
+      contacts
     );
 
     // Update sync job as complete
