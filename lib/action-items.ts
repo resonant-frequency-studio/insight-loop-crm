@@ -1,6 +1,6 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { ActionItem, Contact } from "@/types/firestore";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, FieldPath } from "firebase-admin/firestore";
 import { reportException } from "@/lib/error-reporting";
 import { convertTimestamp } from "@/util/timestamp-utils-server";
 
@@ -105,9 +105,143 @@ export async function getActionItemsForContact(
 
 /**
  * Internal function to fetch all action items for a user (uncached)
+ * OPTIMIZED: Uses collection group query to fetch all action items in ONE query instead of N queries
  * Enriches action items with contact fields (firstName, lastName, primaryEmail) for better performance
  */
 async function getAllActionItemsForUserUncached(
+  userId: string
+): Promise<Array<ActionItem & { 
+  contactId: string;
+  contactFirstName?: string | null;
+  contactLastName?: string | null;
+  contactEmail?: string;
+}>> {
+  try {
+    // Use collection group query to fetch all actionItems across all contacts in ONE query
+    // This requires a composite index: collectionGroup('actionItems'), fields: userId (asc), createdAt (desc)
+    const actionItemsSnapshot = await adminDb
+      .collectionGroup("actionItems")
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .get();
+
+    if (actionItemsSnapshot.empty) {
+      return [];
+    }
+
+    // Extract contactIds from document paths
+    // Path format: users/{userId}/contacts/{contactId}/actionItems/{actionItemId}
+    const contactIds = new Set<string>();
+    const actionItemsMap = new Map<string, Array<ActionItem & { contactId: string }>>();
+    
+    actionItemsSnapshot.docs.forEach((doc) => {
+      const pathParts = doc.ref.path.split("/");
+      const contactId = pathParts[3]; // Extract contactId from path
+      contactIds.add(contactId);
+      
+      if (!actionItemsMap.has(contactId)) {
+        actionItemsMap.set(contactId, []);
+      }
+      
+      const data = doc.data() as ActionItem;
+      actionItemsMap.get(contactId)!.push({
+        ...data,
+        actionItemId: doc.id,
+        contactId,
+        createdAt: convertTimestamp(data.createdAt) as string,
+        updatedAt: convertTimestamp(data.updatedAt) as string,
+        completedAt: data.completedAt ? (convertTimestamp(data.completedAt) as string | null) : null,
+        dueDate: data.dueDate ? (convertTimestamp(data.dueDate) as string | null) : null,
+      });
+    });
+
+    // Fetch only contacts that have action items (much smaller set than all contacts)
+    // Use 'in' query with up to 10 contactIds at a time (Firestore limit)
+    const contactIdsArray = Array.from(contactIds);
+    const contactsMap = new Map<string, Contact>();
+    
+    // Firestore 'in' queries are limited to 10 items, so batch if needed
+    const batchSize = 10;
+    for (let i = 0; i < contactIdsArray.length; i += batchSize) {
+      const batch = contactIdsArray.slice(i, i + batchSize);
+      const contactsSnapshot = await adminDb
+        .collection(`users/${userId}/contacts`)
+        .where(FieldPath.documentId(), "in", batch)
+        .get();
+
+      contactsSnapshot.docs.forEach((doc) => {
+        contactsMap.set(doc.id, { ...doc.data(), contactId: doc.id } as Contact);
+      });
+    }
+
+    // Enrich and flatten action items with contact fields
+    const allActionItems: Array<ActionItem & { 
+      contactId: string;
+      contactFirstName?: string | null;
+      contactLastName?: string | null;
+      contactEmail?: string;
+    }> = [];
+
+    actionItemsMap.forEach((items, contactId) => {
+      const contact = contactsMap.get(contactId);
+      items.forEach((item) => {
+        allActionItems.push({
+          ...item,
+          contactId,
+          contactFirstName: contact?.firstName || null,
+          contactLastName: contact?.lastName || null,
+          contactEmail: contact?.primaryEmail || undefined,
+        });
+      });
+    });
+
+    // Already sorted by createdAt desc from query, but ensure consistency
+    return allActionItems.sort((a, b) => {
+      const aTime = a.createdAt && typeof a.createdAt === "string"
+        ? new Date(a.createdAt).getTime()
+        : a.createdAt && typeof a.createdAt === "number"
+        ? a.createdAt
+        : 0;
+      const bTime = b.createdAt && typeof b.createdAt === "string"
+        ? new Date(b.createdAt).getTime()
+        : b.createdAt && typeof b.createdAt === "number"
+        ? b.createdAt
+        : 0;
+      return bTime - aTime;
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // If collection group query fails (likely due to missing index), fall back to old method
+    if (
+      errorMessage.includes("index") || 
+      errorMessage.includes("requires an index") ||
+      errorMessage.includes("FAILED_PRECONDITION") ||
+      (error instanceof Error && error.message.includes("index"))
+    ) {
+      reportException(error, {
+        context: "Collection group query failed, falling back to per-contact queries",
+        tags: { component: "action-items", userId },
+        extra: { 
+          error: errorMessage,
+          note: "This is expected if the Firestore index hasn't been created yet. The page will work but may be slower."
+        },
+      });
+      
+      // Fallback to old method (N+1 queries)
+      return getAllActionItemsForUserFallback(userId);
+    }
+    
+    // For other errors, propagate them
+    throw error;
+  }
+}
+
+/**
+ * Fallback method: Fetch action items using per-contact queries (N+1 pattern)
+ * Used when collection group query is not available (missing index)
+ */
+async function getAllActionItemsForUserFallback(
   userId: string
 ): Promise<Array<ActionItem & { 
   contactId: string;
@@ -178,10 +312,14 @@ async function getAllActionItemsForUserUncached(
 
 /**
  * Get all action items for a user (across all contacts)
- * OPTIMIZED: Uses parallel queries without delays for better performance
+ * OPTIMIZED: Uses collection group query to fetch all action items in ONE query instead of N+1 queries
+ * This reduces Firestore reads from (1 + N) to (1 + ceil(N/10)) where N = number of contacts with action items
  * Returns action items enriched with contact fields (firstName, lastName, primaryEmail)
  * and timestamps converted to ISO strings
  * Cache removed to ensure React Query works properly with real-time updates.
+ * 
+ * Requires Firestore composite index: collectionGroup('actionItems'), fields: userId (asc), createdAt (desc)
+ * Falls back to per-contact queries if index is not available.
  */
 export async function getAllActionItemsForUser(
   userId: string
@@ -273,6 +411,8 @@ export async function updateActionItem(
 ): Promise<void> {
   const updateData: Partial<ActionItem> = {
     updatedAt: FieldValue.serverTimestamp(),
+    // Ensure userId is always set (required for collection group queries)
+    userId,
   };
 
   if (updates.text !== undefined) {

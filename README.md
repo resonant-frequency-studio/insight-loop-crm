@@ -124,6 +124,15 @@ A modern, elegant Customer Relationship Management (CRM) application built with 
   - Google API Key with Gemini API enabled (for AI features)
   - Gmail API enabled
 
+### Deployment
+
+For production deployment instructions, see the [Deployment Guide](docs/deployment.md). This guide covers:
+- Setting up Vercel for staging and production environments
+- Configuring Google Cloud OAuth with proper redirect URIs
+- Firebase production setup and security
+- Environment variable configuration
+- Troubleshooting common deployment issues
+
 ### Installation
 
 1. Clone the repository:
@@ -154,6 +163,10 @@ npm install
 4. Configure Firestore security rules:
    - Ensure users can only read/write their own contacts
    - Rule should be: `match /users/{userId}/contacts/{contactId} { allow read, write: if request.auth != null && request.auth.uid == userId; }`
+
+5. Create required Firestore indexes:
+   - See [Firestore Indexes Documentation](docs/firestore-indexes.md) for required composite indexes
+   - The action items page requires a collection group index for optimal performance
 
 5. Run the development server:
 ```bash
