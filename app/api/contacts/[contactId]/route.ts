@@ -7,6 +7,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { revalidateTag } from "next/cache";
 import { Contact } from "@/types/firestore";
 import { convertTimestamp } from "@/util/timestamp-utils-server";
+import { syncTouchpointToCalendar } from "@/lib/calendar/sync-touchpoints";
 
 /**
  * GET /api/contacts/[contactId]
@@ -106,6 +107,24 @@ export async function PATCH(
       touchpointStatusUpdatedAt: contactData.touchpointStatusUpdatedAt ? convertTimestamp(contactData.touchpointStatusUpdatedAt) : null,
       summaryUpdatedAt: contactData.summaryUpdatedAt ? convertTimestamp(contactData.summaryUpdatedAt) : null,
     };
+
+    // Sync touchpoint to calendar if nextTouchpointDate was updated
+    if (updates.nextTouchpointDate !== undefined) {
+      try {
+        await syncTouchpointToCalendar(adminDb, userId, {
+          ...updatedContact,
+          contactId: updatedDoc.id,
+        });
+        // Invalidate calendar events cache
+        revalidateTag(`calendar-events-${userId}`, "max");
+      } catch (error) {
+        // Log error but don't fail the contact update
+        reportException(error, {
+          context: "Syncing touchpoint to calendar after contact update",
+          tags: { component: "contacts-api", userId, contactId },
+        });
+      }
+    }
 
     // Invalidate Next.js server cache
     revalidateTag("contacts", "max");

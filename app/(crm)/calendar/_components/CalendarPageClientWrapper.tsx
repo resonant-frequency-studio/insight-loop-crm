@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
+import { useContacts } from "@/hooks/useContacts";
 import CalendarView from "./CalendarView";
 import CalendarSkeleton from "./CalendarSkeleton";
 import CalendarFilterBar, { CalendarFilters } from "./CalendarFilterBar";
@@ -37,6 +38,9 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
     timeMax,
     { enabled: !!effectiveUserId }
   );
+
+  // Fetch contacts for event card suggestions
+  const { data: contacts = [] } = useContacts(effectiveUserId, undefined);
 
   // Filter state
   const [filters, setFilters] = useState<CalendarFilters>({
@@ -354,6 +358,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
           events={filteredEvents}
           currentDate={currentDate}
           onNavigate={(date) => setCurrentDate(date)}
+          contacts={contacts}
         />
       )}
     </div>

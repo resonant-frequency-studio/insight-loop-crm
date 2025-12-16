@@ -6,6 +6,7 @@ import { reportException } from "@/lib/error-reporting";
 import { revalidateTag } from "next/cache";
 import { Contact } from "@/types/firestore";
 import { convertTimestamp } from "@/util/timestamp-utils-server";
+import { syncTouchpointStatusToCalendar } from "@/lib/calendar/sync-touchpoints";
 
 /**
  * PATCH /api/contacts/[contactId]/touchpoint-status
@@ -81,6 +82,19 @@ export async function PATCH(
       touchpointStatusUpdatedAt: contactData.touchpointStatusUpdatedAt ? convertTimestamp(contactData.touchpointStatusUpdatedAt) : null,
       summaryUpdatedAt: contactData.summaryUpdatedAt ? convertTimestamp(contactData.summaryUpdatedAt) : null,
     };
+
+    // Sync touchpoint status to calendar
+    try {
+      await syncTouchpointStatusToCalendar(adminDb, userId, contactId, status);
+      // Invalidate calendar events cache
+      revalidateTag(`calendar-events-${userId}`, "max");
+    } catch (error) {
+      // Log error but don't fail the status update
+      reportException(error, {
+        context: "Syncing touchpoint status to calendar",
+        tags: { component: "touchpoint-status-api", userId, contactId },
+      });
+    }
 
     // Invalidate cache
     revalidateTag("contacts", "max");

@@ -1,14 +1,29 @@
 "use client";
 
-import { CalendarEvent } from "@/types/firestore";
-import { useMemo } from "react";
+import { CalendarEvent, Contact } from "@/types/firestore";
+import { useMemo, useState } from "react";
+import { useLinkEventToContact, useUnlinkEventFromContact } from "@/hooks/useCalendarEvents";
+import { useContacts } from "@/hooks/useContacts";
+import { useAuth } from "@/hooks/useAuth";
+import { formatContactDate } from "@/util/contact-utils";
+import Link from "next/link";
+import { Button } from "@/components/Button";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
   onClose: () => void;
+  contacts?: Contact[]; // Optional - will fetch if not provided
 }
 
-export default function CalendarEventCard({ event, onClose }: CalendarEventCardProps) {
+export default function CalendarEventCard({ event, onClose, contacts: providedContacts }: CalendarEventCardProps) {
+  const { user } = useAuth();
+  const linkMutation = useLinkEventToContact();
+  const unlinkMutation = useUnlinkEventFromContact();
+  const [joinInfoExpanded, setJoinInfoExpanded] = useState(false);
+  
+  // Fetch contacts if not provided
+  const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
+  const contacts = providedContacts || fetchedContacts;
   // Convert Firestore timestamp to Date
   const getDate = (timestamp: unknown): Date => {
     if (timestamp instanceof Date) return timestamp;
@@ -260,6 +275,90 @@ export default function CalendarEventCard({ event, onClose }: CalendarEventCardP
     return colorMap[segmentLower] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
   };
 
+  // Extract Zoom/Meet links from description
+  const joinLinks = useMemo(() => {
+    if (!event.description) return [];
+    const text = event.description.replace(/<[^>]*>/g, " "); // Strip HTML tags
+    const links: Array<{ url: string; type: "zoom" | "meet" | "teams" | "other" }> = [];
+    
+    // Zoom links
+    const zoomRegex = /(https?:\/\/[^\s]*zoom\.us\/[^\s<>"']*)/gi;
+    let match;
+    while ((match = zoomRegex.exec(text)) !== null) {
+      links.push({ url: match[0], type: "zoom" });
+    }
+    
+    // Google Meet links
+    const meetRegex = /(https?:\/\/[^\s]*meet\.google\.com\/[^\s<>"']*)/gi;
+    while ((match = meetRegex.exec(text)) !== null) {
+      links.push({ url: match[0], type: "meet" });
+    }
+    
+    // Microsoft Teams links
+    const teamsRegex = /(https?:\/\/[^\s]*teams\.microsoft\.com\/[^\s<>"']*)/gi;
+    while ((match = teamsRegex.exec(text)) !== null) {
+      links.push({ url: match[0], type: "teams" });
+    }
+    
+    return links;
+  }, [event.description]);
+
+  // Find contact suggestions based on attendees
+  const contactSuggestions = useMemo(() => {
+    if (!contacts.length || event.matchedContactId) return [];
+    
+    const suggestions: Array<{ contact: Contact; reason: string }> = [];
+    const eventEmails = new Set<string>();
+    
+    // Collect emails from attendees
+    if (event.attendees) {
+      event.attendees.forEach((a) => {
+        if (a.email) eventEmails.add(a.email.toLowerCase());
+      });
+    }
+    
+    // Also check description for emails
+    if (event.description) {
+      const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+      let match;
+      while ((match = emailRegex.exec(event.description)) !== null) {
+        eventEmails.add(match[0].toLowerCase());
+      }
+    }
+    
+    // Find matching contacts
+    for (const contact of contacts) {
+      if (contact.primaryEmail && eventEmails.has(contact.primaryEmail.toLowerCase())) {
+        suggestions.push({ contact, reason: "Email match" });
+      }
+    }
+    
+    // Also check name matches in title/description
+    const eventText = `${event.title} ${event.description || ""}`.toLowerCase();
+    for (const contact of contacts) {
+      if (suggestions.some((s) => s.contact.contactId === contact.contactId)) continue;
+      
+      const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim().toLowerCase();
+      if (fullName && eventText.includes(fullName)) {
+        suggestions.push({ contact, reason: "Name match" });
+      }
+    }
+    
+    return suggestions.slice(0, 5); // Limit to 5 suggestions
+  }, [contacts, event, event.matchedContactId]);
+
+  // Get linked contact
+  const linkedContact = useMemo(() => {
+    if (!event.matchedContactId) return null;
+    return contacts.find((c) => c.contactId === event.matchedContactId) || null;
+  }, [contacts, event.matchedContactId]);
+
+  // Format sync metadata
+  const syncMetadata = useMemo(() => {
+    if (!event.lastSyncedAt) return null;
+    return formatContactDate(event.lastSyncedAt, { relative: true });
+  }, [event.lastSyncedAt]);
+
   return (
     <div className="w-full max-w-full overflow-hidden calendar-event-card flex flex-col">
       <div className="flex items-start justify-between mb-6 gap-2 flex-shrink-0 relative">
@@ -467,6 +566,205 @@ export default function CalendarEventCard({ event, onClose }: CalendarEventCardP
                   ))}
                 </ul>
               </div>
+            </div>
+          )}
+
+          {/* Join Info Accordion */}
+          {joinLinks.length > 0 && (
+            <div className="border border-theme-light rounded-sm">
+              <button
+                onClick={() => setJoinInfoExpanded(!joinInfoExpanded)}
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-theme-light transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-theme-medium"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span className="text-theme-darkest font-medium">Join Info</span>
+                  <span className="text-theme-dark text-sm">({joinLinks.length})</span>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-theme-medium transition-transform ${joinInfoExpanded ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {joinInfoExpanded && (
+                <div className="p-3 pt-0 border-t border-theme-light">
+                  <div className="space-y-2">
+                    {joinLinks.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2 rounded-sm hover:bg-theme-light transition-colors text-blue-600 dark:text-blue-400 break-all"
+                      >
+                        <svg
+                          className="w-4 h-4 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        <span className="text-sm font-medium capitalize">{link.type}</span>
+                        <span className="text-xs text-theme-dark truncate">{link.url}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Linked Contact Section */}
+          <div className="border border-theme-light rounded-sm p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-theme-darkest font-medium flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 text-theme-medium"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+                Linked Contact
+              </h4>
+            </div>
+            
+            {linkedContact ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Link
+                    href={`/contacts/${linkedContact.contactId}`}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                        {linkedContact.firstName?.[0] || linkedContact.lastName?.[0] || linkedContact.primaryEmail[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-theme-darkest font-medium">
+                          {linkedContact.firstName || linkedContact.lastName
+                            ? `${linkedContact.firstName || ""} ${linkedContact.lastName || ""}`.trim()
+                            : linkedContact.primaryEmail}
+                        </p>
+                        <p className="text-theme-dark text-xs">{linkedContact.primaryEmail}</p>
+                      </div>
+                    </div>
+                  </Link>
+                  <Button
+                    onClick={() => unlinkMutation.mutate(event.eventId)}
+                    disabled={unlinkMutation.isPending}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Unlink
+                  </Button>
+                </div>
+                {event.contactSnapshot?.segment && (
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${getSegmentColor(event.contactSnapshot.segment)}`}>
+                      {event.contactSnapshot.segment}
+                    </span>
+                    {event.contactSnapshot.tags && event.contactSnapshot.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {event.contactSnapshot.tags.slice(0, 3).map((tag, idx) => (
+                          <span key={idx} className="text-xs text-theme-dark bg-theme-light px-1.5 py-0.5 rounded">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : contactSuggestions.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-theme-dark text-sm mb-2">Suggested contacts:</p>
+                {contactSuggestions.map((suggestion) => (
+                  <div key={suggestion.contact.contactId} className="flex items-center justify-between p-2 rounded-sm hover:bg-theme-light transition-colors">
+                    <Link
+                      href={`/contacts/${suggestion.contact.contactId}`}
+                      className="flex items-center gap-2 flex-1 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-medium">
+                        {suggestion.contact.firstName?.[0] || suggestion.contact.lastName?.[0] || suggestion.contact.primaryEmail[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-theme-darkest text-sm font-medium truncate">
+                          {suggestion.contact.firstName || suggestion.contact.lastName
+                            ? `${suggestion.contact.firstName || ""} ${suggestion.contact.lastName || ""}`.trim()
+                            : suggestion.contact.primaryEmail}
+                        </p>
+                        <p className="text-theme-dark text-xs truncate">{suggestion.contact.primaryEmail}</p>
+                      </div>
+                      <span className="text-xs text-theme-dark">{suggestion.reason}</span>
+                    </Link>
+                    <Button
+                      onClick={() => linkMutation.mutate({ eventId: event.eventId, contactId: suggestion.contact.contactId })}
+                      disabled={linkMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                      className="ml-2"
+                    >
+                      Link
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-theme-dark text-sm">No contact linked. No suggestions available.</p>
+            )}
+          </div>
+
+          {/* Sync Metadata */}
+          {syncMetadata && (
+            <div className="flex items-center gap-2 text-theme-dark text-xs">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              <span>Last synced {syncMetadata}</span>
             </div>
           )}
         </div>
