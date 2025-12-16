@@ -7,6 +7,7 @@ import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 
 interface CalendarEventCardProps {
@@ -17,6 +18,7 @@ interface CalendarEventCardProps {
 
 export default function CalendarEventCard({ event, onClose, contacts: providedContacts }: CalendarEventCardProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const linkMutation = useLinkEventToContact();
   const unlinkMutation = useUnlinkEventFromContact();
   const [joinInfoExpanded, setJoinInfoExpanded] = useState(false);
@@ -683,14 +685,29 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                       </div>
                     </div>
                   </Link>
-                  <Button
-                    onClick={() => unlinkMutation.mutate(event.eventId)}
-                    disabled={unlinkMutation.isPending}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Unlink
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => {
+                        // Format event date as YYYY-MM-DD for query parameter
+                        const eventDate = new Date(startTime);
+                        const dateStr = eventDate.toISOString().split('T')[0];
+                        router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
+                        onClose(); // Close modal after navigation
+                      }}
+                      variant="primary"
+                      size="sm"
+                    >
+                      Create Touchpoint
+                    </Button>
+                    <Button
+                      onClick={() => unlinkMutation.mutate(event.eventId)}
+                      disabled={unlinkMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Unlink
+                    </Button>
+                  </div>
                 </div>
                 {event.contactSnapshot?.segment && (
                   <div className="flex items-center gap-2">
