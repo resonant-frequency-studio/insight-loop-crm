@@ -24,6 +24,10 @@ export interface Contact {
     touchpointStatus?: "pending" | "completed" | "cancelled" | null;
     touchpointStatusUpdatedAt?: unknown | null;
     touchpointStatusReason?: string | null;
+    // Touchpoint ↔ Calendar Event linkage
+    linkedGoogleEventId?: string | null;
+    linkedGoogleCalendarId?: string | null;
+    linkStatus?: "none" | "linked" | "broken" | null;
   
     // AI fields
     summary?: string | null;
@@ -165,5 +169,25 @@ export interface Contact {
     lastSyncToken?: string | null; // Google Calendar syncToken for incremental sync
     lastSyncAt?: unknown | null;
     calendarId?: string; // Default: 'primary'
+  }
+
+  export type TimelineItemType = "calendar_event" | "touchpoint" | "action_item" | "email";
+
+  export interface TimelineItem {
+    id: string;
+    type: TimelineItemType;
+    timestamp: unknown; // Firestore timestamp
+    title: string;
+    description?: string | null;
+    // Type-specific fields
+    eventId?: string;
+    touchpointId?: string;
+    actionItemId?: string;
+    threadId?: string;
+    // Additional metadata for rendering
+    location?: string | null;
+    attendees?: Array<{ email: string; displayName?: string }>;
+    status?: string; // For action items: "pending" | "completed"
+    isFromUser?: boolean; // For emails
   }
   

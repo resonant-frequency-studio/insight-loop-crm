@@ -47,20 +47,169 @@ function convertGoogleCalendarDateToTimestamp(
 /**
  * Sync calendar events from Google Calendar to Firestore
  * Optionally matches events to contacts and stores contact snapshots
+ * @param timeMin - Start of sync range (only delete events within this range)
+ * @param timeMax - End of sync range (only delete events within this range)
  */
 export async function syncCalendarEventsToFirestore(
   db: Firestore,
   userId: string,
   events: GoogleCalendarEvent[],
-  contacts?: Contact[] // Optional: if provided, will match events to contacts
-): Promise<{ synced: number; errors: string[] }> {
+  contacts?: Contact[], // Optional: if provided, will match events to contacts
+  timeMin?: Date, // Optional: start of sync range for cleanup
+  timeMax?: Date // Optional: end of sync range for cleanup
+): Promise<{ synced: number; errors: string[]; deleted: number }> {
   const errors: string[] = [];
   let synced = 0;
+  let deleted = 0;
 
   const eventsCollection = db
     .collection("users")
     .doc(userId)
     .collection("calendarEvents");
+
+  // Create a set of Google event IDs that exist in the sync
+  const googleEventIds = new Set(events.map(e => e.id));
+  console.log('[Sync] Google event IDs in sync:', Array.from(googleEventIds).slice(0, 5), '... (total:', googleEventIds.size, ')');
+
+  // Find events in Firestore that are from Google but no longer exist in Google Calendar
+  // Also check events that were created from CRM but synced to Google (they have googleEventId)
+  // Only delete events that:
+  // 1. Have a googleEventId that matches an event that was synced before
+  // 2. Are within the sync time range (if time range is provided)
+  if (timeMin && timeMax) {
+    try {
+      const timeMinTimestamp = Timestamp.fromDate(timeMin);
+      const timeMaxTimestamp = Timestamp.fromDate(timeMax);
+      
+      // Query all events (we'll filter in memory for events with googleEventId)
+      // This ensures we catch both Google-sourced events and CRM-created events that were synced to Google
+      const existingEventsSnapshot = await eventsCollection.get();
+      
+      console.log('[Sync] Found', existingEventsSnapshot.docs.length, 'events with googleEventId in Firestore');
+      console.log('[Sync] Time range:', {
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        timeMinTimestamp: timeMinTimestamp.toMillis(),
+        timeMaxTimestamp: timeMaxTimestamp.toMillis(),
+        timeMinDate: timeMinTimestamp.toDate().toISOString(),
+        timeMaxDate: timeMaxTimestamp.toDate().toISOString(),
+      });
+      
+      let checkedCount = 0;
+      let skippedNoGoogleId = 0;
+      let skippedOutOfRange = 0;
+      let skippedInGoogle = 0;
+      
+      for (const doc of existingEventsSnapshot.docs) {
+        const eventData = doc.data() as CalendarEvent;
+        
+        // Only process events that have a googleEventId (were synced to/from Google Calendar)
+        // Skip events that were only created in CRM and never synced to Google
+        const eventGoogleEventId = eventData.googleEventId;
+        if (!eventGoogleEventId) {
+          skippedNoGoogleId++;
+          continue; // Skip events without googleEventId
+        }
+        
+        checkedCount++;
+        
+        // Check if event is within the sync time range
+        const eventStartTime = eventData.startTime;
+        let eventStartTimestamp: Timestamp | null = null;
+        
+        if (eventStartTime instanceof Timestamp) {
+          eventStartTimestamp = eventStartTime;
+        } else if (eventStartTime instanceof Date) {
+          eventStartTimestamp = Timestamp.fromDate(eventStartTime);
+        } else if (eventStartTime && typeof eventStartTime === "object" && "toDate" in eventStartTime) {
+          eventStartTimestamp = Timestamp.fromDate((eventStartTime as { toDate: () => Date }).toDate());
+        }
+        
+        // Check if event is in range
+        let isInRange = true;
+        if (eventStartTimestamp) {
+          const eventMillis = eventStartTimestamp.toMillis();
+          const minMillis = timeMinTimestamp.toMillis();
+          const maxMillis = timeMaxTimestamp.toMillis();
+          isInRange = 
+            eventMillis >= minMillis &&
+            eventMillis <= maxMillis;
+          
+          // Log events that are close to the boundary for debugging
+          if (!isInRange && (eventMillis >= minMillis - 86400000 || eventMillis <= maxMillis + 86400000)) {
+            console.log('[Sync] Event near boundary:', {
+              docId: doc.id,
+              title: eventData.title,
+              eventTime: eventStartTimestamp.toDate().toISOString(),
+              eventMillis,
+              minMillis,
+              maxMillis,
+              diffFromMin: eventMillis - minMillis,
+              diffFromMax: eventMillis - maxMillis,
+            });
+          }
+        } else {
+          // If we can't determine the time, skip it
+          skippedOutOfRange++;
+          continue;
+        }
+        
+        if (!isInRange) {
+          skippedOutOfRange++;
+          continue;
+        }
+        
+        // Check if this event is in Google Calendar response
+        // Also check document ID as fallback (some events might use doc.id as googleEventId)
+        const isInGoogle = googleEventIds.has(eventGoogleEventId) || googleEventIds.has(doc.id);
+        if (isInGoogle) {
+          skippedInGoogle++;
+          continue;
+        }
+        
+        // If this event is in range but not in the Google Calendar response, it was deleted
+        console.log('[Sync] Deleting event:', {
+          docId: doc.id,
+          googleEventId: eventGoogleEventId,
+          title: eventData.title,
+          sourceOfTruth: eventData.sourceOfTruth,
+          startTime: eventStartTimestamp?.toDate().toISOString(),
+          isInRange,
+          isInGoogle,
+          inGoogleById: googleEventIds.has(eventGoogleEventId),
+          inGoogleByDocId: googleEventIds.has(doc.id),
+        });
+        try {
+          await doc.ref.delete();
+          deleted++;
+        } catch (deleteError) {
+          const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
+          errors.push(`Failed to delete event ${doc.id}: ${errorMessage}`);
+          console.error('[Sync] Failed to delete event:', doc.id, errorMessage);
+        }
+      }
+      
+      console.log('[Sync] Cleanup stats:', {
+        totalEvents: existingEventsSnapshot.docs.length,
+        checked: checkedCount,
+        skippedNoGoogleId,
+        skippedOutOfRange,
+        skippedInGoogle,
+        deleted,
+      });
+      
+      console.log('[Sync] Cleanup complete. Deleted', deleted, 'events');
+    } catch (cleanupError) {
+      // Log but don't fail sync if cleanup fails
+      const errorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+      errors.push(`Failed to cleanup deleted events: ${errorMessage}`);
+      console.error('[Sync] Cleanup error:', errorMessage);
+      reportException(cleanupError, {
+        context: "Cleaning up deleted calendar events",
+        tags: { component: "sync-calendar-events", userId },
+      });
+    }
+  }
 
   for (const googleEvent of events) {
     try {
@@ -107,10 +256,16 @@ export async function syncCalendarEventsToFirestore(
         startTime: startTime,
         endTime: endTime,
         location: googleEvent.location || null,
-        attendees: googleEvent.attendees?.map((a) => ({
-          email: a.email,
-          displayName: a.displayName || undefined, // Keep as undefined (not null) to match type
-        })) || [],
+        attendees: googleEvent.attendees?.map((a) => {
+          const attendee: { email: string; displayName?: string } = {
+            email: a.email,
+          };
+          // Only include displayName if it exists (Firestore doesn't accept undefined)
+          if (a.displayName) {
+            attendee.displayName = a.displayName;
+          }
+          return attendee;
+        }) || [],
         lastSyncedAt: FieldValue.serverTimestamp(),
         etag: googleEvent.etag,
         googleUpdated: googleUpdated || FieldValue.serverTimestamp(), // Use Google's updated time or fallback to now
@@ -201,6 +356,6 @@ export async function syncCalendarEventsToFirestore(
     }
   }
 
-  return { synced, errors };
+  return { synced, errors, deleted };
 }
 

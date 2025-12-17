@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const forceReauth = searchParams.get("force") === "true";
+  
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
     response_type: "code",
     access_type: "offline",    // crucial for refresh tokens
-    prompt: "consent",         // forces refresh token every time
+    // Use "consent" to force re-authorization with new scopes, "select_account" for normal flow
+    prompt: forceReauth ? "consent select_account" : "select_account",
     scope: process.env.GOOGLE_OAUTH_SCOPES!,
   });
 

@@ -2,13 +2,25 @@
 
 import { CalendarEvent, Contact } from "@/types/firestore";
 import { useMemo, useState } from "react";
-import { useLinkEventToContact, useUnlinkEventFromContact, useGenerateEventContext } from "@/hooks/useCalendarEvents";
+import { useQueryClient } from "@tanstack/react-query";
+import { 
+  useLinkEventToContact, 
+  useUnlinkEventFromContact, 
+  useGenerateEventContext,
+  useUpdateCalendarEvent,
+  useDeleteCalendarEvent,
+  UpdateEventInput
+} from "@/hooks/useCalendarEvents";
 import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateActionItem } from "@/hooks/useActionItemMutations";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
+import Input from "@/components/Input";
+import Textarea from "@/components/Textarea";
+import ConflictResolutionModal, { ConflictData } from "./ConflictResolutionModal";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
@@ -19,15 +31,28 @@ interface CalendarEventCardProps {
 export default function CalendarEventCard({ event, onClose, contacts: providedContacts }: CalendarEventCardProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const linkMutation = useLinkEventToContact();
   const unlinkMutation = useUnlinkEventFromContact();
   const generateContextMutation = useGenerateEventContext();
+  const updateMutation = useUpdateCalendarEvent();
+  const deleteMutation = useDeleteCalendarEvent();
+  const createActionItemMutation = useCreateActionItem();
   const [joinInfoExpanded, setJoinInfoExpanded] = useState(false);
   const [aiContextExpanded, setAiContextExpanded] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showContactSearch, setShowContactSearch] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
+  const [conflictData, setConflictData] = useState<ConflictData | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [isConvertingToTouchpoint, setIsConvertingToTouchpoint] = useState(false);
   
   // Fetch contacts if not provided
   const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
   const contacts = providedContacts || fetchedContacts;
+  
   // Convert Firestore timestamp to Date
   const getDate = (timestamp: unknown): Date => {
     if (timestamp instanceof Date) return timestamp;
@@ -87,6 +112,28 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
   
   // For multi-day all-day events, show the date range
   const isMultiDayAllDay = isAllDay && (startYear !== endYear || startMonth !== endMonth || startDay !== endDay);
+
+  // Edit form state - initialized after date calculations
+  const [editForm, setEditForm] = useState<UpdateEventInput>({
+    title: event.title,
+    description: event.description || undefined,
+    location: event.location || undefined,
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    attendees: event.attendees?.map(a => a.email) || [],
+    isAllDay: isAllDay,
+  });
+  
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Check if description is long (needs accordion)
+  const isDescriptionLong = useMemo(() => {
+    if (!event.description) return false;
+    // Strip HTML tags for length calculation
+    const textLength = event.description.replace(/<[^>]*>/g, "").length;
+    return textLength > 200;
+  }, [event.description]);
 
   // Parse description to convert URLs to links and handle HTML content
   const parseDescription = useMemo(() => {
@@ -184,7 +231,6 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
       }
 
       // Process text parts to convert URLs to links
-      const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
       const finalParts: string[] = [];
 
       parts.forEach((part) => {
@@ -313,6 +359,7 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
     
     const suggestions: Array<{ contact: Contact; reason: string }> = [];
     const eventEmails = new Set<string>();
+    const eventLastNames = new Set<string>();
     
     // Collect emails from attendees
     if (event.attendees) {
@@ -330,26 +377,40 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
       }
     }
     
-    // Find matching contacts
+    // Extract last names from event text (full words only)
+    const eventText = `${event.title} ${event.description || ""}`;
+    // Match full last names (word boundaries, case-insensitive)
+    const words = eventText.toLowerCase().split(/\s+/);
+    words.forEach(word => {
+      // Remove punctuation and check if it's a potential last name (2+ characters)
+      const cleanWord = word.replace(/[^\w]/g, '');
+      if (cleanWord.length >= 2) {
+        eventLastNames.add(cleanWord);
+      }
+    });
+    
+    // First pass: Exact email matches (highest priority)
     for (const contact of contacts) {
       if (contact.primaryEmail && eventEmails.has(contact.primaryEmail.toLowerCase())) {
         suggestions.push({ contact, reason: "Email match" });
       }
     }
     
-    // Also check name matches in title/description
-    const eventText = `${event.title} ${event.description || ""}`.toLowerCase();
+    // Second pass: Full last name matches (only if not already suggested)
     for (const contact of contacts) {
       if (suggestions.some((s) => s.contact.contactId === contact.contactId)) continue;
       
-      const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim().toLowerCase();
-      if (fullName && eventText.includes(fullName)) {
-        suggestions.push({ contact, reason: "Name match" });
+      // Only match full last name (exact match, not partial)
+      if (contact.lastName) {
+        const lastNameLower = contact.lastName.toLowerCase().trim();
+        if (eventLastNames.has(lastNameLower)) {
+          suggestions.push({ contact, reason: "Last name match" });
+        }
       }
     }
     
     return suggestions.slice(0, 5); // Limit to 5 suggestions
-  }, [contacts, event, event.matchedContactId]);
+  }, [contacts, event]);
 
   // Get linked contact
   const linkedContact = useMemo(() => {
@@ -357,35 +418,237 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
     return contacts.find((c) => c.contactId === event.matchedContactId) || null;
   }, [contacts, event.matchedContactId]);
 
+  // Check if event is linked to a touchpoint
+  const isLinkedToTouchpoint = useMemo(() => {
+    if (!linkedContact) return false;
+    return linkedContact.linkedGoogleEventId === event.eventId && 
+           linkedContact.linkStatus === "linked";
+  }, [linkedContact, event.eventId]);
+
   // Format sync metadata
   const syncMetadata = useMemo(() => {
     if (!event.lastSyncedAt) return null;
     return formatContactDate(event.lastSyncedAt, { relative: true });
   }, [event.lastSyncedAt]);
 
+  // Handlers for edit/delete
+  const handleEdit = () => {
+    setIsEditMode(true);
+    setFormErrors({});
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setFormErrors({});
+    // Reset form to original values
+    setEditForm({
+      title: event.title,
+      description: event.description || undefined,
+      location: event.location || undefined,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      attendees: event.attendees?.map(a => a.email) || [],
+      isAllDay: isAllDay,
+    });
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!editForm.title || editForm.title.trim() === "") {
+      errors.title = "Title is required";
+    }
+    
+    if (!editForm.startTime) {
+      errors.startTime = "Start time is required";
+    }
+    
+    if (!editForm.endTime) {
+      errors.endTime = "End time is required";
+    }
+    
+    if (editForm.startTime && editForm.endTime) {
+      const start = new Date(editForm.startTime);
+      const end = new Date(editForm.endTime);
+      if (start >= end) {
+        errors.endTime = "End time must be after start time";
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        eventId: event.eventId,
+        updates: editForm,
+      });
+      setIsEditMode(false);
+      setFormErrors({});
+      setConflictData(null);
+    } catch (error) {
+      // Check if it's a conflict error
+      const conflictError = error as Error & { conflict?: boolean; conflictData?: unknown };
+      if (conflictError.conflict && conflictError.conflictData) {
+        setConflictData(conflictError.conflictData as ConflictData);
+        setShowConflictModal(true);
+      }
+    }
+  };
+
+  const handleResolveConflict = async (
+    resolution: "keep-google" | "overwrite-google" | "merge",
+    mergedData?: Partial<{
+      title?: string;
+      description?: string;
+      location?: string;
+      startTime?: string;
+      endTime?: string;
+      attendees?: string[];
+    }>
+  ) => {
+    try {
+      const response = await fetch(`/api/calendar/events/${event.eventId}/resolve-conflict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ resolution, mergedData }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to resolve conflict");
+      }
+
+      const data = await response.json();
+      
+      // Invalidate queries to refresh the event
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+      // Close conflict modal and edit mode
+      setShowConflictModal(false);
+      setConflictData(null);
+      setIsEditMode(false);
+      setFormErrors({});
+
+      // If overwrite-google, show message that user needs to edit again
+      if (resolution === "overwrite-google" && data.message) {
+        // Could show a toast notification here
+        console.log(data.message);
+      }
+    } catch (error) {
+      console.error("Failed to resolve conflict:", error);
+      throw error;
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(event.eventId);
+      onClose(); // Close modal after successful delete
+    } catch {
+      // Error handling is done by the mutation hook
+    }
+  };
+
+  const handleConvertToTouchpoint = async () => {
+    if (!linkedContact) {
+      // If no linked contact, we need to link one first
+      // For now, show an error or prompt to link
+      alert("Please link a contact first before converting to touchpoint");
+      return;
+    }
+
+    setIsConvertingToTouchpoint(true);
+    try {
+      const response = await fetch(`/api/calendar/events/${event.eventId}/convert-to-touchpoint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          contactId: linkedContact.contactId,
+          markAsFollowUp: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to convert event to touchpoint");
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+
+      // Show success message or navigate
+      router.push(`/contacts/${linkedContact.contactId}`);
+      onClose();
+    } catch (error) {
+      console.error("Failed to convert event to touchpoint:", error);
+      alert(error instanceof Error ? error.message : "Failed to convert event to touchpoint");
+    } finally {
+      setIsConvertingToTouchpoint(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-full overflow-hidden calendar-event-card flex flex-col">
       <div className="flex items-start justify-between mb-6 gap-2 flex-shrink-0 relative">
-        <h2 className="text-2xl font-bold text-theme-darkest flex-shrink-0">Event Details</h2>
-        <button
-          onClick={onClose}
-          className="flex-shrink-0 p-1 rounded-sm hover:bg-theme-light transition-colors text-theme-medium hover:text-theme-darkest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          aria-label="Close event details"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-theme-darkest flex-shrink-0">Event Details</h2>
+          {conflictData && (
+            <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-md">
+              Conflict
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-4">
+          {!isEditMode && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEdit}
+                disabled={updateMutation.isPending || deleteMutation.isPending}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={updateMutation.isPending || deleteMutation.isPending}
+              >
+                Delete
+              </Button>
+            </>
+          )}
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 p-1 rounded-sm hover:bg-theme-light transition-colors text-theme-medium hover:text-theme-darkest focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Close event details"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4 min-w-0 flex-1 overflow-y-auto">
@@ -396,6 +659,26 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
           
           {/* Visual Indicators */}
           <div className="flex flex-wrap items-center gap-2 mb-2">
+            {/* isDirty Badge */}
+            {event.isDirty && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs font-medium rounded">
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                Unsaved Changes
+              </span>
+            )}
+
             {/* Linked Contact Indicator */}
             {event.matchedContactId && (
               <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs font-medium rounded">
@@ -445,7 +728,147 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
           </div>
         </div>
 
-        <div className="space-y-2 min-w-0">
+        {/* Edit Form or Display Mode */}
+        {isEditMode ? (
+          <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-theme-darkest mb-1">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={editForm.title || ""}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="Event title"
+              />
+              {formErrors.title && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
+              )}
+            </div>
+
+            {/* Date/Time */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-theme-darkest mb-1">
+                  Start <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type={editForm.isAllDay ? "date" : "datetime-local"}
+                  value={editForm.isAllDay 
+                    ? editForm.startTime?.split('T')[0] || ""
+                    : editForm.startTime?.slice(0, 16) || ""
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const newStartTime = editForm.isAllDay 
+                      ? `${value}T00:00:00`
+                      : value;
+                    setEditForm({ ...editForm, startTime: newStartTime });
+                  }}
+                />
+                {formErrors.startTime && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.startTime}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-theme-darkest mb-1">
+                  End <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type={editForm.isAllDay ? "date" : "datetime-local"}
+                  value={editForm.isAllDay 
+                    ? editForm.endTime?.split('T')[0] || ""
+                    : editForm.endTime?.slice(0, 16) || ""
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const newEndTime = editForm.isAllDay 
+                      ? `${value}T23:59:59`
+                      : value;
+                    setEditForm({ ...editForm, endTime: newEndTime });
+                  }}
+                />
+                {formErrors.endTime && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.endTime}</p>
+                )}
+              </div>
+            </div>
+
+            {/* All-day toggle */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isAllDay"
+                checked={editForm.isAllDay || false}
+                onChange={(e) => setEditForm({ ...editForm, isAllDay: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <label htmlFor="isAllDay" className="text-sm font-medium text-theme-darkest">
+                All-day event
+              </label>
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-medium text-theme-darkest mb-1">
+                Location
+              </label>
+              <Input
+                value={editForm.location || ""}
+                onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                placeholder="Event location"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-theme-darkest mb-1">
+                Description
+              </label>
+              <Textarea
+                value={editForm.description || ""}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                placeholder="Event description"
+                rows={4}
+              />
+            </div>
+
+            {/* Attendees */}
+            <div>
+              <label className="block text-sm font-medium text-theme-darkest mb-1">
+                Attendees (one email per line)
+              </label>
+              <Textarea
+                value={editForm.attendees?.join('\n') || ""}
+                onChange={(e) => {
+                  const emails = e.target.value.split('\n').filter(email => email.trim() !== '');
+                  setEditForm({ ...editForm, attendees: emails });
+                }}
+                placeholder="email@example.com"
+                rows={3}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                disabled={updateMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2 min-w-0">
           <div className="flex items-start gap-2 min-w-0">
             <svg
               className="w-5 h-5 text-theme-medium mt-0.5 flex-shrink-0"
@@ -521,26 +944,77 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                 />
               </svg>
               <div className="min-w-0 flex-1">
-                {parseDescription && typeof parseDescription === 'object' && '__html' in parseDescription ? (
-                  <div
-                    className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={parseDescription}
-                    style={{
-                      wordBreak: 'break-word',
-                      overflowWrap: 'anywhere',
-                    }}
-                  />
-                ) : parseDescription ? (
-                  <p className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
-                    {Array.isArray(parseDescription) ? (
-                      parseDescription.map((part, index) => (
-                        <span key={index}>{part}</span>
-                      ))
-                    ) : (
-                      parseDescription
+                {isDescriptionLong ? (
+                  <div className="border border-theme-lighter rounded-sm">
+                    <button
+                      onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                      className="w-full flex items-center justify-between p-3 text-left hover:bg-theme-light transition-colors"
+                      aria-expanded={descriptionExpanded}
+                    >
+                      <span className="text-sm font-medium text-theme-darkest">Description</span>
+                      <svg
+                        className={`w-5 h-5 text-theme-medium transition-transform ${descriptionExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {descriptionExpanded && (
+                      <div className="p-3 pt-0 border-t border-theme-lighter">
+                        {parseDescription && typeof parseDescription === 'object' && '__html' in parseDescription ? (
+                          <div
+                            className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={parseDescription}
+                            style={{
+                              wordBreak: 'break-word',
+                              overflowWrap: 'anywhere',
+                            }}
+                          />
+                        ) : parseDescription ? (
+                          <p className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
+                            {Array.isArray(parseDescription) ? (
+                              parseDescription.map((part, index) => (
+                                <span key={index}>{part}</span>
+                              ))
+                            ) : (
+                              parseDescription
+                            )}
+                          </p>
+                        ) : null}
+                      </div>
                     )}
-                  </p>
-                ) : null}
+                  </div>
+                ) : (
+                  <>
+                    {parseDescription && typeof parseDescription === 'object' && '__html' in parseDescription ? (
+                      <div
+                        className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={parseDescription}
+                        style={{
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                        }}
+                      />
+                    ) : parseDescription ? (
+                      <p className="text-theme-darkest whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
+                        {Array.isArray(parseDescription) ? (
+                          parseDescription.map((part, index) => (
+                            <span key={index}>{part}</span>
+                          ))
+                        ) : (
+                          parseDescription
+                        )}
+                      </p>
+                    ) : null}
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -668,48 +1142,64 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
             
             {linkedContact ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Link
-                    href={`/contacts/${linkedContact.contactId}`}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
-                        {linkedContact.firstName?.[0] || linkedContact.lastName?.[0] || linkedContact.primaryEmail[0].toUpperCase()}
-                      </div>
-                      <div>
+                <Link
+                  href={`/contacts/${linkedContact.contactId}`}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                      {linkedContact.firstName?.[0] || linkedContact.lastName?.[0] || linkedContact.primaryEmail[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
                         <p className="text-theme-darkest font-medium">
                           {linkedContact.firstName || linkedContact.lastName
                             ? `${linkedContact.firstName || ""} ${linkedContact.lastName || ""}`.trim()
                             : linkedContact.primaryEmail}
                         </p>
-                        <p className="text-theme-dark text-xs">{linkedContact.primaryEmail}</p>
+                        {isLinkedToTouchpoint && (
+                          <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-md">
+                            Touchpoint
+                          </span>
+                        )}
                       </div>
+                      <p className="text-theme-dark text-xs">{linkedContact.primaryEmail}</p>
                     </div>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => {
-                        // Format event date as YYYY-MM-DD for query parameter
-                        const eventDate = new Date(startTime);
-                        const dateStr = eventDate.toISOString().split('T')[0];
-                        router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
-                        onClose(); // Close modal after navigation
-                      }}
-                      variant="primary"
-                      size="sm"
-                    >
-                      Create Touchpoint
-                    </Button>
-                    <Button
-                      onClick={() => unlinkMutation.mutate(event.eventId)}
-                      disabled={unlinkMutation.isPending}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Unlink
-                    </Button>
                   </div>
+                </Link>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {!isLinkedToTouchpoint && (
+                    <Button
+                      onClick={handleConvertToTouchpoint}
+                      disabled={isConvertingToTouchpoint}
+                      variant="secondary"
+                      size="xs"
+                      loading={isConvertingToTouchpoint}
+                    >
+                      Convert to Touchpoint
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      // Format event date as YYYY-MM-DD for query parameter
+                      const eventDate = new Date(startTime);
+                      const dateStr = eventDate.toISOString().split('T')[0];
+                      router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
+                      onClose(); // Close modal after navigation
+                    }}
+                    variant="primary"
+                    size="xs"
+                  >
+                    Create Touchpoint
+                  </Button>
+                  <Button
+                    onClick={() => unlinkMutation.mutate(event.eventId)}
+                    disabled={unlinkMutation.isPending}
+                    variant="outline"
+                    size="xs"
+                  >
+                    Unlink
+                  </Button>
                 </div>
                 {event.contactSnapshot?.segment && (
                   <div className="flex items-center gap-2">
@@ -728,42 +1218,137 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                   </div>
                 )}
               </div>
-            ) : contactSuggestions.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-theme-dark text-sm mb-2">Suggested contacts:</p>
-                {contactSuggestions.map((suggestion) => (
-                  <div key={suggestion.contact.contactId} className="flex items-center justify-between p-2 rounded-sm hover:bg-theme-light transition-colors">
-                    <Link
-                      href={`/contacts/${suggestion.contact.contactId}`}
-                      className="flex items-center gap-2 flex-1 hover:opacity-80 transition-opacity"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-medium">
-                        {suggestion.contact.firstName?.[0] || suggestion.contact.lastName?.[0] || suggestion.contact.primaryEmail[0].toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-theme-darkest text-sm font-medium truncate">
-                          {suggestion.contact.firstName || suggestion.contact.lastName
-                            ? `${suggestion.contact.firstName || ""} ${suggestion.contact.lastName || ""}`.trim()
-                            : suggestion.contact.primaryEmail}
-                        </p>
-                        <p className="text-theme-dark text-xs truncate">{suggestion.contact.primaryEmail}</p>
-                      </div>
-                      <span className="text-xs text-theme-dark">{suggestion.reason}</span>
-                    </Link>
-                    <Button
-                      onClick={() => linkMutation.mutate({ eventId: event.eventId, contactId: suggestion.contact.contactId })}
-                      disabled={linkMutation.isPending}
-                      variant="outline"
-                      size="sm"
-                      className="ml-2"
-                    >
-                      Link
-                    </Button>
-                  </div>
-                ))}
-              </div>
             ) : (
-              <p className="text-theme-dark text-sm">No contact linked. No suggestions available.</p>
+              <div className="space-y-3">
+                {contactSuggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-theme-dark text-sm mb-2">Suggested contacts:</p>
+                    {contactSuggestions.map((suggestion) => (
+                      <div key={suggestion.contact.contactId} className="flex items-center justify-between p-2 rounded-sm hover:bg-theme-light transition-colors">
+                        <Link
+                          href={`/contacts/${suggestion.contact.contactId}`}
+                          className="flex items-center gap-2 flex-1 hover:opacity-80 transition-opacity"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-medium">
+                            {suggestion.contact.firstName?.[0] || suggestion.contact.lastName?.[0] || suggestion.contact.primaryEmail[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-theme-darkest text-sm font-medium truncate">
+                              {suggestion.contact.firstName || suggestion.contact.lastName
+                                ? `${suggestion.contact.firstName || ""} ${suggestion.contact.lastName || ""}`.trim()
+                                : suggestion.contact.primaryEmail}
+                            </p>
+                            <p className="text-theme-dark text-xs truncate">{suggestion.contact.primaryEmail}</p>
+                          </div>
+                          <span className="text-xs text-theme-dark">{suggestion.reason}</span>
+                        </Link>
+                        <Button
+                          onClick={() => linkMutation.mutate({ eventId: event.eventId, contactId: suggestion.contact.contactId })}
+                          disabled={linkMutation.isPending}
+                          variant="outline"
+                          size="sm"
+                          className="ml-2"
+                        >
+                          Link
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {contactSuggestions.length === 0 && (
+                  <p className="text-theme-dark text-sm">No contact linked. No suggestions available.</p>
+                )}
+                {contacts.length > 0 && (
+                  <div>
+                    {!showContactSearch ? (
+                      <Button
+                        onClick={() => setShowContactSearch(true)}
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                      >
+                        {contactSuggestions.length > 0 ? "Search for Different Contact" : "Search for Contact"}
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <Input
+                          type="text"
+                          placeholder="Search by name or email..."
+                          value={contactSearchQuery}
+                          onChange={(e) => setContactSearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-1 border border-theme-lighter rounded-sm p-2">
+                          {contacts
+                            .filter((contact) => {
+                              if (!contactSearchQuery.trim()) return true;
+                              const query = contactSearchQuery.toLowerCase();
+                              const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim().toLowerCase();
+                              const email = contact.primaryEmail?.toLowerCase() || "";
+                              return (
+                                fullName.includes(query) ||
+                                email.includes(query) ||
+                                (contact.firstName?.toLowerCase().includes(query)) ||
+                                (contact.lastName?.toLowerCase().includes(query))
+                              );
+                            })
+                            .slice(0, 10)
+                            .map((contact) => (
+                              <div
+                                key={contact.contactId}
+                                className="flex items-center justify-between p-2 rounded-sm hover:bg-theme-light transition-colors cursor-pointer"
+                                onClick={() => {
+                                  linkMutation.mutate({ eventId: event.eventId, contactId: contact.contactId });
+                                  setShowContactSearch(false);
+                                  setContactSearchQuery("");
+                                }}
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-medium shrink-0">
+                                    {contact.firstName?.[0] || contact.lastName?.[0] || contact.primaryEmail[0].toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-theme-darkest text-sm font-medium truncate">
+                                      {contact.firstName || contact.lastName
+                                        ? `${contact.firstName || ""} ${contact.lastName || ""}`.trim()
+                                        : contact.primaryEmail}
+                                    </p>
+                                    <p className="text-theme-dark text-xs truncate">{contact.primaryEmail}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          {contacts.filter((contact) => {
+                            if (!contactSearchQuery.trim()) return false;
+                            const query = contactSearchQuery.toLowerCase();
+                            const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim().toLowerCase();
+                            const email = contact.primaryEmail?.toLowerCase() || "";
+                            return (
+                              fullName.includes(query) ||
+                              email.includes(query) ||
+                              (contact.firstName?.toLowerCase().includes(query)) ||
+                              (contact.lastName?.toLowerCase().includes(query))
+                            );
+                          }).length === 0 && contactSearchQuery.trim() && (
+                            <p className="text-theme-dark text-sm text-center py-2">No contacts found</p>
+                          )}
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setShowContactSearch(false);
+                            setContactSearchQuery("");
+                          }}
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -846,7 +1431,7 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                   </div>
                 )}
                 {generateContextMutation.data && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
                       <h5 className="text-theme-darkest font-medium text-sm mb-1">Summary</h5>
                       <p className="text-theme-dark text-sm whitespace-pre-line">
@@ -859,14 +1444,108 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                         {generateContextMutation.data.suggestedNextStep}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => generateContextMutation.mutate(event.eventId)}
-                      variant="outline"
-                      size="sm"
-                      disabled={generateContextMutation.isPending}
-                    >
-                      Regenerate
-                    </Button>
+
+                    {/* Suggested Touchpoint */}
+                    {generateContextMutation.data.suggestedTouchpointDate && event.matchedContactId && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-1">Suggested Touchpoint</h5>
+                        <p className="text-theme-dark text-sm mb-2">
+                          Date: {new Date(generateContextMutation.data.suggestedTouchpointDate).toLocaleDateString()}
+                        </p>
+                        {generateContextMutation.data.suggestedTouchpointRationale && (
+                          <p className="text-theme-dark text-xs mb-2 italic">
+                            {generateContextMutation.data.suggestedTouchpointRationale}
+                          </p>
+                        )}
+                        <Button
+                          onClick={() => {
+                            if (event.matchedContactId) {
+                              const dateStr = generateContextMutation.data.suggestedTouchpointDate;
+                              router.push(`/contacts/${event.matchedContactId}?touchpointDate=${dateStr}`);
+                              onClose();
+                            }
+                          }}
+                          variant="primary"
+                          size="sm"
+                          disabled={!event.matchedContactId}
+                        >
+                          Create Touchpoint
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Suggested Action Items */}
+                    {generateContextMutation.data.suggestedActionItems && 
+                     generateContextMutation.data.suggestedActionItems.length > 0 && 
+                     event.matchedContactId && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-2">Suggested Action Items</h5>
+                        <ul className="list-disc list-inside space-y-1 mb-3">
+                          {generateContextMutation.data.suggestedActionItems.map((item: string, idx: number) => (
+                            <li key={idx} className="text-theme-dark text-sm">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          {generateContextMutation.data.suggestedActionItems.map((item: string, idx: number) => (
+                            <Button
+                              key={idx}
+                              onClick={() => {
+                                if (event.matchedContactId) {
+                                  createActionItemMutation.mutate({
+                                    contactId: event.matchedContactId,
+                                    text: item,
+                                  });
+                                }
+                              }}
+                              variant="outline"
+                              size="sm"
+                              disabled={!event.matchedContactId || createActionItemMutation.isPending}
+                            >
+                              Add &quot;{item.substring(0, 30)}{item.length > 30 ? "..." : ""}&quot;
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Follow-up Email Draft */}
+                    {generateContextMutation.data.followUpEmailDraft && event.matchedContactId && linkedContact?.primaryEmail && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-1">Follow-up Email Draft</h5>
+                        <p className="text-theme-dark text-sm whitespace-pre-line mb-3 p-2 bg-theme-light rounded">
+                          {generateContextMutation.data.followUpEmailDraft}
+                        </p>
+                        <Button
+                          onClick={() => {
+                            if (linkedContact?.primaryEmail) {
+                              const subject = encodeURIComponent(`Follow-up: ${event.title}`);
+                              const body = encodeURIComponent(generateContextMutation.data.followUpEmailDraft || "");
+                              window.open(
+                                `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(linkedContact.primaryEmail)}&su=${subject}&body=${body}`,
+                                "_blank"
+                              );
+                            }
+                          }}
+                          variant="primary"
+                          size="sm"
+                        >
+                          Use to Draft Email
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="border-t border-theme-light pt-3">
+                      <Button
+                        onClick={() => generateContextMutation.mutate(event.eventId)}
+                        variant="outline"
+                        size="sm"
+                        disabled={generateContextMutation.isPending}
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -893,7 +1572,50 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
             </div>
           )}
         </div>
+          </>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-theme-darkest mb-4">Delete Event</h3>
+              <p className="text-theme-dark mb-6">
+                Are you sure you want to delete &quot;{event.title}&quot;? This action cannot be undone.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleteMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Conflict Resolution Modal */}
+      {conflictData && (
+        <ConflictResolutionModal
+          isOpen={showConflictModal}
+          onClose={() => {
+            setShowConflictModal(false);
+            setConflictData(null);
+          }}
+          conflictData={conflictData}
+          onResolve={handleResolveConflict}
+        />
+      )}
     </div>
   );
 }

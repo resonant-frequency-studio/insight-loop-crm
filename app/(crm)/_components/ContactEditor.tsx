@@ -12,6 +12,7 @@ import ContactInsightsCard from "./contact-cards/ContactInsightsCard";
 import ActivityCard from "./contact-cards/ActivityCard";
 import ArchiveContactCard from "./contact-cards/ArchiveContactCard";
 import DeleteContactCard from "./contact-cards/DeleteContactCard";
+import ContactTimelineCard from "./contact-cards/ContactTimelineCard";
 
 interface ContactEditorProps {
   contactDocumentId: string;
@@ -61,6 +62,7 @@ export default function ContactEditor({
           <NextTouchpointCard contactId={contactDocumentId} userId={userId} />
           <OutreachDraftCard contactId={contactDocumentId} userId={userId} />
           <NotesCard contactId={contactDocumentId} userId={userId} />
+          <ContactTimelineCard contactId={contactDocumentId} userId={userId} />
         </div>
 
         {/* Sidebar - Right Column (1/3) */}

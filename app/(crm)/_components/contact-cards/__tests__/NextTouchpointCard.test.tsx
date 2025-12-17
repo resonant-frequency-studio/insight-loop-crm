@@ -10,6 +10,17 @@ import type { Contact } from "@/types/firestore";
 jest.mock("@/hooks/useContact");
 jest.mock("@/hooks/useContactMutations");
 jest.mock("@/contexts/SavingStateContext");
+jest.mock("@tanstack/react-query", () => ({
+  ...jest.requireActual("@tanstack/react-query"),
+  useQueryClient: jest.fn(() => ({
+    invalidateQueries: jest.fn(),
+  })),
+}));
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(() => ({
+    push: jest.fn(),
+  })),
+}));
 jest.mock("../../TouchpointStatusActions", () => ({
   __esModule: true,
   default: ({ contactId, contactName }: { contactId: string; contactName: string }) => (

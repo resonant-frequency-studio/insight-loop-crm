@@ -109,6 +109,7 @@ export async function PATCH(
             etag: conflict.cachedEvent?.etag,
             googleUpdated: cachedEvent.googleUpdated,
           },
+          changedFields: conflict.changedFields || [],
         },
         { status: 409 }
       );
@@ -150,10 +151,16 @@ export async function PATCH(
       title: googleEvent.summary || cachedEvent.title,
       description: googleEvent.description !== undefined ? (googleEvent.description || null) : undefined,
       location: googleEvent.location !== undefined ? (googleEvent.location || null) : undefined,
-      attendees: googleEvent.attendees?.map((a) => ({
-        email: a.email,
-        displayName: a.displayName || undefined,
-      })),
+      attendees: googleEvent.attendees?.map((a) => {
+        const attendee: { email: string; displayName?: string } = {
+          email: a.email,
+        };
+        // Only include displayName if it exists (Firestore doesn't accept undefined)
+        if (a.displayName) {
+          attendee.displayName = a.displayName;
+        }
+        return attendee;
+      }),
       lastSyncedAt: FieldValue.serverTimestamp(),
       etag: googleEvent.etag,
       googleUpdated: googleUpdated as Timestamp,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
-import { getAllContactsForUser } from "@/lib/contacts-server";
+import { getAllContactsForUserUncached } from "@/lib/contacts-server";
 import { reportException } from "@/lib/error-reporting";
 import { AiInsight } from "@/hooks/useAiInsights";
 
@@ -24,7 +24,9 @@ function getDate(date: unknown): Date | null {
 export async function GET() {
   try {
     const userId = await getUserId();
-    const contacts = await getAllContactsForUser(userId);
+    // Use uncached version to avoid Next.js cache size limit (2MB)
+    // Insights need fresh data anyway, so caching isn't critical here
+    const contacts = await getAllContactsForUserUncached(userId);
     const serverTime = new Date();
     const insights: AiInsight[] = [];
 

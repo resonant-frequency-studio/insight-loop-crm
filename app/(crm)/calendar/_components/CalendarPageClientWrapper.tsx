@@ -9,6 +9,7 @@ import { formatRelativeTime } from "@/util/time-utils";
 import CalendarView from "./CalendarView";
 import CalendarSkeleton from "./CalendarSkeleton";
 import CalendarFilterBar, { CalendarFilters } from "./CalendarFilterBar";
+import CreateEventModal from "./CreateEventModal";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/Button";
@@ -21,6 +22,8 @@ const SYNC_RANGE_STORAGE_KEY = "calendar-sync-range-days";
 export default function CalendarPageClientWrapper({ userId }: { userId: string }) {
   const { user, loading: authLoading } = useAuth();
   const [syncingCalendar, setSyncingCalendar] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalPrefill, setCreateModalPrefill] = useState<{ startTime?: Date; endTime?: Date; contactId?: string } | null>(null);
   
   // Prioritize userId prop from SSR (production should always have this)
   // Only fallback to client auth if userId prop is empty (E2E mode)
@@ -312,85 +315,103 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
     );
   }
 
-  // Sync Calendar button component - always rendered
+  // Sync Calendar button component - just the button
   const syncButton = (
-    <div className="flex items-center justify-end gap-4 w-full">
-      {/* Last Synced Display */}
-      {!syncStatusLoading && (
-        <div className="flex items-center gap-2 text-theme-dark text-sm">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          <span>
-            Last synced: {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "Never synced"}
-          </span>
-        </div>
-      )}
-
-      {/* Range Selector */}
-      <div className="flex items-center gap-2">
-        <label htmlFor="sync-range" className="text-theme-dark text-sm whitespace-nowrap">
-          Sync range:
-        </label>
-        <Select
-          id="sync-range"
-          value={syncRangeDays.toString()}
-          onChange={(e) => setSyncRangeDays(parseInt(e.target.value, 10))}
-          className="w-32"
+    <Button
+      onClick={handleSyncCalendar}
+      disabled={syncingCalendar}
+      loading={syncingCalendar}
+      size="sm"
+      variant="secondary"
+      fullWidth
+      className="whitespace-nowrap shadow-sm"
+      icon={
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <option value="30">30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
-          <option value="180">180 days</option>
-        </Select>
-      </div>
-
-      <Button
-        onClick={handleSyncCalendar}
-        disabled={syncingCalendar}
-        loading={syncingCalendar}
-        size="sm"
-        variant="secondary"
-        icon={
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        }
-      >
-        Sync Calendar
-      </Button>
-    </div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      }
+    >
+      Sync Calendar
+    </Button>
   );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-        <p className="text-theme-dark text-lg">View and manage your calendar events</p>
+      {/* Header - Mobile: stacked, Desktop: row with buttons on right */}
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
+          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
+        </div>
+        {/* Buttons - Mobile: below header, Desktop: right side, stacked vertically */}
+        <div className="flex flex-col items-stretch sm:items-end gap-3 xl:shrink-0 w-full sm:w-auto">
+          <Button
+            onClick={() => {
+              setCreateModalPrefill(null);
+              setShowCreateModal(true);
+            }}
+            size="sm"
+            fullWidth
+            className="whitespace-nowrap shadow-sm"
+          >
+            New Event
+          </Button>
+          {syncButton}
+        </div>
       </div>
 
-      {/* Sync Calendar Button - always visible */}
-      {syncButton}
+      {/* Last Synced Display and Range Selector - separate row */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* Last Synced Display */}
+        {!syncStatusLoading && (
+          <div className="flex items-center gap-2 text-theme-dark text-sm">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span>
+              Last synced: {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "Never synced"}
+            </span>
+          </div>
+        )}
+
+        {/* Range Selector */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="sync-range" className="text-theme-dark text-sm whitespace-nowrap">
+            Sync range:
+          </label>
+          <Select
+            id="sync-range"
+            value={syncRangeDays.toString()}
+            onChange={(e) => setSyncRangeDays(parseInt(e.target.value, 10))}
+            className="w-32"
+          >
+            <option value="30">30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+            <option value="180">180 days</option>
+          </Select>
+        </div>
+      </div>
 
       {/* Calendar Filter Bar */}
       {events.length > 0 && (
@@ -409,8 +430,24 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
           currentDate={currentDate}
           onNavigate={(date) => setCurrentDate(date)}
           contacts={contacts}
+          onSlotSelect={(start, end) => {
+            setCreateModalPrefill({ startTime: start, endTime: end });
+            setShowCreateModal(true);
+          }}
         />
       )}
+
+      <CreateEventModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setCreateModalPrefill(null);
+        }}
+        prefillStartTime={createModalPrefill?.startTime}
+        prefillEndTime={createModalPrefill?.endTime}
+        prefillContactId={createModalPrefill?.contactId}
+        contacts={contacts}
+      />
     </div>
   );
 }

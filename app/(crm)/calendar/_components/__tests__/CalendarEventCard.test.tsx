@@ -29,6 +29,21 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
     error: null,
     data: null,
   }),
+  useUpdateCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+  useDeleteCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+  useCreateCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
 }));
 
 jest.mock("@/hooks/useContacts", () => ({

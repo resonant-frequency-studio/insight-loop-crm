@@ -46,6 +46,7 @@ export interface ConflictResponse {
     etag?: string;
     googleUpdated?: string;
   };
+  changedFields?: string[]; // Fields that differ between local and remote
 }
 
 /**
@@ -55,7 +56,7 @@ export async function createGoogleEvent(
   options: CreateEventOptions
 ): Promise<GoogleCalendarEvent> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
@@ -121,7 +122,7 @@ export async function updateGoogleEvent(
   options: UpdateEventOptions
 ): Promise<GoogleCalendarEvent | ConflictResponse> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
@@ -194,6 +195,8 @@ export async function updateGoogleEvent(
         // Fetch the current Google event to return in conflict response
         try {
           const currentGoogleEvent = await client.getEvent(calendarId, options.googleEventId);
+          // Detect which fields changed
+          const changedFields = detectChangedFields(payload, currentGoogleEvent);
           return {
             conflict: true,
             reason: "etag_mismatch",
@@ -202,6 +205,7 @@ export async function updateGoogleEvent(
             cachedEvent: {
               etag: options.etag,
             },
+            changedFields,
           };
         } catch (fetchError) {
           // If we can't fetch the current event, still return conflict response
@@ -217,6 +221,7 @@ export async function updateGoogleEvent(
             cachedEvent: {
               etag: options.etag,
             },
+            changedFields: [], // Can't detect without Google event
           };
         }
       }
@@ -240,7 +245,7 @@ export async function deleteGoogleEvent(
   options: DeleteEventOptions
 ): Promise<void> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
@@ -252,6 +257,81 @@ export async function deleteGoogleEvent(
     });
     throw error;
   }
+}
+
+/**
+ * Detect which fields differ between local payload and remote Google event
+ */
+function detectChangedFields(
+  localEvent: Partial<GoogleCalendarEventPayload>,
+  remoteEvent: GoogleCalendarEvent
+): string[] {
+  const changedFields: string[] = [];
+
+  // Compare summary (title)
+  if (localEvent.summary !== undefined && localEvent.summary !== remoteEvent.summary) {
+    changedFields.push("title");
+  }
+
+  // Compare description
+  const localDesc = localEvent.description ?? null;
+  const remoteDesc = remoteEvent.description ?? null;
+  if (localEvent.description !== undefined && localDesc !== remoteDesc) {
+    changedFields.push("description");
+  }
+
+  // Compare location
+  const localLoc = localEvent.location ?? null;
+  const remoteLoc = remoteEvent.location ?? null;
+  if (localEvent.location !== undefined && localLoc !== remoteLoc) {
+    changedFields.push("location");
+  }
+
+  // Compare start time
+  if (localEvent.start) {
+    const localStart = localEvent.start.dateTime || localEvent.start.date;
+    const remoteStart = remoteEvent.start.dateTime || remoteEvent.start.date;
+    if (localStart !== remoteStart) {
+      changedFields.push("startTime");
+    }
+  }
+
+  // Compare end time
+  if (localEvent.end) {
+    // For all-day events, Google's end.date is exclusive (next day)
+    // We need to account for this when comparing
+    const localEnd = localEvent.end.dateTime || localEvent.end.date;
+    const remoteEnd = remoteEvent.end.dateTime || remoteEvent.end.date;
+    
+    if (localEvent.end.date && remoteEvent.end.date) {
+      // Both are all-day events - compare dates directly
+      if (localEnd !== remoteEnd) {
+        changedFields.push("endTime");
+      }
+    } else if (localEnd !== remoteEnd) {
+      changedFields.push("endTime");
+    }
+  }
+
+  // Compare attendees
+  if (localEvent.attendees !== undefined) {
+    const localAttendees = new Set(
+      localEvent.attendees.map((a) => a.email.toLowerCase())
+    );
+    const remoteAttendees = new Set(
+      (remoteEvent.attendees || []).map((a) => a.email.toLowerCase())
+    );
+
+    // Check if sets are different
+    if (
+      localAttendees.size !== remoteAttendees.size ||
+      [...localAttendees].some((email) => !remoteAttendees.has(email))
+    ) {
+      changedFields.push("attendees");
+    }
+  }
+
+  return changedFields;
 }
 
 /**
