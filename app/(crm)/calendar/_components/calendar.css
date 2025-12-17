@@ -202,6 +202,52 @@
   contain: none !important;
 }
 
+/* Linked Event Indicator - subtle border tint */
+.rbc-event-linked {
+  border-left: 3px solid var(--card-tag);
+  padding-left: calc(0.5rem - 3px); /* Adjust padding to account for border */
+}
+
+/* Touchpoint Event - distinct dashed border */
+.rbc-event-touchpoint {
+  border: 1px dashed var(--card-tag);
+  border-left-width: 3px;
+  padding-left: calc(0.5rem - 3px);
+}
+
+/* Segment-based color coding */
+.rbc-event-segment-vip {
+  border-left-color: #9333ea; /* purple-600 */
+}
+
+.rbc-event-segment-prospect {
+  border-left-color: #2563eb; /* blue-600 */
+}
+
+.rbc-event-segment-customer {
+  border-left-color: #16a34a; /* green-600 */
+}
+
+.rbc-event-segment-lead {
+  border-left-color: #ca8a04; /* yellow-600 */
+}
+
+[data-theme='dark'] .rbc-event-segment-vip {
+  border-left-color: #a855f7; /* purple-500 */
+}
+
+[data-theme='dark'] .rbc-event-segment-prospect {
+  border-left-color: #3b82f6; /* blue-500 */
+}
+
+[data-theme='dark'] .rbc-event-segment-customer {
+  border-left-color: #22c55e; /* green-500 */
+}
+
+[data-theme='dark'] .rbc-event-segment-lead {
+  border-left-color: #eab308; /* yellow-500 */
+}
+
 .rbc-event:hover {
   opacity: 0.9;
 }
