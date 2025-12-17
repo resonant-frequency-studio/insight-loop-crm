@@ -2,6 +2,7 @@
 
 import { CalendarEvent, Contact } from "@/types/firestore";
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   useLinkEventToContact, 
   useUnlinkEventFromContact, 
@@ -18,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
+import ConflictResolutionModal, { ConflictData } from "./ConflictResolutionModal";
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
@@ -28,6 +30,7 @@ interface CalendarEventCardProps {
 export default function CalendarEventCard({ event, onClose, contacts: providedContacts }: CalendarEventCardProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const linkMutation = useLinkEventToContact();
   const unlinkMutation = useUnlinkEventFromContact();
   const generateContextMutation = useGenerateEventContext();
@@ -40,6 +43,8 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showContactSearch, setShowContactSearch] = useState(false);
   const [contactSearchQuery, setContactSearchQuery] = useState("");
+  const [conflictData, setConflictData] = useState<ConflictData | null>(null);
+  const [showConflictModal, setShowConflictModal] = useState(false);
   
   // Fetch contacts if not provided
   const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
@@ -476,14 +481,60 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
       });
       setIsEditMode(false);
       setFormErrors({});
+      setConflictData(null);
     } catch (error) {
-      // Error handling is done by the mutation hook
       // Check if it's a conflict error
-      const conflictError = error as Error & { conflict?: boolean };
-      if (conflictError.conflict) {
-        // Conflict will be handled in PR 4
-        // For now, just show error
+      const conflictError = error as Error & { conflict?: boolean; conflictData?: unknown };
+      if (conflictError.conflict && conflictError.conflictData) {
+        setConflictData(conflictError.conflictData as ConflictData);
+        setShowConflictModal(true);
       }
+    }
+  };
+
+  const handleResolveConflict = async (
+    resolution: "keep-google" | "overwrite-google" | "merge",
+    mergedData?: Partial<{
+      title?: string;
+      description?: string;
+      location?: string;
+      startTime?: string;
+      endTime?: string;
+      attendees?: string[];
+    }>
+  ) => {
+    try {
+      const response = await fetch(`/api/calendar/events/${event.eventId}/resolve-conflict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ resolution, mergedData }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to resolve conflict");
+      }
+
+      const data = await response.json();
+      
+      // Invalidate queries to refresh the event
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+      // Close conflict modal and edit mode
+      setShowConflictModal(false);
+      setConflictData(null);
+      setIsEditMode(false);
+      setFormErrors({});
+
+      // If overwrite-google, show message that user needs to edit again
+      if (resolution === "overwrite-google" && data.message) {
+        // Could show a toast notification here
+        console.log(data.message);
+      }
+    } catch (error) {
+      console.error("Failed to resolve conflict:", error);
+      throw error;
     }
   };
 
@@ -499,7 +550,14 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
   return (
     <div className="w-full max-w-full overflow-hidden calendar-event-card flex flex-col">
       <div className="flex items-start justify-between mb-6 gap-2 flex-shrink-0 relative">
-        <h2 className="text-2xl font-bold text-theme-darkest flex-shrink-0">Event Details</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-theme-darkest flex-shrink-0">Event Details</h2>
+          {conflictData && (
+            <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-md">
+              Conflict
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           {!isEditMode && (
             <>
@@ -1385,6 +1443,19 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
           </div>
         )}
       </div>
+
+      {/* Conflict Resolution Modal */}
+      {conflictData && (
+        <ConflictResolutionModal
+          isOpen={showConflictModal}
+          onClose={() => {
+            setShowConflictModal(false);
+            setConflictData(null);
+          }}
+          conflictData={conflictData}
+          onResolve={handleResolveConflict}
+        />
+      )}
     </div>
   );
 }

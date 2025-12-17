@@ -46,7 +46,7 @@ export async function getCalendarAccessToken(
     const calendarReadonlyScope = "https://www.googleapis.com/auth/calendar.readonly";
     
     // Split scope string by spaces to check individual scopes
-    const scopes = scope.split(/\s+/).filter(s => s.length > 0);
+    const scopes = scope.split(/\s+/).filter((s: string) => s.length > 0);
     
     // Check if we have the write scope (and not just readonly)
     const hasWriteScope = scopes.includes(calendarWriteScope);
