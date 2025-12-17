@@ -109,6 +109,7 @@ export async function PATCH(
             etag: conflict.cachedEvent?.etag,
             googleUpdated: cachedEvent.googleUpdated,
           },
+          changedFields: conflict.changedFields || [],
         },
         { status: 409 }
       );

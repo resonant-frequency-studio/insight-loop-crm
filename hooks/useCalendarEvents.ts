@@ -157,9 +157,13 @@ export function useUnlinkEventFromContact() {
   });
 }
 
-interface EventContext {
+export interface EventContext {
   summary: string;
   suggestedNextStep: string;
+  suggestedTouchpointDate?: string;
+  suggestedTouchpointRationale?: string;
+  suggestedActionItems?: string[];
+  followUpEmailDraft?: string;
 }
 
 /**
@@ -186,6 +190,10 @@ export function useGenerateEventContext() {
       return {
         summary: data.summary,
         suggestedNextStep: data.suggestedNextStep,
+        suggestedTouchpointDate: data.suggestedTouchpointDate,
+        suggestedTouchpointRationale: data.suggestedTouchpointRationale,
+        suggestedActionItems: data.suggestedActionItems,
+        followUpEmailDraft: data.followUpEmailDraft,
       };
     },
     onError: (error) => {

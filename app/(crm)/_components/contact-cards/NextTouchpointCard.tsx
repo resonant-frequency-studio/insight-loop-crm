@@ -12,6 +12,10 @@ import Textarea from "@/components/Textarea";
 import { formatContactDate, getDisplayName } from "@/util/contact-utils";
 import { reportException } from "@/lib/error-reporting";
 import { useSavingState } from "@/contexts/SavingStateContext";
+import { Button } from "@/components/Button";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -27,6 +31,8 @@ export default function NextTouchpointCard({
   const { data: contact } = useContact(userId, contactId);
   const updateMutation = useUpdateContact(userId);
   const { registerSaveStatus, unregisterSaveStatus } = useSavingState();
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const cardId = `next-touchpoint-${contactId}`;
   
   const prevContactIdRef = useRef<string | null>(null);
@@ -35,6 +41,7 @@ export default function NextTouchpointCard({
   const [nextTouchpointDate, setNextTouchpointDate] = useState<string>("");
   const [nextTouchpointMessage, setNextTouchpointMessage] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [isConvertingToEvent, setIsConvertingToEvent] = useState(false);
   
   // Register/unregister save status with context
   useEffect(() => {
@@ -125,6 +132,54 @@ export default function NextTouchpointCard({
     return () => clearInterval(interval);
   }, [hasUnsavedChanges, saveChanges]);
 
+  // Check if touchpoint is linked to a calendar event
+  const isLinkedToEvent = useMemo(() => {
+    if (!contact) return false;
+    return contact.linkedGoogleEventId && contact.linkStatus === "linked";
+  }, [contact]);
+
+  const handleConvertToMeeting = async () => {
+    if (!contact || !nextTouchpointDate) {
+      alert("Please set a touchpoint date first");
+      return;
+    }
+
+    setIsConvertingToEvent(true);
+    try {
+      const response = await fetch("/api/touchpoints/convert-to-event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          contactId: contact.contactId,
+          touchpointDate: nextTouchpointDate,
+          message: nextTouchpointMessage || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to convert touchpoint to meeting");
+      }
+
+      const data = await response.json();
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+
+      // Navigate to calendar or show success
+      if (data.event?.eventId) {
+        router.push(`/calendar?eventId=${data.event.eventId}`);
+      }
+    } catch (error) {
+      console.error("Failed to convert touchpoint to meeting:", error);
+      alert(error instanceof Error ? error.message : "Failed to convert touchpoint to meeting");
+    } finally {
+      setIsConvertingToEvent(false);
+    }
+  };
+
   if (!contact) {
     return (
       <Card padding="md">
@@ -136,22 +191,29 @@ export default function NextTouchpointCard({
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
-          <svg
-            className="w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          Next Touchpoint
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Next Touchpoint
+          </h2>
+          {isLinkedToEvent && (
+            <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-md">
+              Linked to Meeting
+            </span>
+          )}
+        </div>
         <SaveButtonWithIndicator
           saveStatus={saveStatus}
           hasUnsavedChanges={hasUnsavedChanges}
@@ -195,6 +257,44 @@ export default function NextTouchpointCard({
           />
         </div>
       </div>
+
+      {/* Convert to Meeting Button */}
+      {nextTouchpointDate && !isLinkedToEvent && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <Button
+            onClick={handleConvertToMeeting}
+            disabled={isConvertingToEvent || !nextTouchpointDate}
+            loading={isConvertingToEvent}
+            variant="primary"
+            fullWidth
+          >
+            Convert to Meeting
+          </Button>
+          <p className="text-xs text-theme-dark mt-2 text-center">
+            Create a Google Calendar event from this touchpoint
+          </p>
+        </div>
+      )}
+
+      {/* Linked Event Info */}
+      {isLinkedToEvent && contact.linkedGoogleEventId && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-theme-darkest">Linked to Calendar Event</p>
+              <p className="text-xs text-theme-dark mt-1">
+                This touchpoint is connected to a Google Calendar event
+              </p>
+            </div>
+            <Link
+              href={`/calendar?eventId=${contact.linkedGoogleEventId}`}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              View Event →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Touchpoint Status Management */}
       {(nextTouchpointDate || contact.touchpointStatus) && (
