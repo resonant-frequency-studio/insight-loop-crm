@@ -101,6 +101,7 @@ export interface Contact {
   
     // Calendar-specific fields
     processedEvents?: number;
+    rangeDays?: number; // Number of days synced (30, 60, 90, or 180)
   
     errorMessage?: string | null;
   }

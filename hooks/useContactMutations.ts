@@ -128,7 +128,7 @@ export function useUpdateContact(userId?: string) {
      * So we invalidate after a delay to let Firestore propagate the change
      */
     onSuccess: (updatedContact, variables) => {
-      const { contactId } = variables;
+      const { contactId, updates } = variables;
 
       // Update detail cache with actual server result
       if (userId) {
@@ -136,6 +136,11 @@ export function useUpdateContact(userId?: string) {
           ["contact", userId, contactId],
           updatedContact
         );
+      }
+
+      // If touchpoint date was updated, invalidate calendar events
+      if (updates.nextTouchpointDate !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ["calendar-events"], exact: false });
       }
 
       
@@ -378,7 +383,9 @@ export function useUpdateTouchpointStatus(userId?: string) {
       if (!userId) return;
       queryClient.invalidateQueries({ queryKey: ["contact", userId, vars.contactId] });
       queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
-        queryClient.invalidateQueries({ queryKey: ["dashboard-stats"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"], exact: false });
+      // Invalidate calendar events when touchpoint status changes
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"], exact: false });
     },
   });
 }
