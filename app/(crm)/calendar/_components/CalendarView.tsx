@@ -49,9 +49,10 @@ interface CalendarViewProps {
   currentDate: Date;
   onNavigate: (date: Date) => void;
   contacts?: import("@/types/firestore").Contact[]; // Optional contacts for event card
+  onSlotSelect?: (start: Date, end: Date) => void; // Callback when slot is selected
 }
 
-export default function CalendarView({ events, currentDate, onNavigate, contacts }: CalendarViewProps) {
+export default function CalendarView({ events, currentDate, onNavigate, contacts, onSlotSelect }: CalendarViewProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
   
@@ -170,8 +171,11 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
     setSelectedEvent(event.resource as CalendarEvent);
   };
 
-  const handleSelectSlot = () => {
+  const handleSelectSlot = (slotInfo: { start: Date; end: Date }) => {
     setSelectedEvent(null);
+    if (onSlotSelect) {
+      onSlotSelect(slotInfo.start, slotInfo.end);
+    }
   };
 
   // Style events based on their properties (linked, segment, touchpoint)

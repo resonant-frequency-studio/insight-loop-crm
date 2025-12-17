@@ -38,6 +38,21 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
     error: null,
     refetch: mockRefetch,
   }),
+  useCreateCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+  useUpdateCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+  useDeleteCalendarEvent: () => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
 }));
 
 jest.mock("@/hooks/useContacts", () => ({
