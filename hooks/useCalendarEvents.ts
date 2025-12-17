@@ -157,3 +157,43 @@ export function useUnlinkEventFromContact() {
   });
 }
 
+interface EventContext {
+  summary: string;
+  suggestedNextStep: string;
+}
+
+/**
+ * Mutation hook to generate AI context for a calendar event
+ */
+export function useGenerateEventContext() {
+  return useMutation({
+    mutationFn: async (eventId: string): Promise<EventContext> => {
+      const response = await fetch(`/api/calendar/events/${eventId}/ai-context`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate AI context");
+      }
+
+      const data = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to generate AI context");
+      }
+
+      return {
+        summary: data.summary,
+        suggestedNextStep: data.suggestedNextStep,
+      };
+    },
+    onError: (error) => {
+      reportException(error, {
+        context: "Generating AI context for calendar event",
+        tags: { component: "useGenerateEventContext" },
+      });
+    },
+  });
+}
+

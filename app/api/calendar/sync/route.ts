@@ -13,9 +13,10 @@ import { Contact } from "@/types/firestore";
 /**
  * POST /api/calendar/sync
  * Manual sync trigger for calendar events
- * Syncs events for the next 60 days from now
+ * Query params:
+ *   - range: number of days to sync (default: 60)
  */
-export async function POST() {
+export async function POST(req: Request) {
   const jobId = `calendar_sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   let syncJobCreated = false;
   let userId: string = "";
@@ -24,6 +25,15 @@ export async function POST() {
     console.log('[Calendar Sync API] Starting sync...');
     userId = await getUserId();
     console.log('[Calendar Sync API] User authenticated:', userId);
+    
+    // Get range parameter from query string (default: 60 days)
+    const url = new URL(req.url);
+    const rangeParam = url.searchParams.get("range");
+    const rangeDays = rangeParam ? parseInt(rangeParam, 10) : 60;
+    
+    // Validate range (must be one of the allowed values)
+    const allowedRanges = [30, 60, 90, 180];
+    const validRangeDays = allowedRanges.includes(rangeDays) ? rangeDays : 60;
     
     // Create sync job
     await adminDb
@@ -39,13 +49,14 @@ export async function POST() {
         status: "running",
         startedAt: FieldValue.serverTimestamp(),
         processedEvents: 0,
+        rangeDays: validRangeDays, // Store range in sync job metadata
       });
     syncJobCreated = true;
     
-    // Sync events for the next 60 days
+    // Sync events for the specified range
     const timeMin = new Date();
     const timeMax = new Date();
-    timeMax.setDate(timeMax.getDate() + 60);
+    timeMax.setDate(timeMax.getDate() + validRangeDays);
 
     // Fetch from Google Calendar API
     const accessToken = await getCalendarAccessToken(userId);

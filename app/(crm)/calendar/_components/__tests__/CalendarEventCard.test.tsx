@@ -22,6 +22,13 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
     mutate: jest.fn(),
     isPending: false,
   }),
+  useGenerateEventContext: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+    data: null,
+  }),
 }));
 
 jest.mock("@/hooks/useContacts", () => ({
