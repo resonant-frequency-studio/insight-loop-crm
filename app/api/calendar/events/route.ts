@@ -133,7 +133,9 @@ export async function GET(req: Request) {
       adminDb,
       userId,
       googleEvents.items,
-      contacts
+      contacts,
+      timeMin, // Pass time range for cleanup
+      timeMax
     );
 
     console.log('[Calendar API] Sync result:', syncResult);
@@ -274,10 +276,16 @@ export async function POST(req: Request) {
       startTime: startTimestamp,
       endTime: endTimestamp,
       location: googleEvent.location || body.location || null,
-      attendees: googleEvent.attendees?.map((a) => ({
-        email: a.email,
-        displayName: a.displayName || undefined,
-      })) || [],
+      attendees: googleEvent.attendees?.map((a) => {
+        const attendee: { email: string; displayName?: string } = {
+          email: a.email,
+        };
+        // Only include displayName if it exists (Firestore doesn't accept undefined)
+        if (a.displayName) {
+          attendee.displayName = a.displayName;
+        }
+        return attendee;
+      }) || [],
       lastSyncedAt: FieldValue.serverTimestamp(),
       etag: googleEvent.etag,
       googleUpdated: googleUpdated as Timestamp,
@@ -342,8 +350,13 @@ export async function POST(req: Request) {
     
     const friendlyError = toUserFriendlyError(err);
     
-    // Check for auth errors
-    if (errorMessage.includes("Calendar access") || errorMessage.includes("permission")) {
+    // Check for auth errors (including missing account)
+    if (
+      errorMessage.includes("Calendar access") || 
+      errorMessage.includes("permission") ||
+      errorMessage.includes("No Google account linked") ||
+      errorMessage.includes("connect your Gmail account")
+    ) {
       return NextResponse.json(
         { 
           error: friendlyError,

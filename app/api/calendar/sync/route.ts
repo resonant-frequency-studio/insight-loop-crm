@@ -54,7 +54,9 @@ export async function POST(req: Request) {
     syncJobCreated = true;
     
     // Sync events for the specified range
+    // Include past events (30 days back) and future events (rangeDays forward)
     const timeMin = new Date();
+    timeMin.setDate(timeMin.getDate() - 30); // Go back 30 days to catch past events
     const timeMax = new Date();
     timeMax.setDate(timeMax.getDate() + validRangeDays);
 
@@ -85,7 +87,9 @@ export async function POST(req: Request) {
       adminDb,
       userId,
       googleEvents.items,
-      contacts
+      contacts,
+      timeMin, // Pass time range for cleanup
+      timeMax
     );
 
     // Update sync job as complete
@@ -104,6 +108,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       synced: syncResult.synced,
+      deleted: syncResult.deleted,
       errors: syncResult.errors,
       totalEvents: googleEvents.items.length,
       syncJobId: jobId,

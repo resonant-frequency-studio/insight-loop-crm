@@ -78,6 +78,7 @@ export default function CreateEventModal({
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [attendeesText, setAttendeesText] = useState("");
+  const [requiresReauth, setRequiresReauth] = useState(false);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -120,13 +121,25 @@ export default function CreateEventModal({
       .filter((email) => email !== "" && email.includes("@"));
 
     try {
+      setRequiresReauth(false);
       await createMutation.mutateAsync({
         ...formData,
         attendees: attendees.length > 0 ? attendees : undefined,
       });
       handleClose();
     } catch (error) {
-      // Error handling is done by the mutation hook
+      // Check if error requires re-authentication
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const needsReauth = 
+        (error instanceof Error && (error as Error & { requiresReauth?: boolean }).requiresReauth) ||
+        errorMessage.includes("No Google account linked") ||
+        errorMessage.includes("connect your Gmail account") ||
+        errorMessage.includes("Calendar access") ||
+        errorMessage.includes("permission");
+      
+      if (needsReauth) {
+        setRequiresReauth(true);
+      }
     }
   };
 
@@ -144,6 +157,7 @@ export default function CreateEventModal({
     });
     setAttendeesText("");
     setFormErrors({});
+    setRequiresReauth(false);
     onClose();
   };
 
@@ -286,11 +300,40 @@ export default function CreateEventModal({
             </div>
           )}
 
+          {/* Re-authentication Error */}
+          {requiresReauth && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-sm">
+              <p className="text-sm text-amber-800 mb-3">
+                Calendar write access is not granted. Please reconnect your Google account with Calendar write permissions.
+              </p>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    // Disconnect existing tokens
+                    await fetch("/api/oauth/gmail/disconnect", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    // Redirect to OAuth flow with force re-auth
+                    window.location.href = "/api/oauth/gmail/start?force=true";
+                  } catch (error) {
+                    console.error("Failed to disconnect:", error);
+                  }
+                }}
+              >
+                Reconnect Google Account
+              </Button>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4">
             <Button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || requiresReauth}
             >
               {createMutation.isPending ? "Creating..." : "Create Event"}
             </Button>

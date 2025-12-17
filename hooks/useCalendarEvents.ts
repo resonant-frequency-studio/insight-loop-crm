@@ -238,12 +238,22 @@ export function useCreateCalendarEvent() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create calendar event");
+        const error = new Error(errorData.error || "Failed to create calendar event");
+        // Attach requiresReauth flag if present
+        if (errorData.requiresReauth) {
+          (error as Error & { requiresReauth?: boolean }).requiresReauth = true;
+        }
+        throw error;
       }
 
       const data = await response.json();
       if (!data.ok) {
-        throw new Error(data.error || "Failed to create calendar event");
+        const error = new Error(data.error || "Failed to create calendar event");
+        // Attach requiresReauth flag if present
+        if (data.requiresReauth) {
+          (error as Error & { requiresReauth?: boolean }).requiresReauth = true;
+        }
+        throw error;
       }
 
       return data.event as CalendarEvent;

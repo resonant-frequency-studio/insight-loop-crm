@@ -55,7 +55,7 @@ export async function createGoogleEvent(
   options: CreateEventOptions
 ): Promise<GoogleCalendarEvent> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
@@ -121,7 +121,7 @@ export async function updateGoogleEvent(
   options: UpdateEventOptions
 ): Promise<GoogleCalendarEvent | ConflictResponse> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
@@ -240,7 +240,7 @@ export async function deleteGoogleEvent(
   options: DeleteEventOptions
 ): Promise<void> {
   try {
-    const accessToken = await getCalendarAccessToken(options.userId);
+    const accessToken = await getCalendarAccessToken(options.userId, true); // requireWriteScope: true
     const client = new GoogleCalendarClient(accessToken);
     const calendarId = options.calendarId || "primary";
 
