@@ -2,11 +2,12 @@
 
 import { CalendarEvent, Contact } from "@/types/firestore";
 import { useMemo, useState } from "react";
-import { useLinkEventToContact, useUnlinkEventFromContact } from "@/hooks/useCalendarEvents";
+import { useLinkEventToContact, useUnlinkEventFromContact, useGenerateEventContext } from "@/hooks/useCalendarEvents";
 import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 
 interface CalendarEventCardProps {
@@ -17,9 +18,12 @@ interface CalendarEventCardProps {
 
 export default function CalendarEventCard({ event, onClose, contacts: providedContacts }: CalendarEventCardProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const linkMutation = useLinkEventToContact();
   const unlinkMutation = useUnlinkEventFromContact();
+  const generateContextMutation = useGenerateEventContext();
   const [joinInfoExpanded, setJoinInfoExpanded] = useState(false);
+  const [aiContextExpanded, setAiContextExpanded] = useState(false);
   
   // Fetch contacts if not provided
   const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
@@ -683,14 +687,29 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                       </div>
                     </div>
                   </Link>
-                  <Button
-                    onClick={() => unlinkMutation.mutate(event.eventId)}
-                    disabled={unlinkMutation.isPending}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Unlink
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => {
+                        // Format event date as YYYY-MM-DD for query parameter
+                        const eventDate = new Date(startTime);
+                        const dateStr = eventDate.toISOString().split('T')[0];
+                        router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
+                        onClose(); // Close modal after navigation
+                      }}
+                      variant="primary"
+                      size="sm"
+                    >
+                      Create Touchpoint
+                    </Button>
+                    <Button
+                      onClick={() => unlinkMutation.mutate(event.eventId)}
+                      disabled={unlinkMutation.isPending}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Unlink
+                    </Button>
+                  </div>
                 </div>
                 {event.contactSnapshot?.segment && (
                   <div className="flex items-center gap-2">
@@ -745,6 +764,112 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
               </div>
             ) : (
               <p className="text-theme-dark text-sm">No contact linked. No suggestions available.</p>
+            )}
+          </div>
+
+          {/* AI Context Section */}
+          <div className="border border-theme-light rounded-sm">
+            <button
+              onClick={() => {
+                if (!aiContextExpanded && !generateContextMutation.data) {
+                  // Generate context when first expanded
+                  generateContextMutation.mutate(event.eventId);
+                }
+                setAiContextExpanded(!aiContextExpanded);
+              }}
+              className="w-full flex items-center justify-between p-3 hover:bg-theme-light transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 text-theme-medium"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  />
+                </svg>
+                <span className="text-theme-darkest font-medium">AI Context</span>
+              </div>
+              <svg
+                className={`w-5 h-5 text-theme-medium transition-transform ${aiContextExpanded ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {aiContextExpanded && (
+              <div className="p-3 pt-0 border-t border-theme-light">
+                {generateContextMutation.isPending && (
+                  <div className="flex items-center gap-2 text-theme-dark text-sm py-4">
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    <span>Generating context...</span>
+                  </div>
+                )}
+                {generateContextMutation.isError && (
+                  <div className="space-y-2">
+                    <p className="text-red-600 dark:text-red-400 text-sm">
+                      {generateContextMutation.error instanceof Error
+                        ? generateContextMutation.error.message
+                        : "Failed to generate AI context"}
+                    </p>
+                    <Button
+                      onClick={() => generateContextMutation.mutate(event.eventId)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                )}
+                {generateContextMutation.data && (
+                  <div className="space-y-3">
+                    <div>
+                      <h5 className="text-theme-darkest font-medium text-sm mb-1">Summary</h5>
+                      <p className="text-theme-dark text-sm whitespace-pre-line">
+                        {generateContextMutation.data.summary}
+                      </p>
+                    </div>
+                    <div>
+                      <h5 className="text-theme-darkest font-medium text-sm mb-1">Suggested Next Step</h5>
+                      <p className="text-theme-dark text-sm">
+                        {generateContextMutation.data.suggestedNextStep}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => generateContextMutation.mutate(event.eventId)}
+                      variant="outline"
+                      size="sm"
+                      disabled={generateContextMutation.isPending}
+                    >
+                      Regenerate
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
