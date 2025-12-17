@@ -1,7 +1,8 @@
 import { Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { GoogleCalendarEvent } from "./get-calendar-events";
-import { CalendarEvent } from "@/types/firestore";
+import { CalendarEvent, Contact } from "@/types/firestore";
 import { reportException } from "@/lib/error-reporting";
+import { matchEventToContact } from "./match-event-to-contact";
 
 /**
  * Convert Google Calendar date format to Firestore Timestamp
@@ -45,12 +46,13 @@ function convertGoogleCalendarDateToTimestamp(
 
 /**
  * Sync calendar events from Google Calendar to Firestore
+ * Optionally matches events to contacts and stores contact snapshots
  */
 export async function syncCalendarEventsToFirestore(
   db: Firestore,
   userId: string,
   events: GoogleCalendarEvent[],
-  calendarId: string = 'primary'
+  contacts?: Contact[] // Optional: if provided, will match events to contacts
 ): Promise<{ synced: number; errors: string[] }> {
   const errors: string[] = [];
   let synced = 0;
@@ -96,7 +98,7 @@ export async function syncCalendarEventsToFirestore(
         googleUpdated = Timestamp.fromDate(new Date(googleEvent.updated));
       }
 
-      // Prepare event data
+      // Prepare base event data
       const eventData: Omit<CalendarEvent, 'eventId'> = {
         googleEventId: googleEvent.id,
         userId,
@@ -117,6 +119,74 @@ export async function syncCalendarEventsToFirestore(
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       };
+
+      // Check if event already exists to preserve manual match overrides
+      const existingEventDoc = await eventsCollection.doc(googleEvent.id).get();
+      const existingEvent = existingEventDoc.exists
+        ? (existingEventDoc.data() as CalendarEvent)
+        : null;
+
+      // Match event to contact if contacts are provided
+      if (contacts && contacts.length > 0) {
+        // Create a CalendarEvent-like object for matching (with eventId from googleEvent.id)
+        const eventForMatching: CalendarEvent = {
+          eventId: googleEvent.id,
+          ...eventData,
+        } as CalendarEvent;
+
+        const match = matchEventToContact(eventForMatching, contacts);
+
+        // Only auto-link if:
+        // 1. High confidence match
+        // 2. No existing manual override (matchOverriddenByUser !== true)
+        if (
+          match.confidence === "high" &&
+          match.contactId &&
+          existingEvent?.matchOverriddenByUser !== true
+        ) {
+          // Find the matched contact
+          const matchedContact = contacts.find(
+            (c) => c.contactId === match.contactId
+          );
+
+          if (matchedContact) {
+            eventData.matchedContactId = match.contactId;
+            eventData.matchConfidence = match.confidence;
+            eventData.matchMethod = match.method;
+
+            // Create contact snapshot
+            eventData.contactSnapshot = {
+              name: `${matchedContact.firstName || ""} ${matchedContact.lastName || ""}`.trim() || matchedContact.primaryEmail,
+              segment: matchedContact.segment || null,
+              tags: matchedContact.tags || [],
+              primaryEmail: matchedContact.primaryEmail,
+              engagementScore: matchedContact.engagementScore || null,
+              snapshotUpdatedAt: FieldValue.serverTimestamp(),
+            };
+          }
+        } else if (match.contactId) {
+          // Medium/low confidence: store match info but don't auto-link
+          // This allows UI to show suggestions later
+          eventData.matchedContactId = match.contactId;
+          eventData.matchConfidence = match.confidence;
+          eventData.matchMethod = match.method;
+        }
+      }
+
+      // Preserve existing manual overrides and denied contact IDs
+      if (existingEvent) {
+        if (existingEvent.matchOverriddenByUser) {
+          eventData.matchOverriddenByUser = true;
+          // Preserve existing matchedContactId if user manually set it
+          if (existingEvent.matchedContactId) {
+            eventData.matchedContactId = existingEvent.matchedContactId;
+            eventData.matchMethod = existingEvent.matchMethod || "manual";
+          }
+        }
+        if (existingEvent.matchDeniedContactIds) {
+          eventData.matchDeniedContactIds = existingEvent.matchDeniedContactIds;
+        }
+      }
 
       // Upsert event (use googleEventId as document ID for easy lookup)
       await eventsCollection.doc(googleEvent.id).set(eventData, { merge: true });

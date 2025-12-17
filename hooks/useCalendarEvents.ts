@@ -1,7 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarEvent } from "@/types/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 interface CalendarEventsResponse {
   events: CalendarEvent[];
@@ -61,5 +62,138 @@ export function useCalendarEvents(
     error: query.error,
     refetch: query.refetch,
   };
+}
+
+/**
+ * Mutation hook to link a calendar event to a contact
+ */
+export function useLinkEventToContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ eventId, contactId }: { eventId: string; contactId: string }) => {
+      const response = await fetch(`/api/calendar/events/${eventId}/link-contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ contactId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to link event to contact");
+      }
+
+      const data = await response.json();
+      return data.event as CalendarEvent;
+    },
+    onSuccess: (updatedEvent, variables) => {
+      // Invalidate all calendar events queries to refetch with updated data
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      
+      // Optimistically update the specific event in cache if it exists
+      queryClient.setQueriesData(
+        { queryKey: ["calendar-events"] },
+        (oldData: CalendarEvent[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((event) =>
+            event.eventId === variables.eventId ? updatedEvent : event
+          );
+        }
+      );
+    },
+    onError: (error) => {
+      reportException(error, {
+        context: "Linking calendar event to contact",
+        tags: { component: "useLinkEventToContact" },
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to unlink a calendar event from its contact
+ */
+export function useUnlinkEventFromContact() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const response = await fetch(`/api/calendar/events/${eventId}/unlink-contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to unlink event from contact");
+      }
+
+      const data = await response.json();
+      return data.event as CalendarEvent;
+    },
+    onSuccess: (updatedEvent, eventId) => {
+      // Invalidate all calendar events queries to refetch with updated data
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      
+      // Optimistically update the specific event in cache if it exists
+      queryClient.setQueriesData(
+        { queryKey: ["calendar-events"] },
+        (oldData: CalendarEvent[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map((event) =>
+            event.eventId === eventId ? updatedEvent : event
+          );
+        }
+      );
+    },
+    onError: (error) => {
+      reportException(error, {
+        context: "Unlinking calendar event from contact",
+        tags: { component: "useUnlinkEventFromContact" },
+      });
+    },
+  });
+}
+
+interface EventContext {
+  summary: string;
+  suggestedNextStep: string;
+}
+
+/**
+ * Mutation hook to generate AI context for a calendar event
+ */
+export function useGenerateEventContext() {
+  return useMutation({
+    mutationFn: async (eventId: string): Promise<EventContext> => {
+      const response = await fetch(`/api/calendar/events/${eventId}/ai-context`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate AI context");
+      }
+
+      const data = await response.json();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to generate AI context");
+      }
+
+      return {
+        summary: data.summary,
+        suggestedNextStep: data.suggestedNextStep,
+      };
+    },
+    onError: (error) => {
+      reportException(error, {
+        context: "Generating AI context for calendar event",
+        tags: { component: "useGenerateEventContext" },
+      });
+    },
+  });
 }
 

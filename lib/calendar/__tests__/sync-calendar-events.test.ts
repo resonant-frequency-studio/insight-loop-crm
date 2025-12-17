@@ -46,8 +46,13 @@ describe("syncCalendarEventsToFirestore", () => {
 
     // Mock nested collection structure: users/{userId}/calendarEvents/{eventId}
     const mockEventDocSet = jest.fn().mockResolvedValue(undefined);
+    const mockEventDocGet = jest.fn().mockResolvedValue({
+      exists: false,
+      data: () => null,
+    });
     const mockEventDoc = jest.fn().mockReturnValue({ 
       set: mockEventDocSet,
+      get: mockEventDocGet,
       delete: jest.fn(),
     });
     const mockEventsCollection = jest.fn().mockReturnValue({ 
@@ -103,8 +108,13 @@ describe("syncCalendarEventsToFirestore", () => {
     };
 
     const mockEventDocSet = jest.fn().mockResolvedValue(undefined);
+    const mockEventDocGet = jest.fn().mockResolvedValue({
+      exists: false,
+      data: () => null,
+    });
     const mockEventDoc = jest.fn().mockReturnValue({ 
       set: mockEventDocSet,
+      get: mockEventDocGet,
       delete: jest.fn(),
     });
     const mockEventsCollection = jest.fn().mockReturnValue({ 
@@ -156,8 +166,13 @@ describe("syncCalendarEventsToFirestore", () => {
 
     const mockEventDocDelete = jest.fn().mockResolvedValue(undefined);
     const mockEventDocSet = jest.fn().mockResolvedValue(undefined);
+    const mockEventDocGet = jest.fn().mockResolvedValue({
+      exists: false,
+      data: () => null,
+    });
     const mockEventDoc = jest.fn().mockReturnValue({ 
       set: mockEventDocSet,
+      get: mockEventDocGet,
       delete: mockEventDocDelete,
     });
     const mockEventsCollection = jest.fn().mockReturnValue({ 
@@ -204,8 +219,13 @@ describe("syncCalendarEventsToFirestore", () => {
     };
 
     const mockEventDocSet = jest.fn().mockResolvedValue(undefined);
+    const mockEventDocGet = jest.fn().mockResolvedValue({
+      exists: false,
+      data: () => null,
+    });
     const mockEventDoc = jest.fn().mockReturnValue({ 
       set: mockEventDocSet,
+      get: mockEventDocGet,
       delete: jest.fn(),
     });
     const mockEventsCollection = jest.fn().mockReturnValue({ 
@@ -267,8 +287,13 @@ describe("syncCalendarEventsToFirestore", () => {
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(new Error("Sync failed"));
 
+    const mockEventDocGet = jest.fn().mockResolvedValue({
+      exists: false,
+      data: () => null,
+    });
     const mockEventDoc = jest.fn().mockReturnValue({ 
       set: mockEventDocSet,
+      get: mockEventDocGet,
       delete: jest.fn(),
     });
     const mockEventsCollection = jest.fn().mockReturnValue({ 

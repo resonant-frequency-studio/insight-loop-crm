@@ -61,6 +61,16 @@ export async function getCalendarEventsForUser(
         googleUpdated: data.googleUpdated ? convertTimestamp(data.googleUpdated) as string : undefined,
         sourceOfTruth: data.sourceOfTruth || "google", // Default to "google" for backward compatibility
         isDirty: data.isDirty ?? false, // Default to false for backward compatibility
+        // Contact matching fields
+        matchedContactId: data.matchedContactId ?? null,
+        matchConfidence: data.matchConfidence,
+        matchMethod: data.matchMethod,
+        matchOverriddenByUser: data.matchOverriddenByUser ?? false,
+        matchDeniedContactIds: data.matchDeniedContactIds || [],
+        contactSnapshot: data.contactSnapshot ? {
+          ...data.contactSnapshot,
+          snapshotUpdatedAt: convertTimestamp(data.contactSnapshot.snapshotUpdatedAt) as string,
+        } : null,
         createdAt: convertTimestamp(data.createdAt) as string,
         updatedAt: convertTimestamp(data.updatedAt) as string,
       } as CalendarEvent);

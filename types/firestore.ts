@@ -101,6 +101,7 @@ export interface Contact {
   
     // Calendar-specific fields
     processedEvents?: number;
+    rangeDays?: number; // Number of days synced (30, 60, 90, or 180)
   
     errorMessage?: string | null;
   }
@@ -139,6 +140,21 @@ export interface Contact {
     googleUpdated?: unknown; // Google's updated timestamp (Firestore timestamp)
     sourceOfTruth?: "google" | "crm_touchpoint"; // Where event originated
     isDirty?: boolean; // Has local changes not synced to Google
+    
+    // Contact matching
+    matchedContactId?: string | null;
+    matchConfidence?: "high" | "medium" | "low";
+    matchMethod?: "email" | "name" | "domain" | "manual";
+    matchOverriddenByUser?: boolean; // User manually changed match
+    matchDeniedContactIds?: string[]; // Contacts user explicitly rejected
+    contactSnapshot?: {
+      name: string;
+      segment?: string | null;
+      tags?: string[];
+      primaryEmail: string;
+      engagementScore?: number | null;
+      snapshotUpdatedAt: unknown;
+    } | null;
     
     createdAt: unknown;
     updatedAt: unknown;
