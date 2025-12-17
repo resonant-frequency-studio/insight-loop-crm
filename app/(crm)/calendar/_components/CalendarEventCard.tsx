@@ -13,6 +13,7 @@ import {
 } from "@/hooks/useCalendarEvents";
 import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
+import { useCreateActionItem } from "@/hooks/useActionItemMutations";
 import { formatContactDate } from "@/util/contact-utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
   const generateContextMutation = useGenerateEventContext();
   const updateMutation = useUpdateCalendarEvent();
   const deleteMutation = useDeleteCalendarEvent();
+  const createActionItemMutation = useCreateActionItem();
   const [joinInfoExpanded, setJoinInfoExpanded] = useState(false);
   const [aiContextExpanded, setAiContextExpanded] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
@@ -45,6 +47,7 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
   const [contactSearchQuery, setContactSearchQuery] = useState("");
   const [conflictData, setConflictData] = useState<ConflictData | null>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [isConvertingToTouchpoint, setIsConvertingToTouchpoint] = useState(false);
   
   // Fetch contacts if not provided
   const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
@@ -415,6 +418,13 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
     return contacts.find((c) => c.contactId === event.matchedContactId) || null;
   }, [contacts, event.matchedContactId]);
 
+  // Check if event is linked to a touchpoint
+  const isLinkedToTouchpoint = useMemo(() => {
+    if (!linkedContact) return false;
+    return linkedContact.linkedGoogleEventId === event.eventId && 
+           linkedContact.linkStatus === "linked";
+  }, [linkedContact, event.eventId]);
+
   // Format sync metadata
   const syncMetadata = useMemo(() => {
     if (!event.lastSyncedAt) return null;
@@ -544,6 +554,46 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
       onClose(); // Close modal after successful delete
     } catch {
       // Error handling is done by the mutation hook
+    }
+  };
+
+  const handleConvertToTouchpoint = async () => {
+    if (!linkedContact) {
+      // If no linked contact, we need to link one first
+      // For now, show an error or prompt to link
+      alert("Please link a contact first before converting to touchpoint");
+      return;
+    }
+
+    setIsConvertingToTouchpoint(true);
+    try {
+      const response = await fetch(`/api/calendar/events/${event.eventId}/convert-to-touchpoint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          contactId: linkedContact.contactId,
+          markAsFollowUp: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to convert event to touchpoint");
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+
+      // Show success message or navigate
+      router.push(`/contacts/${linkedContact.contactId}`);
+      onClose();
+    } catch (error) {
+      console.error("Failed to convert event to touchpoint:", error);
+      alert(error instanceof Error ? error.message : "Failed to convert event to touchpoint");
+    } finally {
+      setIsConvertingToTouchpoint(false);
     }
   };
 
@@ -1092,48 +1142,64 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
             
             {linkedContact ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Link
-                    href={`/contacts/${linkedContact.contactId}`}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
-                        {linkedContact.firstName?.[0] || linkedContact.lastName?.[0] || linkedContact.primaryEmail[0].toUpperCase()}
-                      </div>
-                      <div>
+                <Link
+                  href={`/contacts/${linkedContact.contactId}`}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
+                      {linkedContact.firstName?.[0] || linkedContact.lastName?.[0] || linkedContact.primaryEmail[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
                         <p className="text-theme-darkest font-medium">
                           {linkedContact.firstName || linkedContact.lastName
                             ? `${linkedContact.firstName || ""} ${linkedContact.lastName || ""}`.trim()
                             : linkedContact.primaryEmail}
                         </p>
-                        <p className="text-theme-dark text-xs">{linkedContact.primaryEmail}</p>
+                        {isLinkedToTouchpoint && (
+                          <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-md">
+                            Touchpoint
+                          </span>
+                        )}
                       </div>
+                      <p className="text-theme-dark text-xs">{linkedContact.primaryEmail}</p>
                     </div>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => {
-                        // Format event date as YYYY-MM-DD for query parameter
-                        const eventDate = new Date(startTime);
-                        const dateStr = eventDate.toISOString().split('T')[0];
-                        router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
-                        onClose(); // Close modal after navigation
-                      }}
-                      variant="primary"
-                      size="sm"
-                    >
-                      Create Touchpoint
-                    </Button>
-                    <Button
-                      onClick={() => unlinkMutation.mutate(event.eventId)}
-                      disabled={unlinkMutation.isPending}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Unlink
-                    </Button>
                   </div>
+                </Link>
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {!isLinkedToTouchpoint && (
+                    <Button
+                      onClick={handleConvertToTouchpoint}
+                      disabled={isConvertingToTouchpoint}
+                      variant="secondary"
+                      size="xs"
+                      loading={isConvertingToTouchpoint}
+                    >
+                      Convert to Touchpoint
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      // Format event date as YYYY-MM-DD for query parameter
+                      const eventDate = new Date(startTime);
+                      const dateStr = eventDate.toISOString().split('T')[0];
+                      router.push(`/contacts/${linkedContact.contactId}?touchpointDate=${dateStr}`);
+                      onClose(); // Close modal after navigation
+                    }}
+                    variant="primary"
+                    size="xs"
+                  >
+                    Create Touchpoint
+                  </Button>
+                  <Button
+                    onClick={() => unlinkMutation.mutate(event.eventId)}
+                    disabled={unlinkMutation.isPending}
+                    variant="outline"
+                    size="xs"
+                  >
+                    Unlink
+                  </Button>
                 </div>
                 {event.contactSnapshot?.segment && (
                   <div className="flex items-center gap-2">
@@ -1365,7 +1431,7 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                   </div>
                 )}
                 {generateContextMutation.data && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
                       <h5 className="text-theme-darkest font-medium text-sm mb-1">Summary</h5>
                       <p className="text-theme-dark text-sm whitespace-pre-line">
@@ -1378,14 +1444,108 @@ export default function CalendarEventCard({ event, onClose, contacts: providedCo
                         {generateContextMutation.data.suggestedNextStep}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => generateContextMutation.mutate(event.eventId)}
-                      variant="outline"
-                      size="sm"
-                      disabled={generateContextMutation.isPending}
-                    >
-                      Regenerate
-                    </Button>
+
+                    {/* Suggested Touchpoint */}
+                    {generateContextMutation.data.suggestedTouchpointDate && event.matchedContactId && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-1">Suggested Touchpoint</h5>
+                        <p className="text-theme-dark text-sm mb-2">
+                          Date: {new Date(generateContextMutation.data.suggestedTouchpointDate).toLocaleDateString()}
+                        </p>
+                        {generateContextMutation.data.suggestedTouchpointRationale && (
+                          <p className="text-theme-dark text-xs mb-2 italic">
+                            {generateContextMutation.data.suggestedTouchpointRationale}
+                          </p>
+                        )}
+                        <Button
+                          onClick={() => {
+                            if (event.matchedContactId) {
+                              const dateStr = generateContextMutation.data.suggestedTouchpointDate;
+                              router.push(`/contacts/${event.matchedContactId}?touchpointDate=${dateStr}`);
+                              onClose();
+                            }
+                          }}
+                          variant="primary"
+                          size="sm"
+                          disabled={!event.matchedContactId}
+                        >
+                          Create Touchpoint
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Suggested Action Items */}
+                    {generateContextMutation.data.suggestedActionItems && 
+                     generateContextMutation.data.suggestedActionItems.length > 0 && 
+                     event.matchedContactId && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-2">Suggested Action Items</h5>
+                        <ul className="list-disc list-inside space-y-1 mb-3">
+                          {generateContextMutation.data.suggestedActionItems.map((item: string, idx: number) => (
+                            <li key={idx} className="text-theme-dark text-sm">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          {generateContextMutation.data.suggestedActionItems.map((item: string, idx: number) => (
+                            <Button
+                              key={idx}
+                              onClick={() => {
+                                if (event.matchedContactId) {
+                                  createActionItemMutation.mutate({
+                                    contactId: event.matchedContactId,
+                                    text: item,
+                                  });
+                                }
+                              }}
+                              variant="outline"
+                              size="sm"
+                              disabled={!event.matchedContactId || createActionItemMutation.isPending}
+                            >
+                              Add &quot;{item.substring(0, 30)}{item.length > 30 ? "..." : ""}&quot;
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Follow-up Email Draft */}
+                    {generateContextMutation.data.followUpEmailDraft && event.matchedContactId && linkedContact?.primaryEmail && (
+                      <div className="border-t border-theme-light pt-3">
+                        <h5 className="text-theme-darkest font-medium text-sm mb-1">Follow-up Email Draft</h5>
+                        <p className="text-theme-dark text-sm whitespace-pre-line mb-3 p-2 bg-theme-light rounded">
+                          {generateContextMutation.data.followUpEmailDraft}
+                        </p>
+                        <Button
+                          onClick={() => {
+                            if (linkedContact?.primaryEmail) {
+                              const subject = encodeURIComponent(`Follow-up: ${event.title}`);
+                              const body = encodeURIComponent(generateContextMutation.data.followUpEmailDraft || "");
+                              window.open(
+                                `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(linkedContact.primaryEmail)}&su=${subject}&body=${body}`,
+                                "_blank"
+                              );
+                            }
+                          }}
+                          variant="primary"
+                          size="sm"
+                        >
+                          Use to Draft Email
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="border-t border-theme-light pt-3">
+                      <Button
+                        onClick={() => generateContextMutation.mutate(event.eventId)}
+                        variant="outline"
+                        size="sm"
+                        disabled={generateContextMutation.isPending}
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
