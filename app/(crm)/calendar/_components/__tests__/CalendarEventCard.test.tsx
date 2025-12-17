@@ -1,11 +1,54 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import CalendarEventCard from "../CalendarEventCard";
-import { CalendarEvent } from "@/types/firestore";
+import { CalendarEvent, Contact } from "@/types/firestore";
 
 // Mock the onClose function
 const mockOnClose = jest.fn();
+
+// Mock hooks
+jest.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { uid: "test-user" }, loading: false }),
+}));
+
+jest.mock("@/hooks/useCalendarEvents", () => ({
+  useLinkEventToContact: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+  }),
+  useUnlinkEventFromContact: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+  }),
+  useGenerateEventContext: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+    data: null,
+  }),
+}));
+
+jest.mock("@/hooks/useContacts", () => ({
+  useContacts: () => ({
+    data: [],
+  }),
+}));
+
+// Helper to render with QueryClientProvider
+const renderWithProviders = (ui: React.ReactElement) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
+};
 
 describe("CalendarEventCard", () => {
   const baseEvent: CalendarEvent = {
@@ -26,7 +69,7 @@ describe("CalendarEventCard", () => {
   });
 
   it("should render event title", () => {
-    render(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
     expect(screen.getByText("Test Event")).toBeInTheDocument();
   });
 
@@ -40,12 +83,12 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    render(<CalendarEventCard event={linkedEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={linkedEvent} onClose={mockOnClose} />);
     expect(screen.getByText("Linked")).toBeInTheDocument();
   });
 
   it("should not display linked indicator when event is not linked", () => {
-    render(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
     expect(screen.queryByText("Linked")).not.toBeInTheDocument();
   });
 
@@ -60,7 +103,7 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    render(<CalendarEventCard event={segmentEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={segmentEvent} onClose={mockOnClose} />);
     expect(screen.getByText("Prospect")).toBeInTheDocument();
   });
 
@@ -74,7 +117,7 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    render(<CalendarEventCard event={noSegmentEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={noSegmentEvent} onClose={mockOnClose} />);
     expect(screen.queryByText("Prospect")).not.toBeInTheDocument();
   });
 
@@ -83,12 +126,12 @@ describe("CalendarEventCard", () => {
       ...baseEvent,
       sourceOfTruth: "crm_touchpoint",
     };
-    render(<CalendarEventCard event={touchpointEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={touchpointEvent} onClose={mockOnClose} />);
     expect(screen.getByText("Touchpoint")).toBeInTheDocument();
   });
 
   it("should not display touchpoint badge when event is not a touchpoint", () => {
-    render(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
     expect(screen.queryByText("Touchpoint")).not.toBeInTheDocument();
   });
 
@@ -104,14 +147,14 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    render(<CalendarEventCard event={fullEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={fullEvent} onClose={mockOnClose} />);
     expect(screen.getByText("Linked")).toBeInTheDocument();
     expect(screen.getByText("Customer")).toBeInTheDocument();
     expect(screen.getByText("Touchpoint")).toBeInTheDocument();
   });
 
   it("should render event date and time for timed events", () => {
-    render(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
     // The date formatting will vary by locale, so we just check that date/time info is present
     expect(screen.getByText(/January|Jan/)).toBeInTheDocument();
   });
@@ -123,8 +166,31 @@ describe("CalendarEventCard", () => {
       startTime: "2025-01-01T00:00:00Z",
       endTime: "2025-01-01T23:59:59.999Z",
     };
-    render(<CalendarEventCard event={allDayEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={allDayEvent} onClose={mockOnClose} />);
     expect(screen.getByText("All day")).toBeInTheDocument();
+  });
+
+  it("should display Join Info accordion when Zoom/Meet links are present", () => {
+    const eventWithZoomLink: CalendarEvent = {
+      ...baseEvent,
+      description: "Join the meeting: https://zoom.us/j/123456789",
+    };
+    renderWithProviders(<CalendarEventCard event={eventWithZoomLink} onClose={mockOnClose} />);
+    expect(screen.getByText("Join Info")).toBeInTheDocument();
+  });
+
+  it("should display Linked Contact section", () => {
+    renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
+    expect(screen.getByText("Linked Contact")).toBeInTheDocument();
+  });
+
+  it("should display sync metadata when lastSyncedAt is present", () => {
+    const eventWithSync: CalendarEvent = {
+      ...baseEvent,
+      lastSyncedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    };
+    renderWithProviders(<CalendarEventCard event={eventWithSync} onClose={mockOnClose} />);
+    expect(screen.getByText(/Last synced/)).toBeInTheDocument();
   });
 });
 

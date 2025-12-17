@@ -48,9 +48,10 @@ interface CalendarViewProps {
   events: CalendarEvent[];
   currentDate: Date;
   onNavigate: (date: Date) => void;
+  contacts?: import("@/types/firestore").Contact[]; // Optional contacts for event card
 }
 
-export default function CalendarView({ events, currentDate, onNavigate }: CalendarViewProps) {
+export default function CalendarView({ events, currentDate, onNavigate, contacts }: CalendarViewProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
   
@@ -235,6 +236,7 @@ export default function CalendarView({ events, currentDate, onNavigate }: Calend
           <CalendarEventCard
             event={selectedEvent}
             onClose={() => setSelectedEvent(null)}
+            contacts={contacts}
           />
         )}
       </Modal>
