@@ -16,6 +16,7 @@ import { Button } from "@/components/Button";
 import Card from "@/components/Card";
 import Select from "@/components/Select";
 import { CalendarEvent } from "@/types/firestore";
+import { reportException } from "@/lib/error-reporting";
 
 const SYNC_RANGE_STORAGE_KEY = "calendar-sync-range-days";
 
@@ -140,14 +141,14 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
         credentials: 'include',
       });
       const data = await response.json();
-      console.log('Sync result:', data);
       if (data.ok) {
         await refetch();
-      } else {
-        console.error('Sync failed:', data.error);
       }
     } catch (err) {
-      console.error('Sync error:', err);
+      reportException(err, {
+        context: "Syncing calendar events",
+        tags: { component: "CalendarPageClientWrapper" },
+      });
     } finally {
       setSyncingCalendar(false);
     }
@@ -169,7 +170,6 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
   // Show error if there is one
   if (isError) {
     const errorMessage = error instanceof Error ? error.message : "Failed to load calendar events";
-    console.log('[CalendarPageClientWrapper] Error detected:', { errorMessage, error });
     const needsReconnect = errorMessage.includes("Calendar access not granted") || 
                           errorMessage.includes("reconnect your Google account with Calendar") ||
                           errorMessage.includes("Calendar scope");

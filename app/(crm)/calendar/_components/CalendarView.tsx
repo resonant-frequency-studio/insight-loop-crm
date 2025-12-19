@@ -234,7 +234,7 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
         isOpen={!!selectedEvent}
         onClose={() => setSelectedEvent(null)}
         closeOnBackdropClick={true}
-        maxWidth="2xl"
+        maxWidth="4xl"
       >
         {selectedEvent && (
           <CalendarEventCard

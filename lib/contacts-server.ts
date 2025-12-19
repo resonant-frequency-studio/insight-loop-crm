@@ -2,8 +2,6 @@ import { adminDb } from "@/lib/firebase-admin";
 import { Contact } from "@/types/firestore";
 import { reportException } from "@/lib/error-reporting";
 import { convertTimestamp } from "@/util/timestamp-utils-server";
-import { unstable_cache } from "next/cache";
-import { isTestMode } from "@/util/test-utils";
 
 /**
  * Get contacts path for a user
@@ -42,14 +40,12 @@ async function getContactForUserUncached(
 
     if (!doc.exists) {
       // In test mode, add debug logging
-      if (isTestMode()) {
-        if (process.env.DEBUG_TEST_CACHE) {
-          console.log(`[TEST] Contact not found: userId=${userId}, contactId=${contactId}`);
-          // List available contacts for debugging
-          const snapshot = await adminDb.collection(contactsPath(userId)).get();
-          const availableIds = snapshot.docs.map(d => d.id).slice(0, 5);
-          console.log(`[TEST] Available contact IDs (first 5):`, availableIds);
-        }
+      if (process.env.NODE_ENV === "test" && process.env.DEBUG_TEST_CACHE) {
+        console.log(`[TEST] Contact not found: userId=${userId}, contactId=${contactId}`);
+        // List available contacts for debugging
+        const snapshot = await adminDb.collection(contactsPath(userId)).get();
+        const availableIds = snapshot.docs.map(d => d.id).slice(0, 5);
+        console.log(`[TEST] Available contact IDs (first 5):`, availableIds);
       }
       return null;
     }
@@ -80,34 +76,19 @@ async function getContactForUserUncached(
 }
 
 /**
- * Get a single contact for a user (cached)
+ * Get a single contact for a user
  * 
  * @param userId - The user ID
  * @param contactId - The contact ID
  * @returns The contact data or null if not found
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getContactForUser(
   userId: string,
   contactId: string
 ): Promise<Contact | null> {
-  // In test mode, bypass cache to avoid stale data issues
-  // Tests create contacts and immediately navigate to them, so cache can be problematic
-  
-  if (isTestMode()) {
-    // Add debug logging in test mode
-    if (process.env.DEBUG_TEST_CACHE) {
-      console.log(`[TEST] getContactForUser: bypassing cache for userId=${userId}, contactId=${contactId}`);
-    }
-    return getContactForUserUncached(userId, contactId);
-  }
-
-  return unstable_cache(
-    async () => getContactForUserUncached(userId, contactId),
-    [`contact-${userId}-${contactId}`],
-    {
-      tags: [`contacts`, `contacts-${userId}`, `contact-${userId}-${contactId}`],
-    }
-  )();
+  return getContactForUserUncached(userId, contactId);
 }
 
 /**
@@ -154,26 +135,17 @@ export async function getAllContactsForUserUncached(
 }
 
 /**
- * Get all contacts for a user (cached)
+ * Get all contacts for a user
  * 
  * @param userId - The user ID
  * @returns Array of contacts with timestamps converted to ISO strings
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getAllContactsForUser(
   userId: string
 ): Promise<Contact[]> {
-  // In test mode, bypass cache to avoid stale data issues
-  if (isTestMode()) {
-    return getAllContactsForUserUncached(userId);
-  }
-
-  return unstable_cache(
-    async () => getAllContactsForUserUncached(userId),
-    [`contacts-${userId}`],
-    {
-      tags: [`contacts`, `contacts-${userId}`],
-    }
-  )();
+  return getAllContactsForUserUncached(userId);
 }
 
 /**
@@ -246,20 +218,16 @@ async function getUniqueSegmentsForUserUncached(
 }
 
 /**
- * Get unique segments for a user (cached)
+ * Get unique segments for a user
  * 
  * @param userId - The user ID
  * @returns Array of unique segment strings, sorted alphabetically
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getUniqueSegmentsForUser(
   userId: string
 ): Promise<string[]> {
-  return unstable_cache(
-    async () => getUniqueSegmentsForUserUncached(userId),
-    [`segments-${userId}`],
-    {
-      tags: [`contacts`, `contacts-${userId}`],
-    }
-  )();
+  return getUniqueSegmentsForUserUncached(userId);
 }
 

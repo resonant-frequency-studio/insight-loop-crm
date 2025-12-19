@@ -56,7 +56,8 @@ export async function syncCalendarEventsToFirestore(
   events: GoogleCalendarEvent[],
   contacts?: Contact[], // Optional: if provided, will match events to contacts
   timeMin?: Date, // Optional: start of sync range for cleanup
-  timeMax?: Date // Optional: end of sync range for cleanup
+  timeMax?: Date, // Optional: end of sync range for cleanup
+  userEmail?: string | null // Optional: user's email to exclude from matching
 ): Promise<{ synced: number; errors: string[]; deleted: number }> {
   const errors: string[] = [];
   let synced = 0;
@@ -69,7 +70,6 @@ export async function syncCalendarEventsToFirestore(
 
   // Create a set of Google event IDs that exist in the sync
   const googleEventIds = new Set(events.map(e => e.id));
-  console.log('[Sync] Google event IDs in sync:', Array.from(googleEventIds).slice(0, 5), '... (total:', googleEventIds.size, ')');
 
   // Find events in Firestore that are from Google but no longer exist in Google Calendar
   // Also check events that were created from CRM but synced to Google (they have googleEventId)
@@ -85,21 +85,6 @@ export async function syncCalendarEventsToFirestore(
       // This ensures we catch both Google-sourced events and CRM-created events that were synced to Google
       const existingEventsSnapshot = await eventsCollection.get();
       
-      console.log('[Sync] Found', existingEventsSnapshot.docs.length, 'events with googleEventId in Firestore');
-      console.log('[Sync] Time range:', {
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        timeMinTimestamp: timeMinTimestamp.toMillis(),
-        timeMaxTimestamp: timeMaxTimestamp.toMillis(),
-        timeMinDate: timeMinTimestamp.toDate().toISOString(),
-        timeMaxDate: timeMaxTimestamp.toDate().toISOString(),
-      });
-      
-      let checkedCount = 0;
-      let skippedNoGoogleId = 0;
-      let skippedOutOfRange = 0;
-      let skippedInGoogle = 0;
-      
       for (const doc of existingEventsSnapshot.docs) {
         const eventData = doc.data() as CalendarEvent;
         
@@ -107,11 +92,8 @@ export async function syncCalendarEventsToFirestore(
         // Skip events that were only created in CRM and never synced to Google
         const eventGoogleEventId = eventData.googleEventId;
         if (!eventGoogleEventId) {
-          skippedNoGoogleId++;
           continue; // Skip events without googleEventId
         }
-        
-        checkedCount++;
         
         // Check if event is within the sync time range
         const eventStartTime = eventData.startTime;
@@ -134,28 +116,12 @@ export async function syncCalendarEventsToFirestore(
           isInRange = 
             eventMillis >= minMillis &&
             eventMillis <= maxMillis;
-          
-          // Log events that are close to the boundary for debugging
-          if (!isInRange && (eventMillis >= minMillis - 86400000 || eventMillis <= maxMillis + 86400000)) {
-            console.log('[Sync] Event near boundary:', {
-              docId: doc.id,
-              title: eventData.title,
-              eventTime: eventStartTimestamp.toDate().toISOString(),
-              eventMillis,
-              minMillis,
-              maxMillis,
-              diffFromMin: eventMillis - minMillis,
-              diffFromMax: eventMillis - maxMillis,
-            });
-          }
         } else {
           // If we can't determine the time, skip it
-          skippedOutOfRange++;
           continue;
         }
         
         if (!isInRange) {
-          skippedOutOfRange++;
           continue;
         }
         
@@ -163,47 +129,26 @@ export async function syncCalendarEventsToFirestore(
         // Also check document ID as fallback (some events might use doc.id as googleEventId)
         const isInGoogle = googleEventIds.has(eventGoogleEventId) || googleEventIds.has(doc.id);
         if (isInGoogle) {
-          skippedInGoogle++;
           continue;
         }
         
         // If this event is in range but not in the Google Calendar response, it was deleted
-        console.log('[Sync] Deleting event:', {
-          docId: doc.id,
-          googleEventId: eventGoogleEventId,
-          title: eventData.title,
-          sourceOfTruth: eventData.sourceOfTruth,
-          startTime: eventStartTimestamp?.toDate().toISOString(),
-          isInRange,
-          isInGoogle,
-          inGoogleById: googleEventIds.has(eventGoogleEventId),
-          inGoogleByDocId: googleEventIds.has(doc.id),
-        });
         try {
           await doc.ref.delete();
           deleted++;
         } catch (deleteError) {
           const errorMessage = deleteError instanceof Error ? deleteError.message : String(deleteError);
           errors.push(`Failed to delete event ${doc.id}: ${errorMessage}`);
-          console.error('[Sync] Failed to delete event:', doc.id, errorMessage);
+          reportException(deleteError, {
+            context: "Deleting calendar event during cleanup",
+            tags: { component: "sync-calendar-events", userId, eventId: doc.id },
+          });
         }
       }
-      
-      console.log('[Sync] Cleanup stats:', {
-        totalEvents: existingEventsSnapshot.docs.length,
-        checked: checkedCount,
-        skippedNoGoogleId,
-        skippedOutOfRange,
-        skippedInGoogle,
-        deleted,
-      });
-      
-      console.log('[Sync] Cleanup complete. Deleted', deleted, 'events');
     } catch (cleanupError) {
       // Log but don't fail sync if cleanup fails
       const errorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
       errors.push(`Failed to cleanup deleted events: ${errorMessage}`);
-      console.error('[Sync] Cleanup error:', errorMessage);
       reportException(cleanupError, {
         context: "Cleaning up deleted calendar events",
         tags: { component: "sync-calendar-events", userId },
@@ -289,10 +234,13 @@ export async function syncCalendarEventsToFirestore(
           ...eventData,
         } as CalendarEvent;
 
-        const match = matchEventToContact(eventForMatching, contacts);
+        // Use userEmail parameter (passed from caller)
+        const eventUserEmail = userEmail || null;
+
+        const match = matchEventToContact(eventForMatching, contacts, eventUserEmail);
 
         // Only auto-link if:
-        // 1. High confidence match
+        // 1. High confidence match (exact email match)
         // 2. No existing manual override (matchOverriddenByUser !== true)
         if (
           match.confidence === "high" &&
@@ -307,7 +255,15 @@ export async function syncCalendarEventsToFirestore(
           if (matchedContact) {
             eventData.matchedContactId = match.contactId;
             eventData.matchConfidence = match.confidence;
-            eventData.matchMethod = match.method;
+            // Map match method to CalendarEvent matchMethod type
+            // "lastname" and "firstname" both map to "name" (name-based matching)
+            eventData.matchMethod = match.method === "lastname" || match.method === "firstname" 
+              ? "name" 
+              : match.method === "email" 
+                ? "email" 
+                : match.method === "manual" 
+                  ? "manual" 
+                  : undefined;
 
             // Create contact snapshot
             eventData.contactSnapshot = {
@@ -319,13 +275,8 @@ export async function syncCalendarEventsToFirestore(
               snapshotUpdatedAt: FieldValue.serverTimestamp(),
             };
           }
-        } else if (match.contactId) {
-          // Medium/low confidence: store match info but don't auto-link
-          // This allows UI to show suggestions later
-          eventData.matchedContactId = match.contactId;
-          eventData.matchConfidence = match.confidence;
-          eventData.matchMethod = match.method;
         }
+        // Note: Medium/low confidence matches are only in suggestions, not stored as matchedContactId
       }
 
       // Preserve existing manual overrides and denied contact IDs

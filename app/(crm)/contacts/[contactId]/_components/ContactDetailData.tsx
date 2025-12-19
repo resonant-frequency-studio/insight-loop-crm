@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
-import { getContactForUser, getUniqueSegmentsForUser, getAllContactsForUser } from "@/lib/contacts-server";
+import { getContactForUser, getUniqueSegmentsForUser, getAllContactsForUserUncached } from "@/lib/contacts-server";
 import { getActionItemsForContact } from "@/lib/action-items";
 import { getQueryClient } from "@/lib/query-client";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
@@ -30,7 +30,20 @@ export default async function ContactDetailData({ contactId }: ContactDetailData
 
   // Only prefetch and check if we have userId
   if (userId) {
-    await Promise.all([
+    // Check if contact exists first (for notFound) - this is critical path
+    const contact = await getContactForUser(userId, decodedContactId);
+    if (!contact) {
+      // In E2E mode, don't call notFound() immediately - let client-side handle it
+      // This allows tests to create contacts and immediately navigate to them
+      if (!isPlaywrightTest()) {
+        notFound();
+      }
+      // In E2E mode, continue - the client-side component will fetch and handle notFound if needed
+    }
+
+    // Prefetch in background - don't block navigation
+    // Use Promise.allSettled to not block on failures
+    Promise.allSettled([
       // Prefetch contact
       queryClient.prefetchQuery({
         queryKey: ["contact", userId, decodedContactId],
@@ -41,30 +54,19 @@ export default async function ContactDetailData({ contactId }: ContactDetailData
         queryKey: ["action-items", userId, decodedContactId],
         queryFn: () => getActionItemsForContact(userId!, decodedContactId).catch(() => []),
       }),
-      // Prefetch contacts list (in case user navigated from contacts page, it's already cached)
+      // Prefetch contacts list (using uncached version to avoid Next.js cache size limits)
       queryClient.prefetchQuery({
         queryKey: ["contacts", userId],
-        queryFn: () => getAllContactsForUser(userId!),
+        queryFn: () => getAllContactsForUserUncached(userId!),
       }),
       // Prefetch unique segments
       queryClient.prefetchQuery({
         queryKey: ["unique-segments", userId],
         queryFn: () => getUniqueSegmentsForUser(userId!).catch(() => []),
       }),
-    ]);
-
-    // Check if contact exists (for notFound)
-    // In E2E mode, be more lenient - allow client-side fetch to handle missing contacts
-    // This avoids false negatives due to stale Next.js cache after test data creation
-    const contact = await getContactForUser(userId, decodedContactId);
-    if (!contact) {
-      // In E2E mode, don't call notFound() immediately - let client-side handle it
-      // This allows tests to create contacts and immediately navigate to them
-      if (!isPlaywrightTest()) {
-        notFound();
-      }
-      // In E2E mode, continue - the client-side component will fetch and handle notFound if needed
-    }
+    ]).catch(() => {
+      // Silently handle errors - client will fetch on mount
+    });
   }
 
   return (

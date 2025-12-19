@@ -160,6 +160,18 @@ export interface Contact {
       snapshotUpdatedAt: unknown;
     } | null;
     
+    // Meeting Insights (AI-generated)
+    meetingInsights?: {
+      summary: string;
+      suggestedNextStep: string;
+      suggestedTouchpointDate?: string; // ISO date string
+      suggestedTouchpointRationale?: string;
+      suggestedActionItems?: string[];
+      followUpEmailDraft?: string;
+      generatedAt: unknown; // Firestore timestamp
+      dataSignature: string; // Hash of relevant data for staleness detection
+    } | null;
+    
     createdAt: unknown;
     updatedAt: unknown;
   }

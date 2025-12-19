@@ -7,7 +7,9 @@ import { getCalendarEventById } from "@/lib/calendar/get-calendar-event-by-id";
 import { getContactForUser } from "@/lib/contacts-server";
 import { getContactTimeline } from "@/lib/timeline/get-contact-timeline";
 import { EVENT_CONTEXT_PROMPT } from "@/lib/gemini/event-context-prompt";
+import { generateInsightsSignature } from "@/lib/calendar/insights-data-signature";
 import { Contact } from "@/types/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 
 interface EventContextResponse {
   summary: string;
@@ -29,6 +31,8 @@ export async function GET(
   try {
     const userId = await getUserId();
     const { eventId } = await params;
+    const { searchParams } = new URL(req.url);
+    const regenerate = searchParams.get("regenerate") === "true";
 
     // Fetch event from Firestore
     const event = await getCalendarEventById(adminDb, userId, eventId);
@@ -167,6 +171,27 @@ export async function GET(
       }
     }
 
+    // Check for existing insights and compare signatures
+    const timelineItemCount = timelineItems.length;
+    const currentSignature = generateInsightsSignature(event, contact, timelineItemCount);
+
+    // If insights exist and signature matches and not regenerating, return cached insights
+    if (event.meetingInsights && !regenerate) {
+      const storedSignature = event.meetingInsights.dataSignature;
+      if (storedSignature === currentSignature) {
+        return NextResponse.json({
+          ok: true,
+          summary: event.meetingInsights.summary,
+          suggestedNextStep: event.meetingInsights.suggestedNextStep,
+          suggestedTouchpointDate: event.meetingInsights.suggestedTouchpointDate,
+          suggestedTouchpointRationale: event.meetingInsights.suggestedTouchpointRationale,
+          suggestedActionItems: event.meetingInsights.suggestedActionItems || [],
+          followUpEmailDraft: event.meetingInsights.followUpEmailDraft,
+        });
+      }
+      // Signature mismatch - insights are stale, will regenerate below
+    }
+
     // Build prompt with timeline data
     const prompt = EVENT_CONTEXT_PROMPT(
       event.title,
@@ -244,6 +269,36 @@ export async function GET(
         { error: "Invalid AI response format. Please try again." },
         { status: 500 }
       );
+    }
+
+    // Save insights to Firestore
+    const insightsData = {
+      summary: parsed.summary,
+      suggestedNextStep: parsed.suggestedNextStep,
+      suggestedTouchpointDate: parsed.suggestedTouchpointDate,
+      suggestedTouchpointRationale: parsed.suggestedTouchpointRationale,
+      suggestedActionItems: parsed.suggestedActionItems || [],
+      followUpEmailDraft: parsed.followUpEmailDraft,
+      generatedAt: Timestamp.now(),
+      dataSignature: currentSignature,
+    };
+
+    try {
+      await adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("calendarEvents")
+        .doc(eventId)
+        .update({
+          meetingInsights: insightsData,
+          updatedAt: Timestamp.now(),
+        });
+    } catch (saveError) {
+      // Log but don't fail the request if save fails
+      reportException(saveError, {
+        context: "Saving meeting insights to Firestore",
+        tags: { component: "ai-context-api", eventId },
+      });
     }
 
     return NextResponse.json({

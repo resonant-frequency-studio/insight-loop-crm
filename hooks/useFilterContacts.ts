@@ -5,6 +5,11 @@ interface ContactWithId extends Contact {
   id: string;
 }
 
+interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
+
 interface FilterState {
   selectedSegment: string;
   selectedTags: string[];
@@ -15,6 +20,7 @@ interface FilterState {
   upcomingTouchpoints: boolean;
   showArchived: boolean;
   customFilter?: "at-risk" | "warm" | null;
+  lastEmailDateRange: DateRange;
 }
 
 interface UseFilterContactsReturn {
@@ -29,6 +35,7 @@ interface UseFilterContactsReturn {
   upcomingTouchpoints: boolean;
   showArchived: boolean;
   customFilter?: "at-risk" | "warm" | null;
+  lastEmailDateRange: DateRange;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
@@ -38,6 +45,7 @@ interface UseFilterContactsReturn {
   setUpcomingTouchpoints: (value: boolean) => void;
   setShowArchived: (value: boolean) => void;
   setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setLastEmailDateRange: (range: DateRange) => void;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
@@ -62,6 +70,15 @@ export function useFilterContacts(
   const [upcomingTouchpoints, setUpcomingTouchpoints] = useState<boolean>(initialUpcomingTouchpoints);
   const [showArchived, setShowArchived] = useState<boolean>(false);
   const [customFilter, setCustomFilter] = useState<"at-risk" | "warm" | null>(null);
+  
+  // Default date range: last 12 months
+  const getDefaultDateRange = (): DateRange => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 12);
+    return { start, end };
+  };
+  const [lastEmailDateRange, setLastEmailDateRange] = useState<DateRange>(getDefaultDateRange());
 
   // Debounced search values (for filtering performance)
   const [debouncedEmailSearch, setDebouncedEmailSearch] = useState<string>("");
@@ -108,6 +125,7 @@ export function useFilterContacts(
     upcomingTouchpoints,
     showArchived,
     customFilter,
+    lastEmailDateRange,
   };
 
   const filteredContacts = useMemo(() => {
@@ -208,8 +226,40 @@ export function useFilterContacts(
       });
     }
 
+    // Filter by last email date range
+    if (filters.lastEmailDateRange.start && filters.lastEmailDateRange.end) {
+      filtered = filtered.filter((contact) => {
+        if (!contact.lastEmailDate) return false; // Exclude contacts with no email date
+        
+        // Handle Firestore Timestamp or Date string
+        const lastEmailDate =
+          contact.lastEmailDate instanceof Date
+            ? contact.lastEmailDate
+            : typeof contact.lastEmailDate === "string"
+            ? new Date(contact.lastEmailDate)
+            : typeof contact.lastEmailDate === "object" && "toDate" in contact.lastEmailDate
+            ? (contact.lastEmailDate as { toDate: () => Date }).toDate()
+            : null;
+        
+        if (!lastEmailDate) return false;
+        
+        // Set time to start/end of day for proper range checking
+        const dateStartOfDay = new Date(lastEmailDate);
+        dateStartOfDay.setHours(0, 0, 0, 0);
+        
+        const rangeStart = new Date(filters.lastEmailDateRange.start!);
+        rangeStart.setHours(0, 0, 0, 0);
+        
+        const rangeEnd = new Date(filters.lastEmailDateRange.end!);
+        rangeEnd.setHours(23, 59, 59, 999);
+        
+        return dateStartOfDay.getTime() >= rangeStart.getTime() && 
+               dateStartOfDay.getTime() <= rangeEnd.getTime();
+      });
+    }
+
     return filtered;
-  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter]);
+  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter, filters.lastEmailDateRange]);
 
   const clearFilters = () => {
     setSelectedSegment("");
@@ -221,7 +271,27 @@ export function useFilterContacts(
     setUpcomingTouchpoints(false);
     setShowArchived(false);
     setCustomFilter(null);
+    setLastEmailDateRange(getDefaultDateRange());
   };
+
+  // Check if date range is different from default (12 months)
+  const isDefaultDateRange = useMemo(() => {
+    if (!lastEmailDateRange.start || !lastEmailDateRange.end) return true;
+    const defaultRange = getDefaultDateRange();
+    if (!defaultRange.start || !defaultRange.end) return true;
+    
+    // Compare dates normalized to start of day
+    const normalizeDate = (date: Date) => {
+      const normalized = new Date(date);
+      normalized.setHours(0, 0, 0, 0);
+      return normalized.getTime();
+    };
+    
+    return (
+      normalizeDate(lastEmailDateRange.start) === normalizeDate(defaultRange.start) &&
+      normalizeDate(lastEmailDateRange.end) === normalizeDate(defaultRange.end)
+    );
+  }, [lastEmailDateRange]);
 
   const hasActiveFilters = 
     !!selectedSegment || 
@@ -232,7 +302,8 @@ export function useFilterContacts(
     !!companySearch.trim() ||
     upcomingTouchpoints ||
     showArchived ||
-    !!customFilter;
+    !!customFilter ||
+    !isDefaultDateRange;
 
   return {
     filteredContacts,
@@ -255,6 +326,8 @@ export function useFilterContacts(
     setUpcomingTouchpoints,
     setShowArchived,
     setCustomFilter,
+    lastEmailDateRange,
+    setLastEmailDateRange,
     onSegmentChange: setSelectedSegment,
     onTagsChange: setSelectedTags,
     onEmailSearchChange: setEmailSearch,

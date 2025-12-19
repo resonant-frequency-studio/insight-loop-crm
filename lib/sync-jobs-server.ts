@@ -3,7 +3,6 @@ import { SyncJob } from "@/types/firestore";
 import { syncJobsPath } from "@/lib/firestore-paths";
 import { reportException } from "@/lib/error-reporting";
 import { convertTimestampToISO } from "@/util/timestamp-utils-server";
-import { unstable_cache } from "next/cache";
 
 /**
  * Convert a SyncJob document to have ISO string timestamps
@@ -76,22 +75,17 @@ async function getLastSyncForUserUncached(
 }
 
 /**
- * Get the most recent sync job for a user (cached)
+ * Get the most recent sync job for a user
  * 
  * @param userId - The user ID
  * @returns The most recent sync job or null if none exists
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getLastSyncForUser(
   userId: string
 ): Promise<SyncJob | null> {
-  return unstable_cache(
-    async () => getLastSyncForUserUncached(userId),
-    [`last-sync-${userId}`],
-    {
-      tags: [`sync-jobs`, `sync-jobs-${userId}`],
-      revalidate: 60, // 1 minute (sync jobs change more frequently)
-    }
-  )();
+  return getLastSyncForUserUncached(userId);
 }
 
 /**
@@ -145,24 +139,19 @@ async function getSyncHistoryForUserUncached(
 }
 
 /**
- * Get sync history for a user (cached)
+ * Get sync history for a user
  * 
  * @param userId - The user ID
  * @param limit - Maximum number of sync jobs to return (default: 10)
  * @returns Array of sync jobs ordered by startedAt descending
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getSyncHistoryForUser(
   userId: string,
   limit: number = 10
 ): Promise<SyncJob[]> {
-  return unstable_cache(
-    async () => getSyncHistoryForUserUncached(userId, limit),
-    [`sync-history-${userId}-${limit}`],
-    {
-      tags: [`sync-jobs`, `sync-jobs-${userId}`],
-      revalidate: 60, // 1 minute (sync jobs change more frequently)
-    }
-  )();
+  return getSyncHistoryForUserUncached(userId, limit);
 }
 
 /**
@@ -225,23 +214,18 @@ async function getLastSyncForServiceUncached(
 }
 
 /**
- * Get the most recent sync job for a user filtered by service (cached)
+ * Get the most recent sync job for a user filtered by service
  * 
  * @param userId - The user ID
  * @param service - The service to filter by ("gmail" or "calendar")
  * @returns The most recent sync job for the service or null if none exists
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getLastSyncForService(
   userId: string,
   service: "gmail" | "calendar"
 ): Promise<SyncJob | null> {
-  return unstable_cache(
-    async () => getLastSyncForServiceUncached(userId, service),
-    [`last-sync-${userId}-${service}`],
-    {
-      tags: [`sync-jobs`, `sync-jobs-${userId}`, `sync-jobs-${service}`],
-      revalidate: 60, // 1 minute (sync jobs change more frequently)
-    }
-  )();
+  return getLastSyncForServiceUncached(userId, service);
 }
 

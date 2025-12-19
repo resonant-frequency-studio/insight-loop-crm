@@ -4,92 +4,126 @@ import { Contact } from "@/types/firestore";
 export interface EventContactMatch {
   contactId: string | null;
   confidence: "high" | "medium" | "low";
-  method: "email" | "name" | "domain" | "manual";
+  method: "email" | "lastname" | "firstname" | "manual";
   suggestions?: Array<{ contactId: string; confidence: "medium" | "low"; method: string }>;
 }
 
 /**
- * Calculate Levenshtein distance between two strings
- * Used for fuzzy name matching
+ * Extract names from event, prioritizing attendee names (excluding user's email)
+ * Looks for names in attendees first, then falls back to title extraction
+ * Excludes names that match the user's name
  */
-function levenshteinDistance(str1: string, str2: string): number {
-  const m = str1.length;
-  const n = str2.length;
-  const dp: number[][] = [];
-
-  for (let i = 0; i <= m; i++) {
-    dp[i] = [i];
-  }
-  for (let j = 0; j <= n; j++) {
-    dp[0][j] = j;
-  }
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (str1[i - 1] === str2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = Math.min(
-          dp[i - 1][j] + 1, // deletion
-          dp[i][j - 1] + 1, // insertion
-          dp[i - 1][j - 1] + 1 // substitution
-        );
+function extractNamesFromEvent(
+  event: CalendarEvent,
+  userEmail: string | null
+): { firstName: string | null; lastName: string | null } {
+  // First, try to extract name from attendees (excluding user's email)
+  if (event.attendees && event.attendees.length > 0) {
+    for (const attendee of event.attendees) {
+      const email = attendee.email.toLowerCase().trim();
+      
+      // Skip if this is the user's email
+      if (userEmail && email === userEmail.toLowerCase().trim()) {
+        continue;
+      }
+      
+      // Try to extract name from displayName
+      if (attendee.displayName) {
+        const nameParts = attendee.displayName.trim().split(/\s+/);
+        if (nameParts.length >= 2) {
+          // Assume first part is first name, last part is last name
+          return {
+            firstName: nameParts[0],
+            lastName: nameParts[nameParts.length - 1],
+          };
+        }
       }
     }
   }
-
-  return dp[m][n];
-}
-
-/**
- * Calculate string similarity (0-1, where 1 is identical)
- */
-function stringSimilarity(str1: string, str2: string): number {
-  const maxLen = Math.max(str1.length, str2.length);
-  if (maxLen === 0) return 1;
-  const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
-  return 1 - distance / maxLen;
-}
-
-/**
- * Extract potential names from event title and description
- */
-function extractNamesFromEvent(event: CalendarEvent): string[] {
-  const names: string[] = [];
-  const text = `${event.title} ${event.description || ""}`.toLowerCase();
-
-  // Simple pattern: Look for "with {name}" or "{name} meeting" patterns
-  const patterns = [
-    /(?:with|meeting with|call with)\s+([a-z]+(?:\s+[a-z]+)?)/gi,
-    /([A-Z][a-z]+\s+[A-Z][a-z]+)/g, // Capitalized first and last name
-  ];
-
-  for (const pattern of patterns) {
-    const matches = text.matchAll(pattern);
-    for (const match of matches) {
-      if (match[1]) {
-        names.push(match[1].trim());
+  
+  // Fallback: Extract from title, but exclude names that match user's name
+  const text = event.title || "";
+  const namePattern = /([A-Z][a-z]+)\s+([A-Z][a-z]+)/g;
+  const matches = Array.from(text.matchAll(namePattern));
+  
+  // If we have user email, try to extract user's name to exclude it
+  let userFirstName: string | null = null;
+  let userLastName: string | null = null;
+  if (userEmail) {
+    // Try to infer user's name from attendees
+    const userEmailLower = userEmail.toLowerCase().trim();
+    const userAttendee = event.attendees?.find(
+      (a) => a.email.toLowerCase().trim() === userEmailLower
+    );
+    if (userAttendee?.displayName) {
+      const userNameParts = userAttendee.displayName.trim().split(/\s+/);
+      if (userNameParts.length >= 2) {
+        userFirstName = userNameParts[0];
+        userLastName = userNameParts[userNameParts.length - 1];
       }
     }
   }
-
-  return names;
+  
+  // Return the first name that doesn't match the user's name
+  for (const match of matches) {
+    const firstName = match[1];
+    const lastName = match[2];
+    
+    // Skip if this matches the user's name (both first and last)
+    if (userFirstName && userLastName) {
+      if (
+        firstName.toLowerCase() === userFirstName.toLowerCase() &&
+        lastName.toLowerCase() === userLastName.toLowerCase()
+      ) {
+        continue;
+      }
+    }
+    // Also skip if just the last name matches (more lenient check)
+    if (userLastName && lastName.toLowerCase() === userLastName.toLowerCase()) {
+      continue;
+    }
+    
+    return {
+      firstName: firstName,
+      lastName: lastName,
+    };
+  }
+  
+  // If all names matched user, return the first one anyway (fallback)
+  if (matches.length > 0) {
+    return {
+      firstName: matches[0][1],
+      lastName: matches[0][2],
+    };
+  }
+  
+  return { firstName: null, lastName: null };
 }
 
 /**
  * Match event to contact using email (high confidence)
+ * Only matches if attendee email exactly matches contact's primaryEmail
+ * Excludes the user's own email
  */
 function matchByEmail(
   event: CalendarEvent,
-  contacts: Contact[]
+  contacts: Contact[],
+  userEmail: string | null
 ): { contactId: string; confidence: "high"; method: "email" } | null {
   if (!event.attendees || event.attendees.length === 0) {
     return null;
   }
 
   // Check each attendee email against contact primaryEmail
+  // Exclude the user's own email
   for (const attendee of event.attendees) {
     const email = attendee.email.toLowerCase().trim();
+    
+    // Skip if this is the user's own email
+    if (userEmail && email === userEmail.toLowerCase().trim()) {
+      continue;
+    }
+    
     const contact = contacts.find(
       (c) => c.primaryEmail.toLowerCase().trim() === email
     );
@@ -107,91 +141,92 @@ function matchByEmail(
 }
 
 /**
- * Match event to contact using name (medium confidence)
+ * Match event to contact using exact last name (medium confidence)
+ * Returns all contacts with matching last name as suggestions
+ * Excludes contacts that match the user's email
  */
-function matchByName(
+function matchByLastName(
   event: CalendarEvent,
-  contacts: Contact[]
-): { contactId: string; confidence: "medium"; method: "name" } | null {
-  const extractedNames = extractNamesFromEvent(event);
-  if (extractedNames.length === 0) {
-    return null;
-  }
-
-  const threshold = 0.8; // 80% similarity required
-
-  for (const extractedName of extractedNames) {
-    for (const contact of contacts) {
-      const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim();
-      if (!fullName) continue;
-
-      const similarity = stringSimilarity(extractedName, fullName);
-      if (similarity >= threshold) {
-        return {
-          contactId: contact.contactId,
-          confidence: "medium",
-          method: "name",
-        };
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
- * Match event to contact using domain (low confidence)
- */
-function matchByDomain(
-  event: CalendarEvent,
-  contacts: Contact[]
-): Array<{ contactId: string; confidence: "low"; method: "domain" }> {
-  if (!event.attendees || event.attendees.length === 0) {
+  contacts: Contact[],
+  extractedLastName: string | null,
+  userEmail: string | null
+): Array<{ contactId: string; confidence: "medium"; method: "lastname" }> {
+  if (!extractedLastName) {
     return [];
   }
 
-  const domainMatches: Array<{ contactId: string; confidence: "low"; method: "domain" }> = [];
-  const seenContactIds = new Set<string>();
+  const lastNameLower = extractedLastName.toLowerCase().trim();
+  const matches: Array<{ contactId: string; confidence: "medium"; method: "lastname" }> = [];
 
-  // Extract domains from attendee emails
-  const attendeeDomains = new Set<string>();
-  for (const attendee of event.attendees) {
-    const email = attendee.email.toLowerCase().trim();
-    const domain = email.split("@")[1];
-    if (domain) {
-      attendeeDomains.add(domain);
+  for (const contact of contacts) {
+    // Skip if this contact's email matches the user's email
+    if (userEmail && contact.primaryEmail.toLowerCase().trim() === userEmail.toLowerCase().trim()) {
+      continue;
+    }
+    
+    if (contact.lastName && contact.lastName.toLowerCase().trim() === lastNameLower) {
+      matches.push({
+        contactId: contact.contactId,
+        confidence: "medium",
+        method: "lastname",
+      });
     }
   }
 
-  // Match contacts by email domain
-  for (const contact of contacts) {
-    if (seenContactIds.has(contact.contactId)) continue;
+  return matches;
+}
 
-    const contactEmail = contact.primaryEmail.toLowerCase().trim();
-    const contactDomain = contactEmail.split("@")[1];
-    if (contactDomain && attendeeDomains.has(contactDomain)) {
-      domainMatches.push({
+/**
+ * Match event to contact using exact first name (low confidence)
+ * Returns all contacts with matching first name as suggestions
+ * Excludes contacts that match the user's email
+ */
+function matchByFirstName(
+  event: CalendarEvent,
+  contacts: Contact[],
+  extractedFirstName: string | null,
+  userEmail: string | null
+): Array<{ contactId: string; confidence: "low"; method: "firstname" }> {
+  if (!extractedFirstName) {
+    return [];
+  }
+
+  const firstNameLower = extractedFirstName.toLowerCase().trim();
+  const matches: Array<{ contactId: string; confidence: "low"; method: "firstname" }> = [];
+
+  for (const contact of contacts) {
+    // Skip if this contact's email matches the user's email
+    if (userEmail && contact.primaryEmail.toLowerCase().trim() === userEmail.toLowerCase().trim()) {
+      continue;
+    }
+    
+    if (contact.firstName && contact.firstName.toLowerCase().trim() === firstNameLower) {
+      matches.push({
         contactId: contact.contactId,
         confidence: "low",
-        method: "domain",
+        method: "firstname",
       });
-      seenContactIds.add(contact.contactId);
     }
   }
 
-  return domainMatches;
+  return matches;
 }
 
 /**
  * Match a calendar event to a contact
  * Returns the best match and suggestions for lower confidence matches
+ * 
+ * @param event - The calendar event to match
+ * @param contacts - Array of contacts to match against
+ * @param userEmail - The signed-in user's email (to exclude from matching)
  */
 export function matchEventToContact(
   event: CalendarEvent,
-  contacts: Contact[]
+  contacts: Contact[],
+  userEmail: string | null = null
 ): EventContactMatch {
-  // Strategy 1: Email match (high confidence) - return immediately if found
-  const emailMatch = matchByEmail(event, contacts);
+  // Strategy 1: Email match (high confidence) - only auto-link on exact email match
+  const emailMatch = matchByEmail(event, contacts, userEmail);
   if (emailMatch) {
     return {
       contactId: emailMatch.contactId,
@@ -200,44 +235,34 @@ export function matchEventToContact(
     };
   }
 
-  // Strategy 2: Name match (medium confidence)
-  const nameMatch = matchByName(event, contacts);
-  if (nameMatch) {
-    // Collect domain matches as suggestions
-    const domainMatches = matchByDomain(event, contacts);
-    return {
-      contactId: nameMatch.contactId,
-      confidence: nameMatch.confidence,
-      method: nameMatch.method,
-      suggestions: domainMatches.map((m) => ({
-        contactId: m.contactId,
-        confidence: m.confidence,
-        method: m.method,
-      })),
-    };
-  }
+  // Strategy 2: Extract names from event (prioritizing attendees, excluding user)
+  const { firstName, lastName } = extractNamesFromEvent(event, userEmail);
+  
+  // Strategy 3: Last name match (medium confidence) - as suggestions only
+  const lastNameMatches = matchByLastName(event, contacts, lastName, userEmail);
+  
+  // Strategy 4: First name match (low confidence) - as suggestions only
+  const firstNameMatches = matchByFirstName(event, contacts, firstName, userEmail);
+  
+  // Combine suggestions (last name matches first, then first name matches)
+  const suggestions = [
+    ...lastNameMatches.map((m) => ({
+      contactId: m.contactId,
+      confidence: m.confidence,
+      method: m.method,
+    })),
+    ...firstNameMatches.map((m) => ({
+      contactId: m.contactId,
+      confidence: m.confidence,
+      method: m.method,
+    })),
+  ];
 
-  // Strategy 3: Domain match (low confidence) - return first as match, rest as suggestions
-  const domainMatches = matchByDomain(event, contacts);
-  if (domainMatches.length > 0) {
-    const [firstMatch, ...restMatches] = domainMatches;
-    return {
-      contactId: firstMatch.contactId,
-      confidence: firstMatch.confidence,
-      method: firstMatch.method,
-      suggestions: restMatches.map((m) => ({
-        contactId: m.contactId,
-        confidence: m.confidence,
-        method: m.method,
-      })),
-    };
-  }
-
-  // No match found
+  // No auto-link, but return suggestions if available
   return {
     contactId: null,
     confidence: "low",
     method: "email", // Default method
+    suggestions: suggestions.length > 0 ? suggestions : undefined,
   };
 }
-

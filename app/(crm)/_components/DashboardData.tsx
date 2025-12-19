@@ -1,5 +1,5 @@
 import { getUserId } from "@/lib/auth-utils";
-import { getAllContactsForUser } from "@/lib/contacts-server";
+import { getAllContactsForUserUncached } from "@/lib/contacts-server";
 import { getDashboardStats } from "@/lib/dashboard-stats-server";
 import { getQueryClient } from "@/lib/query-client";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
@@ -27,17 +27,20 @@ export default async function DashboardData() {
   }
 
   // Only prefetch if we have userId
+  // Use Promise.allSettled to not block navigation on failures
   if (userId) {
-    await Promise.all([
+    Promise.allSettled([
       queryClient.prefetchQuery({
         queryKey: ["contacts", userId],
-        queryFn: () => getAllContactsForUser(userId),
+        queryFn: () => getAllContactsForUserUncached(userId),
       }),
       queryClient.prefetchQuery({
         queryKey: ["dashboard-stats", userId],
         queryFn: () => getDashboardStats(userId),
       }),
-    ]);
+    ]).catch(() => {
+      // Silently handle errors - client will fetch on mount
+    });
   }
 
   return (

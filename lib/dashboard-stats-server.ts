@@ -1,7 +1,6 @@
 import { getAllContactsForUserUncached } from "./contacts-server";
 import { DashboardStats } from "@/hooks/useDashboardStats";
 import { reportException } from "./error-reporting";
-import { unstable_cache } from "next/cache";
 
 /**
  * Internal function to calculate dashboard stats (uncached)
@@ -133,19 +132,14 @@ async function getDashboardStatsUncached(userId: string): Promise<DashboardStats
 }
 
 /**
- * Get dashboard statistics for a user (cached)
+ * Get dashboard statistics for a user
  * 
  * @param userId - The user ID
  * @returns Dashboard statistics calculated from all contacts
+ * 
+ * Note: Caching is handled by React Query on the client side
  */
 export async function getDashboardStats(userId: string): Promise<DashboardStats> {
-  return unstable_cache(
-    async () => getDashboardStatsUncached(userId),
-    [`dashboard-stats-${userId}`],
-    {
-      tags: [`contacts`, `contacts-${userId}`, `dashboard-stats-${userId}`],
-      revalidate: 300, // 5 minutes
-    }
-  )();
+  return getDashboardStatsUncached(userId);
 }
 

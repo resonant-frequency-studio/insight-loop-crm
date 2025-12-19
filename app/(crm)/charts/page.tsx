@@ -26,9 +26,14 @@ export default async function ChartsPage() {
   const queryClient = getQueryClient();
 
   // Prefetch dashboard stats for charts
-  await queryClient.prefetchQuery({
-    queryKey: ["dashboard-stats", userId],
-    queryFn: () => getDashboardStats(userId),
+  // Don't block navigation - prefetch in background
+  Promise.allSettled([
+    queryClient.prefetchQuery({
+      queryKey: ["dashboard-stats", userId],
+      queryFn: () => getDashboardStats(userId),
+    }),
+  ]).catch(() => {
+    // Silently handle errors - client will fetch on mount
   });
 
   return (

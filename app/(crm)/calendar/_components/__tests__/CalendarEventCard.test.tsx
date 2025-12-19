@@ -89,6 +89,14 @@ describe("CalendarEventCard", () => {
   });
 
   it("should display linked contact indicator when event is linked", () => {
+    const linkedContact: Contact = {
+      contactId: "c1",
+      firstName: "John",
+      lastName: "Doe",
+      primaryEmail: "john@example.com",
+      createdAt: "2025-01-01T09:00:00Z",
+      updatedAt: "2025-01-01T09:00:00Z",
+    };
     const linkedEvent: CalendarEvent = {
       ...baseEvent,
       matchedContactId: "c1",
@@ -98,16 +106,25 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    renderWithProviders(<CalendarEventCard event={linkedEvent} onClose={mockOnClose} />);
-    expect(screen.getByText("Linked")).toBeInTheDocument();
+    renderWithProviders(<CalendarEventCard event={linkedEvent} onClose={mockOnClose} contacts={[linkedContact]} />);
+    expect(screen.getByText("Linked Contact")).toBeInTheDocument();
   });
 
   it("should not display linked indicator when event is not linked", () => {
     renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
-    expect(screen.queryByText("Linked")).not.toBeInTheDocument();
+    expect(screen.queryByText("Linked Contact")).not.toBeInTheDocument();
   });
 
   it("should display segment pill when contact has a segment", () => {
+    const segmentContact: Contact = {
+      contactId: "c1",
+      firstName: "John",
+      lastName: "Doe",
+      primaryEmail: "john@example.com",
+      segment: "Prospect",
+      createdAt: "2025-01-01T09:00:00Z",
+      updatedAt: "2025-01-01T09:00:00Z",
+    };
     const segmentEvent: CalendarEvent = {
       ...baseEvent,
       matchedContactId: "c1",
@@ -118,8 +135,9 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    renderWithProviders(<CalendarEventCard event={segmentEvent} onClose={mockOnClose} />);
-    expect(screen.getByText("Prospect")).toBeInTheDocument();
+    renderWithProviders(<CalendarEventCard event={segmentEvent} onClose={mockOnClose} contacts={[segmentContact]} />);
+    // Segment appears in both header and LinkedContactCard, so use getAllByText
+    expect(screen.getAllByText("Prospect").length).toBeGreaterThan(0);
   });
 
   it("should not display segment pill when contact has no segment", () => {
@@ -137,11 +155,29 @@ describe("CalendarEventCard", () => {
   });
 
   it("should display touchpoint badge when event is a touchpoint", () => {
+    const touchpointContact: Contact = {
+      contactId: "c1",
+      firstName: "John",
+      lastName: "Doe",
+      primaryEmail: "john@example.com",
+      linkedGoogleEventId: "e1", // Link the contact to this event
+      linkStatus: "linked",
+      createdAt: "2025-01-01T09:00:00Z",
+      updatedAt: "2025-01-01T09:00:00Z",
+    };
     const touchpointEvent: CalendarEvent = {
       ...baseEvent,
+      eventId: "e1",
+      matchedContactId: "c1",
       sourceOfTruth: "crm_touchpoint",
+      contactSnapshot: {
+        name: "John Doe",
+        primaryEmail: "john@example.com",
+        snapshotUpdatedAt: "2025-01-01T09:00:00Z",
+      },
     };
-    renderWithProviders(<CalendarEventCard event={touchpointEvent} onClose={mockOnClose} />);
+    renderWithProviders(<CalendarEventCard event={touchpointEvent} onClose={mockOnClose} contacts={[touchpointContact]} />);
+    // Touchpoint badge only shows when linked to a contact and isLinkedToTouchpoint is true
     expect(screen.getByText("Touchpoint")).toBeInTheDocument();
   });
 
@@ -151,8 +187,20 @@ describe("CalendarEventCard", () => {
   });
 
   it("should display all indicators together when applicable", () => {
+    const fullContact: Contact = {
+      contactId: "c1",
+      firstName: "John",
+      lastName: "Doe",
+      primaryEmail: "john@example.com",
+      segment: "Customer",
+      linkedGoogleEventId: "e1", // Link the contact to this event
+      linkStatus: "linked",
+      createdAt: "2025-01-01T09:00:00Z",
+      updatedAt: "2025-01-01T09:00:00Z",
+    };
     const fullEvent: CalendarEvent = {
       ...baseEvent,
+      eventId: "e1",
       matchedContactId: "c1",
       sourceOfTruth: "crm_touchpoint",
       contactSnapshot: {
@@ -162,9 +210,10 @@ describe("CalendarEventCard", () => {
         snapshotUpdatedAt: "2025-01-01T09:00:00Z",
       },
     };
-    renderWithProviders(<CalendarEventCard event={fullEvent} onClose={mockOnClose} />);
-    expect(screen.getByText("Linked")).toBeInTheDocument();
-    expect(screen.getByText("Customer")).toBeInTheDocument();
+    renderWithProviders(<CalendarEventCard event={fullEvent} onClose={mockOnClose} contacts={[fullContact]} />);
+    expect(screen.getByText("Linked Contact")).toBeInTheDocument();
+    // Segment appears in both header and LinkedContactCard, so use getAllByText
+    expect(screen.getAllByText("Customer").length).toBeGreaterThan(0);
     expect(screen.getByText("Touchpoint")).toBeInTheDocument();
   });
 
@@ -191,12 +240,14 @@ describe("CalendarEventCard", () => {
       description: "Join the meeting: https://zoom.us/j/123456789",
     };
     renderWithProviders(<CalendarEventCard event={eventWithZoomLink} onClose={mockOnClose} />);
-    expect(screen.getByText("Join Info")).toBeInTheDocument();
+    // The component now shows "Join Information" not "Join Info"
+    expect(screen.getByText("Join Information")).toBeInTheDocument();
   });
 
   it("should display Linked Contact section", () => {
     renderWithProviders(<CalendarEventCard event={baseEvent} onClose={mockOnClose} />);
-    expect(screen.getByText("Linked Contact")).toBeInTheDocument();
+    // When unlinked, it shows "Link Contact" not "Linked Contact"
+    expect(screen.getByText("Link Contact")).toBeInTheDocument();
   });
 
   it("should display sync metadata when lastSyncedAt is present", () => {
@@ -205,7 +256,8 @@ describe("CalendarEventCard", () => {
       lastSyncedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
     };
     renderWithProviders(<CalendarEventCard event={eventWithSync} onClose={mockOnClose} />);
-    expect(screen.getByText(/Last synced/)).toBeInTheDocument();
+    // The header now shows "Synced:" not "Last synced"
+    expect(screen.getByText(/Synced:/)).toBeInTheDocument();
   });
 });
 

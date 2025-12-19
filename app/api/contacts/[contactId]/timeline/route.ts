@@ -36,9 +36,11 @@ export async function GET(
     const url = new URL(req.url);
     const limitParam = url.searchParams.get("limit");
     const beforeParam = url.searchParams.get("before");
+    const daysParam = url.searchParams.get("days");
 
     const limit = limitParam ? parseInt(limitParam, 10) : 50;
     const before = beforeParam ? new Date(beforeParam) : undefined;
+    const days = daysParam ? parseInt(daysParam, 10) : undefined;
 
     if (isNaN(limit) || limit < 1 || limit > 100) {
       return NextResponse.json(
@@ -54,12 +56,19 @@ export async function GET(
       );
     }
 
+    if (days !== undefined && (isNaN(days) || days < 1 || days > 60)) {
+      return NextResponse.json(
+        { error: "Invalid days parameter. Must be between 1 and 60." },
+        { status: 400 }
+      );
+    }
+
     // Fetch timeline items
     const timelineItems = await getContactTimeline(
       adminDb,
       userId,
       contactId,
-      { limit, before }
+      { limit, before, days }
     );
 
     return NextResponse.json({ timelineItems });

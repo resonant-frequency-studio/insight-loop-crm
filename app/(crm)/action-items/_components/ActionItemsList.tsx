@@ -24,10 +24,15 @@ export default async function ActionItemsList() {
 
   // Only prefetch if we have userId
   // Note: Action items are now enriched with contact fields, so we don't need to prefetch contacts separately
+  // Don't block navigation - prefetch in background
   if (userId) {
-    await queryClient.prefetchQuery({
-      queryKey: ["action-items", userId],
-      queryFn: () => getAllActionItemsForUser(userId!),
+    Promise.allSettled([
+      queryClient.prefetchQuery({
+        queryKey: ["action-items", userId],
+        queryFn: () => getAllActionItemsForUser(userId!),
+      }),
+    ]).catch(() => {
+      // Silently handle errors - client will fetch on mount
     });
   }
 

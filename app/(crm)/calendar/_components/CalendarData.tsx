@@ -23,24 +23,29 @@ export default async function CalendarData() {
   }
 
   // Only prefetch if we have userId
+  // Don't block navigation - prefetch in background
   if (userId) {
     // Prefetch events for current month
     const now = new Date();
     const timeMin = new Date(now.getFullYear(), now.getMonth(), 1);
     const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    await queryClient.prefetchQuery({
-      queryKey: ["calendar-events", userId, timeMin.toISOString(), timeMax.toISOString()],
-      queryFn: async () => {
-        // Try to get from cache first
-        const cachedEvents = await getCalendarEventsForUser(
-          adminDb,
-          userId,
-          timeMin,
-          timeMax
-        );
-        return cachedEvents;
-      },
+    Promise.allSettled([
+      queryClient.prefetchQuery({
+        queryKey: ["calendar-events", userId, timeMin.toISOString(), timeMax.toISOString()],
+        queryFn: async () => {
+          // Try to get from cache first
+          const cachedEvents = await getCalendarEventsForUser(
+            adminDb,
+            userId,
+            timeMin,
+            timeMax
+          );
+          return cachedEvents;
+        },
+      }),
+    ]).catch(() => {
+      // Silently handle errors - client will fetch on mount
     });
   }
 

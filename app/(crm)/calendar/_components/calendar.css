@@ -176,9 +176,9 @@
    Events - Base Styles
    ============================================ */
 .rbc-event {
-  background: var(--card-tag);
-  color: var(--card-tag-text);
-  border: none;
+  background: var(--calendar-event-bg);
+  color: var(--calendar-event-text);
+  border: 1px solid var(--calendar-event-border);
   border-radius: 0.125rem; /* rounded-sm */
   padding: 0.25rem 0.5rem;
   min-height: 1.5rem;
@@ -192,7 +192,7 @@
   align-items: center;
   box-sizing: border-box;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: opacity 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
   /* width is set per view type - don't set globally */
   /* contain is only for month view to prevent layout issues */
 }
@@ -202,17 +202,33 @@
   contain: none !important;
 }
 
-/* Linked Event Indicator - subtle border tint */
+/* Linked Event Indicator - more visible than base events */
 .rbc-event-linked {
-  border-left: 3px solid var(--card-tag);
+  background: var(--calendar-event-linked-bg);
+  border-color: var(--calendar-event-linked-border);
+  border-left-width: 3px;
   padding-left: calc(0.5rem - 3px); /* Adjust padding to account for border */
 }
 
-/* Touchpoint Event - distinct dashed border */
+/* Touchpoint Event - soft orange styling */
 .rbc-event-touchpoint {
-  border: 1px dashed var(--card-tag);
+  background: var(--calendar-event-touchpoint-bg);
+  border-color: var(--calendar-event-touchpoint-border);
+  border-style: dashed;
   border-left-width: 3px;
   padding-left: calc(0.5rem - 3px);
+}
+
+/* Block / Personal / Non-actionable events - muted styling */
+.rbc-event-block {
+  background: var(--calendar-event-block-bg);
+  border-color: var(--calendar-event-block-border);
+}
+
+/* Overdue / Needs-attention events - soft red styling */
+.rbc-event-overdue {
+  background: var(--calendar-event-overdue-bg);
+  border-color: var(--calendar-event-overdue-border);
 }
 
 /* Segment-based color coding */
@@ -249,14 +265,16 @@
 }
 
 .rbc-event:hover {
-  opacity: 0.9;
+  background: var(--calendar-event-hover-bg);
 }
 
 .rbc-event-selected,
 .rbc-event:focus,
 .rbc-event:active {
   overflow: hidden !important;
-  outline: 2px solid var(--card-tag);
+  background: var(--calendar-event-selected-bg);
+  border-color: var(--calendar-event-selected-border);
+  outline: 2px solid var(--calendar-event-selected-border);
   outline-offset: 2px;
 }
 
@@ -269,7 +287,7 @@
    Event Content
    ============================================ */
 .rbc-event-content {
-  color: var(--card-tag-text);
+  color: var(--calendar-event-text);
   overflow: hidden !important;
   white-space: normal !important;
   word-wrap: break-word;
@@ -400,7 +418,7 @@
 
 /* Add subtle hover effect */
 .rbc-month-view .rbc-event:hover {
-  opacity: 0.85;
+  background: var(--calendar-event-hover-bg);
   cursor: pointer;
 }
 

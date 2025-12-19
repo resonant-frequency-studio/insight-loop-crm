@@ -12,6 +12,14 @@ import { createMockContact, createMockUseQueryResult, createMockUseMutationResul
 // Mock hooks
 jest.mock("@/hooks/useContacts");
 jest.mock("@/hooks/useContactMutations");
+// Default date range: last 12 months
+const getDefaultDateRange = () => {
+  const end = new Date();
+  const start = new Date();
+  start.setMonth(start.getMonth() - 12);
+  return { start, end };
+};
+
 jest.mock("@/hooks/useFilterContacts", () => ({
   useFilterContacts: jest.fn(() => ({
     filteredContacts: [],
@@ -22,6 +30,8 @@ jest.mock("@/hooks/useFilterContacts", () => ({
     setSelectedSegment: jest.fn(),
     setSelectedTags: jest.fn(),
     setCustomFilter: jest.fn(),
+    setLastEmailDateRange: jest.fn(),
+    lastEmailDateRange: getDefaultDateRange(),
     selectedSegment: "",
     selectedTags: [],
     emailSearch: "",

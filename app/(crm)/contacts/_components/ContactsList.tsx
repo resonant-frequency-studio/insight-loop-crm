@@ -22,10 +22,15 @@ export default async function ContactsList() {
   }
 
   // Only prefetch if we have userId
+  // Don't block navigation - prefetch in background
   if (userId) {
-    await queryClient.prefetchQuery({
-      queryKey: ["contacts", userId],
-      queryFn: () => getAllContactsForUser(userId!),
+    Promise.allSettled([
+      queryClient.prefetchQuery({
+        queryKey: ["contacts", userId],
+        queryFn: () => getAllContactsForUser(userId!),
+      }),
+    ]).catch(() => {
+      // Silently handle errors - client will fetch on mount
     });
   }
 

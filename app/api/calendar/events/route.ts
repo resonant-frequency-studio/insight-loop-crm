@@ -48,13 +48,6 @@ export async function GET(req: Request) {
       );
     }
 
-    console.log('[Calendar API] Request:', {
-      userId,
-      timeMin: timeMin.toISOString(),
-      timeMax: timeMax.toISOString(),
-      forceRefresh,
-    });
-
     // Check cache first (unless forceRefresh is true)
     if (!forceRefresh) {
       const cachedEvents = await getCalendarEventsForUser(
@@ -63,8 +56,6 @@ export async function GET(req: Request) {
         timeMin,
         timeMax
       );
-
-      console.log('[Calendar API] Cached events:', cachedEvents.length);
 
       // Check if cache is fresh (events synced within last 5 minutes)
       if (cachedEvents.length > 0) {
@@ -84,15 +75,6 @@ export async function GET(req: Request) {
           .reduce((max, time) => Math.max(max, time), 0);
 
         const cacheAge = Date.now() - mostRecentSync;
-        const cacheAgeMinutes = Math.floor(cacheAge / (60 * 1000));
-        
-        // Log cached freshness info (no UI yet)
-        console.log('[Calendar API] Cache freshness:', {
-          eventCount: cachedEvents.length,
-          cacheAgeMinutes,
-          mostRecentSync: new Date(mostRecentSync).toISOString(),
-          isFresh: cacheAge < CACHE_TTL_MS,
-        });
         
         if (cacheAge < CACHE_TTL_MS) {
           return NextResponse.json({ events: cachedEvents });
@@ -101,7 +83,6 @@ export async function GET(req: Request) {
     }
 
     // Fetch from Google Calendar API
-    console.log('[Calendar API] Fetching from Google Calendar...');
     const accessToken = await getCalendarAccessToken(userId);
     const googleEvents = await getCalendarEventsFromGoogle(
       accessToken,
@@ -109,19 +90,30 @@ export async function GET(req: Request) {
       timeMax
     );
 
-    console.log('[Calendar API] Google Calendar returned:', {
-      itemsCount: googleEvents.items?.length || 0,
-      hasNextPage: !!googleEvents.nextPageToken,
-    });
+    // Fetch user's email from Google API
+    let userEmail: string | null = null;
+    try {
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (userInfoResponse.ok) {
+        const userInfo = await userInfoResponse.json();
+        userEmail = userInfo.email || null;
+      }
+    } catch (error) {
+      // Log but don't fail sync if user info fetch fails
+      reportException(error, {
+        context: "Fetching user email for calendar event matching",
+        tags: { component: "calendar-events-api", userId },
+      });
+    }
 
     // Fetch contacts for matching
     let contacts: Contact[] = [];
     try {
       contacts = await getAllContactsForUserUncached(userId);
-      console.log('[Calendar API] Fetched contacts for matching:', contacts.length);
     } catch (error) {
       // Log but don't fail sync if contacts fetch fails
-      console.error('[Calendar API] Failed to fetch contacts for matching:', error);
       reportException(error, {
         context: "Fetching contacts for calendar event matching",
         tags: { component: "calendar-events-api", userId },
@@ -135,10 +127,9 @@ export async function GET(req: Request) {
       googleEvents.items,
       contacts,
       timeMin, // Pass time range for cleanup
-      timeMax
+      timeMax,
+      userEmail // Pass user's email to exclude from matching
     );
-
-    console.log('[Calendar API] Sync result:', syncResult);
 
     // Get synced events from Firestore
     const syncedEvents = await getCalendarEventsForUser(
@@ -147,8 +138,6 @@ export async function GET(req: Request) {
       timeMin,
       timeMax
     );
-
-    console.log('[Calendar API] Returning events:', syncedEvents.length);
 
     return NextResponse.json({
       events: syncedEvents,

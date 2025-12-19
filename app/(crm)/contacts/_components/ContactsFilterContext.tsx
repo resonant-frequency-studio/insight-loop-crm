@@ -8,12 +8,18 @@ interface ContactWithId extends Contact {
   id: string;
 }
 
+interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
+
 interface ContactsFilterContextValue {
   // Filter state
   filteredContacts: ContactWithId[];
   totalContactsCount: number;
   isLoading?: boolean;
   hasActiveFilters: boolean;
+  lastEmailDateRange: DateRange;
   showArchived: boolean;
   setShowArchived: (value: boolean) => void;
   setSelectedSegment: (segment: string) => void;
@@ -23,6 +29,7 @@ interface ContactsFilterContextValue {
   setLastNameSearch: (lastName: string) => void;
   setCompanySearch: (company: string) => void;
   setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setLastEmailDateRange: (range: DateRange) => void;
   onClearFilters: () => void;
   
   // Pagination
@@ -58,6 +65,7 @@ interface ContactsFilterContextValue {
   onCompanySearchChange: (company: string) => void;
   onShowArchivedChange: (show: boolean) => void;
   onCustomFilterChange: (filter: "at-risk" | "warm" | null) => void;
+  onLastEmailDateRangeChange: (range: DateRange) => void;
 }
 
 const ContactsFilterContext = createContext<ContactsFilterContextValue | undefined>(undefined);

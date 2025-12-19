@@ -5,6 +5,7 @@ import { Contact } from "@/types/firestore";
 import { getInitials, getDisplayName, formatContactDate } from "@/util/contact-utils";
 import TouchpointStatusActions from "./TouchpointStatusActions";
 import QuickTag from "./QuickTag";
+import ContactMenuDropdown from "./ContactMenuDropdown";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -71,7 +72,7 @@ export default function ContactCard({
 
   return (
     <div
-      className={`rounded-sm p-4 transition-all duration-200 ${getVariantStyles()}`}
+      className={`rounded-sm p-4 transition-all duration-200 ${getVariantStyles()} relative`}
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
@@ -104,9 +105,16 @@ export default function ContactCard({
             {/* Contact Info */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-col xxl:flex-row items-start justify-between gap-2 mb-1">
-                <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors text-theme-darkest wrap-break-word`}>
-                  {getDisplayName(contact)}
-                </h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors text-theme-darkest wrap-break-word`}>
+                    {getDisplayName(contact)}
+                  </h3>
+                  {contact.company && (
+                    <p className="text-xs text-theme-dark mt-0.5 wrap-break-word">
+                      {contact.company}
+                    </p>
+                  )}
+                </div>
                 {/* Touchpoint Date Badges */}
                 {isTouchpointVariant && (
                   <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
@@ -194,7 +202,8 @@ export default function ContactCard({
                       {contact.tags.slice(0, 3).map((tag, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 text-xs font-medium border border-card-tag text-card-tag-text rounded-sm"
+                          className="px-2 py-1 text-xs font-medium border border-card-tag rounded-sm"
+                          style={{ color: 'var(--foreground)' }}
                         >
                           {tag}
                         </span>
@@ -235,56 +244,74 @@ export default function ContactCard({
             <div className="w-px bg-theme-light/30 my-2" />
           </div>
 
-          {/* Right Column - Segment and Tags (Desktop only) - Outside Link */}
-          <div className={`hidden xl:flex ${isTouchpointVariant ? 'items-center' : 'flex-col items-end'} gap-2 shrink-0 ml-auto`}>
-            {contact.segment && (
-              <span className={`px-2 py-1 text-xs font-medium text-theme-darkest rounded whitespace-nowrap border border-theme-dark`}>
-                {contact.segment}
-              </span>
-            )}
-            {/* Only show tags for non-touchpoint variants */}
+          {/* Right Column - Menu (Top Right), Segment and Tags (Bottom Right) - Desktop only - Outside Link */}
+          <div className="hidden xl:flex flex-col items-end gap-2 shrink-0 ml-auto">
+            {/* Menu Dropdown - Top Right (only for non-touchpoint variants) */}
             {!isTouchpointVariant && (
-              <div className="flex flex-wrap gap-1 justify-end items-center">
-                {/* Quick Tag component - appears directly left of existing tags */}
-                {userId && (
-                  <QuickTag
-                    contactId={contact.id}
-                    userId={userId}
-                    existingTags={contact.tags}
-                  />
-                )}
-                {/* Existing tags */}
-                {contact.tags && contact.tags.length > 0 && (
-                  <>
-                    {contact.tags.slice(0, 2).map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 text-xs font-medium border border-card-tag text-card-tag-text rounded-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {contact.tags.length > 2 && (
-                      <span className="px-2 py-1 text-xs font-medium text-theme-dark">
-                        +{contact.tags.length - 2}
-                      </span>
-                    )}
-                  </>
-                )}
+              <div className="z-10">
+                <ContactMenuDropdown contact={contact} />
               </div>
             )}
-          </div>
-
-          {/* Touchpoint Message - Outside Link to span full width */}
-          {isTouchpointVariant && contact.nextTouchpointMessage && (
-            <div className="mt-2 mb-3">
-              <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block wrap-break-word`}>
-                {contact.nextTouchpointMessage}
-              </p>
+            
+            {/* Segment and Tags - Bottom Right */}
+            <div className={`flex ${isTouchpointVariant ? 'items-center' : 'flex-col items-end'} gap-2`}>
+              {contact.segment && (
+                <span className={`px-2 py-1 text-xs font-medium text-theme-darkest rounded whitespace-nowrap border border-theme-dark`}>
+                  {contact.segment}
+                </span>
+              )}
+              {/* Only show tags for non-touchpoint variants */}
+              {!isTouchpointVariant && (
+                <div className="flex flex-wrap gap-1 justify-end items-center">
+                  {/* Quick Tag component - appears directly left of existing tags */}
+                  {userId && (
+                    <QuickTag
+                      contactId={contact.id}
+                      userId={userId}
+                      existingTags={contact.tags}
+                    />
+                  )}
+                  {/* Existing tags */}
+                  {contact.tags && contact.tags.length > 0 && (
+                    <>
+                      {contact.tags.slice(0, 2).map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 text-xs font-medium border border-card-tag rounded-sm"
+                          style={{ color: 'var(--foreground)' }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {contact.tags.length > 2 && (
+                        <span className="px-2 py-1 text-xs font-medium text-theme-dark">
+                          +{contact.tags.length - 2}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
+      
+      {/* Menu Dropdown - Top Right for Mobile (only for non-touchpoint variants) */}
+      {!isTouchpointVariant && (
+        <div className="xl:hidden absolute top-3 right-3 z-10">
+          <ContactMenuDropdown contact={contact} />
+        </div>
+      )}
+
+      {/* Touchpoint Message - Outside Link to span full width */}
+      {isTouchpointVariant && contact.nextTouchpointMessage && (
+        <div className="mt-2 mb-3">
+          <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block wrap-break-word`}>
+            {contact.nextTouchpointMessage}
+          </p>
+        </div>
+      )}
 
       {/* Touchpoint Status Actions */}
       {showTouchpointActions && (

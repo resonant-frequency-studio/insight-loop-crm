@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
 import { GoogleCalendarEvent } from "@/lib/calendar/google-calendar-client";
+import { reportException } from "@/lib/error-reporting";
 
 export interface ConflictData {
   conflict: true;
@@ -95,7 +96,10 @@ export default function ConflictResolutionModal({
       setResolution(null);
       setMergeData({});
     } catch (error) {
-      console.error("Failed to resolve conflict:", error);
+      reportException(error, {
+        context: "Resolving calendar event conflict",
+        tags: { component: "ConflictResolutionModal" },
+      });
       // Error handling is done by parent component
     } finally {
       setIsResolving(false);

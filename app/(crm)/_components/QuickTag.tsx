@@ -99,7 +99,16 @@ export default function QuickTag({
       <button
         type="button"
         onClick={handlePlusClick}
-        className="cursor-pointer px-2 py-1 text-xs font-medium border border-card-tag text-card-tag-text rounded-sm hover:bg-card-tag/10 transition-colors flex items-center justify-center shrink-0"
+        className="cursor-pointer px-2 py-1 text-xs font-medium border border-card-tag rounded-sm transition-colors flex items-center justify-center shrink-0"
+        style={{
+          color: 'var(--foreground)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
         aria-label="Add tag"
         title="Add tag"
       >
@@ -187,7 +196,18 @@ export default function QuickTag({
           type="button"
           onClick={handleCancel}
           disabled={updateContact.isPending}
-          className="cursor-pointer px-2 py-1 text-xs font-medium border border-gray-300 text-gray-200 rounded-sm hover:bg-gray-50/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="cursor-pointer px-2 py-1 text-xs font-medium border border-theme-light rounded-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{
+            color: 'var(--foreground)',
+          }}
+          onMouseEnter={(e) => {
+            if (!updateContact.isPending) {
+              e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
           aria-label="Cancel"
         >
           <svg

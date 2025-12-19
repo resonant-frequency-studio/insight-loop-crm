@@ -173,7 +173,10 @@ export default function NextTouchpointCard({
         router.push(`/calendar?eventId=${data.event.eventId}`);
       }
     } catch (error) {
-      console.error("Failed to convert touchpoint to meeting:", error);
+      reportException(error, {
+        context: "Converting touchpoint to calendar event",
+        tags: { component: "NextTouchpointCard", contactId },
+      });
       alert(error instanceof Error ? error.message : "Failed to convert touchpoint to meeting");
     } finally {
       setIsConvertingToEvent(false);

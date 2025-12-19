@@ -1,9 +1,11 @@
 import { Firestore, Timestamp, Query } from "firebase-admin/firestore";
 import { TimelineItem, CalendarEvent, ActionItem, Thread, Contact } from "@/types/firestore";
+import { DEFAULT_TIMELINE_DAYS } from "./constants";
 
 interface GetContactTimelineOptions {
   limit?: number;
   before?: Date; // Cursor for pagination
+  days?: number; // Number of days to look back (default: DEFAULT_TIMELINE_DAYS)
 }
 
 /**
@@ -15,8 +17,12 @@ export async function getContactTimeline(
   contactId: string,
   options: GetContactTimelineOptions = {}
 ): Promise<TimelineItem[]> {
-  const { limit = 50, before } = options;
+  const { limit = 50, before, days = DEFAULT_TIMELINE_DAYS } = options;
   const timelineItems: TimelineItem[] = [];
+  
+  // Calculate the cutoff date based on days parameter
+  const now = new Date();
+  const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
   // 1. Fetch calendar events for this contact
   const eventsCollection = db
@@ -44,6 +50,9 @@ export async function getContactTimeline(
       : null;
 
     if (!startTime) continue;
+    
+    // Filter by date range: only include events within the specified days
+    if (startTime.toDate() < cutoffDate) continue;
 
     timelineItems.push({
       id: doc.id,
@@ -78,14 +87,17 @@ export async function getContactTimeline(
         : null;
 
       if (touchpointDate && (!before || touchpointDate.toDate() < before)) {
-        timelineItems.push({
-          id: `touchpoint-${contactId}`,
-          type: "touchpoint",
-          timestamp: touchpointDate,
-          title: "Next Touchpoint",
-          description: contact.nextTouchpointMessage,
-          touchpointId: contactId,
-        });
+        // Filter by date range: only include touchpoints within the specified days
+        if (touchpointDate.toDate() >= cutoffDate) {
+          timelineItems.push({
+            id: `touchpoint-${contactId}`,
+            type: "touchpoint",
+            timestamp: touchpointDate,
+            title: "Next Touchpoint",
+            description: contact.nextTouchpointMessage,
+            touchpointId: contactId,
+          });
+        }
       }
     }
   }
@@ -116,6 +128,9 @@ export async function getContactTimeline(
       : null;
 
     if (!createdAt) continue;
+    
+    // Filter by date range: only include action items within the specified days
+    if (createdAt.toDate() < cutoffDate) continue;
 
     timelineItems.push({
       id: doc.id,
@@ -158,6 +173,9 @@ export async function getContactTimeline(
         : null;
 
       if (!lastMessageAt) continue;
+      
+      // Filter by date range: only include emails within the specified days
+      if (lastMessageAt.toDate() < cutoffDate) continue;
 
       timelineItems.push({
         id: doc.id,
@@ -192,6 +210,9 @@ export async function getContactTimeline(
 
         if (!lastMessageAt) continue;
         if (before && lastMessageAt.toDate() >= before) continue;
+        
+        // Filter by date range: only include emails within the specified days
+        if (lastMessageAt.toDate() < cutoffDate) continue;
 
         timelineItems.push({
           id: doc.id,
@@ -203,8 +224,11 @@ export async function getContactTimeline(
         });
       }
     } catch (fallbackError) {
-      // If both queries fail, log and continue without email items
-      console.error("Failed to fetch email threads for timeline:", fallbackError);
+      // If both queries fail, report and continue without email items
+      reportException(fallbackError, {
+        context: "Fetching email threads for contact timeline (fallback query)",
+        tags: { component: "get-contact-timeline", contactId },
+      });
     }
   }
 

@@ -22,9 +22,7 @@ export async function POST(req: Request) {
   let userId: string = "";
 
   try {
-    console.log('[Calendar Sync API] Starting sync...');
     userId = await getUserId();
-    console.log('[Calendar Sync API] User authenticated:', userId);
     
     // Get range parameter from query string (default: 60 days)
     const url = new URL(req.url);
@@ -68,14 +66,30 @@ export async function POST(req: Request) {
       timeMax
     );
 
+    // Fetch user's email from Google API
+    let userEmail: string | null = null;
+    try {
+      const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (userInfoResponse.ok) {
+        const userInfo = await userInfoResponse.json();
+        userEmail = userInfo.email || null;
+      }
+    } catch (error) {
+      // Log but don't fail sync if user info fetch fails
+      reportException(error, {
+        context: "Fetching user email for calendar event matching",
+        tags: { component: "calendar-sync-api", userId },
+      });
+    }
+
     // Fetch contacts for matching
     let contacts: Contact[] = [];
     try {
       contacts = await getAllContactsForUserUncached(userId);
-      console.log('[Calendar Sync API] Fetched contacts for matching:', contacts.length);
     } catch (error) {
       // Log but don't fail sync if contacts fetch fails
-      console.error('[Calendar Sync API] Failed to fetch contacts for matching:', error);
       reportException(error, {
         context: "Fetching contacts for calendar event matching",
         tags: { component: "calendar-sync-api", userId },
@@ -89,7 +103,8 @@ export async function POST(req: Request) {
       googleEvents.items,
       contacts,
       timeMin, // Pass time range for cleanup
-      timeMax
+      timeMax,
+      userEmail // Pass user's email to exclude from matching
     );
 
     // Update sync job as complete
@@ -115,8 +130,6 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    
-    console.error('[Calendar Sync API] Error:', errorMessage);
     
     reportException(err, {
       context: "Calendar sync error",

@@ -32,6 +32,14 @@ describe("matchEventToContact", () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
+    {
+      contactId: "contact4",
+      primaryEmail: "sahana.murthy@example.com",
+      firstName: "Sahana",
+      lastName: "Murthy",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
   ];
 
   describe("Email matching (high confidence)", () => {
@@ -81,10 +89,33 @@ describe("matchEventToContact", () => {
       expect(result.method).toBe("email");
     });
 
-    it("should return null contactId if no email match", () => {
+    it("should exclude user's own email from matching", () => {
       const event: CalendarEvent = {
         eventId: "event3",
         googleEventId: "google3",
+        userId: "user1",
+        title: "Meeting",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        attendees: [
+          { email: "john.doe@example.com", displayName: "John Doe" },
+        ],
+        lastSyncedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // User's email is john.doe@example.com, so it should not match
+      const result = matchEventToContact(event, mockContacts, "john.doe@example.com");
+
+      expect(result.contactId).toBeNull();
+      expect(result.confidence).toBe("low");
+    });
+
+    it("should return null contactId if no email match", () => {
+      const event: CalendarEvent = {
+        eventId: "event4",
+        googleEventId: "google4",
         userId: "user1",
         title: "Meeting",
         startTime: new Date().toISOString(),
@@ -99,43 +130,18 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      // Should not be a high confidence email match
-      expect(result.confidence).not.toBe("high");
-      if (result.method === "email") {
-        expect(result.confidence).not.toBe("high");
-      }
+      expect(result.contactId).toBeNull();
+      expect(result.confidence).toBe("low");
     });
   });
 
-  describe("Name matching (medium confidence)", () => {
-    it("should match event by name in title", () => {
-      const event: CalendarEvent = {
-        eventId: "event4",
-        googleEventId: "google4",
-        userId: "user1",
-        title: "Meeting with John Doe",
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        attendees: [],
-        lastSyncedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const result = matchEventToContact(event, mockContacts);
-
-      expect(result.contactId).toBe("contact1");
-      expect(result.confidence).toBe("medium");
-      expect(result.method).toBe("name");
-    });
-
-    it("should match by name in description", () => {
+  describe("Last name matching (medium confidence - suggestions only)", () => {
+    it("should suggest contacts with exact last name match", () => {
       const event: CalendarEvent = {
         eventId: "event5",
         googleEventId: "google5",
         userId: "user1",
-        title: "Team Meeting",
-        description: "Call with Jane Smith to discuss project",
+        title: "Sahana Murthy and Charlene Wilson",
         startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
         attendees: [],
@@ -146,12 +152,19 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      expect(result.contactId).toBe("contact2");
-      expect(result.confidence).toBe("medium");
-      expect(result.method).toBe("name");
+      // Should not auto-link, but should have suggestions
+      expect(result.contactId).toBeNull();
+      expect(result.suggestions).toBeDefined();
+      expect(result.suggestions?.length).toBeGreaterThan(0);
+      
+      // Should suggest contact4 (Sahana Murthy) with medium confidence
+      const murthySuggestion = result.suggestions?.find(s => s.contactId === "contact4");
+      expect(murthySuggestion).toBeDefined();
+      expect(murthySuggestion?.confidence).toBe("medium");
+      expect(murthySuggestion?.method).toBe("lastname");
     });
 
-    it("should handle fuzzy name matching with high similarity", () => {
+    it("should not match with fuzzy name similarity", () => {
       const event: CalendarEvent = {
         eventId: "event6",
         googleEventId: "google6",
@@ -167,25 +180,27 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      // Should still match due to high similarity
-      expect(result.contactId).toBe("contact1");
-      expect(result.confidence).toBe("medium");
-      expect(result.method).toBe("name");
+      // Should not match because "Jon" is not exactly "John"
+      // But "Doe" should match as last name suggestion
+      expect(result.contactId).toBeNull();
+      if (result.suggestions) {
+        const doeSuggestion = result.suggestions.find(s => s.contactId === "contact1");
+        expect(doeSuggestion?.confidence).toBe("medium");
+        expect(doeSuggestion?.method).toBe("lastname");
+      }
     });
   });
 
-  describe("Domain matching (low confidence)", () => {
-    it("should match by email domain", () => {
+  describe("First name matching (low confidence - suggestions only)", () => {
+    it("should suggest contacts with exact first name match", () => {
       const event: CalendarEvent = {
         eventId: "event7",
         googleEventId: "google7",
         userId: "user1",
-        title: "Company Meeting",
+        title: "Sahana Murthy and Charlene Wilson",
         startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
-        attendees: [
-          { email: "someone@company.com", displayName: "Someone" },
-        ],
+        attendees: [],
         lastSyncedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -193,44 +208,25 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      // Should match first contact with matching domain (contact2 or contact3)
-      expect(result.contactId).toBeTruthy();
-      expect(["contact2", "contact3"]).toContain(result.contactId);
-      expect(result.confidence).toBe("low");
-      expect(result.method).toBe("domain");
-    });
-
-    it("should return multiple domain matches as suggestions", () => {
-      const event: CalendarEvent = {
-        eventId: "event8",
-        googleEventId: "google8",
-        userId: "user1",
-        title: "Company Meeting",
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        attendees: [
-          { email: "someone@company.com", displayName: "Someone" },
-        ],
-        lastSyncedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const result = matchEventToContact(event, mockContacts);
-
-      // Should have suggestions for other domain matches
-      if (result.suggestions && result.suggestions.length > 0) {
-        expect(result.suggestions.length).toBeGreaterThan(0);
-        expect(result.suggestions[0].method).toBe("domain");
-      }
+      // Should not auto-link, but should have suggestions
+      expect(result.contactId).toBeNull();
+      expect(result.suggestions).toBeDefined();
+      
+      // Should suggest contact4 (Sahana Murthy) with low confidence for first name
+      const sahanaSuggestion = result.suggestions?.find(
+        s => s.contactId === "contact4" && s.method === "firstname"
+      );
+      expect(sahanaSuggestion).toBeDefined();
+      expect(sahanaSuggestion?.confidence).toBe("low");
+      expect(sahanaSuggestion?.method).toBe("firstname");
     });
   });
 
   describe("No match scenarios", () => {
     it("should return null contactId when no matches found", () => {
       const event: CalendarEvent = {
-        eventId: "event9",
-        googleEventId: "google9",
+        eventId: "event8",
+        googleEventId: "google8",
         userId: "user1",
         title: "Random Meeting",
         startTime: new Date().toISOString(),
@@ -247,12 +243,13 @@ describe("matchEventToContact", () => {
 
       expect(result.contactId).toBeNull();
       expect(result.confidence).toBe("low");
+      expect(result.suggestions).toBeUndefined();
     });
 
     it("should handle events with no attendees", () => {
       const event: CalendarEvent = {
-        eventId: "event10",
-        googleEventId: "google10",
+        eventId: "event9",
+        googleEventId: "google9",
         userId: "user1",
         title: "Solo Meeting",
         startTime: new Date().toISOString(),
@@ -268,19 +265,40 @@ describe("matchEventToContact", () => {
       expect(result.contactId).toBeNull();
       expect(result.confidence).toBe("low");
     });
+
+    it("should handle events with title that doesn't contain names", () => {
+      const event: CalendarEvent = {
+        eventId: "event10",
+        googleEventId: "google10",
+        userId: "user1",
+        title: "Team Standup",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        attendees: [],
+        lastSyncedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const result = matchEventToContact(event, mockContacts);
+
+      expect(result.contactId).toBeNull();
+      expect(result.confidence).toBe("low");
+      expect(result.suggestions).toBeUndefined();
+    });
   });
 
   describe("Priority order", () => {
-    it("should prioritize email match over name match", () => {
+    it("should prioritize email match over name suggestions", () => {
       const event: CalendarEvent = {
         eventId: "event11",
         googleEventId: "google11",
         userId: "user1",
-        title: "Meeting with Jane Smith", // Name suggests contact2
+        title: "Sahana Murthy Meeting", // Name suggests contact4
         startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
         attendees: [
-          { email: "john.doe@example.com", displayName: "John Doe" }, // Email matches contact1
+          { email: "sahana.murthy@example.com", displayName: "Sahana Murthy" }, // Email matches contact4
         ],
         lastSyncedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
@@ -289,23 +307,21 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      // Should match by email (contact1), not by name (contact2)
-      expect(result.contactId).toBe("contact1");
+      // Should match by email (contact4), not just suggest by name
+      expect(result.contactId).toBe("contact4");
       expect(result.confidence).toBe("high");
       expect(result.method).toBe("email");
     });
 
-    it("should prioritize name match over domain match", () => {
+    it("should provide both last name and first name suggestions when available", () => {
       const event: CalendarEvent = {
         eventId: "event12",
         googleEventId: "google12",
         userId: "user1",
-        title: "Meeting with Jane Smith", // Name matches contact2
+        title: "Sahana Murthy",
         startTime: new Date().toISOString(),
         endTime: new Date().toISOString(),
-        attendees: [
-          { email: "someone@company.com", displayName: "Someone" }, // Domain matches contact2 or contact3
-        ],
+        attendees: [],
         lastSyncedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -313,11 +329,19 @@ describe("matchEventToContact", () => {
 
       const result = matchEventToContact(event, mockContacts);
 
-      // Should match by name (contact2), not by domain
-      expect(result.contactId).toBe("contact2");
-      expect(result.confidence).toBe("medium");
-      expect(result.method).toBe("name");
+      // Should not auto-link
+      expect(result.contactId).toBeNull();
+      
+      // Should have suggestions for both last name (medium) and first name (low)
+      expect(result.suggestions).toBeDefined();
+      const murthySuggestions = result.suggestions?.filter(s => s.contactId === "contact4");
+      expect(murthySuggestions?.length).toBe(2);
+      
+      const lastNameSuggestion = murthySuggestions?.find(s => s.method === "lastname");
+      const firstNameSuggestion = murthySuggestions?.find(s => s.method === "firstname");
+      
+      expect(lastNameSuggestion?.confidence).toBe("medium");
+      expect(firstNameSuggestion?.confidence).toBe("low");
     });
   });
 });
-

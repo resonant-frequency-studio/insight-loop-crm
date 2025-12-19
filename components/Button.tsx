@@ -26,11 +26,11 @@ export interface ButtonProps
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-blue-600 border-2 border-blue-600 text-[#eeeeec] hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400",
+    "bg-btn-primary-bg border-2 border-btn-primary-border text-btn-primary-fg hover:bg-btn-primary-bg-hover focus:ring-btn-primary-focus-ring disabled:bg-btn-primary-bg-disabled disabled:text-btn-primary-fg-disabled",
   danger:
     "bg-red-600 text-[#eeeeec] hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400",
   secondary:
-    "bg-emerald-600 text-white border-2 border-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500 disabled:bg-emerald-400",
+    "bg-btn-secondary-bg text-btn-secondary-fg border-2 border-btn-secondary-border hover:bg-btn-secondary-bg-hover focus:ring-btn-secondary-focus-ring disabled:bg-btn-secondary-bg-disabled disabled:text-btn-secondary-fg-disabled",
   outline:
     "bg-transparent border-2 border-theme-dark text-theme-darker hover:bg-theme-light focus:ring-gray-500 disabled:border-gray-300 disabled:text-gray-400",
   link: "bg-transparent text-blue-600 hover:text-blue-700 underline focus:ring-blue-500 disabled:text-blue-400",

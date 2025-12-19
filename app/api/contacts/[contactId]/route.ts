@@ -83,6 +83,37 @@ export async function PATCH(
         updatedAt: FieldValue.serverTimestamp(),
       });
 
+    // Invalidate meeting insights for all calendar events linked to this contact
+    try {
+      const eventsCollection = adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("calendarEvents");
+      
+      // Find all events linked to this contact
+      const linkedEventsSnapshot = await eventsCollection
+        .where("matchedContactId", "==", contactId)
+        .get();
+
+      if (!linkedEventsSnapshot.empty) {
+        // Use batch write for efficiency
+        const batch = adminDb.batch();
+        linkedEventsSnapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, {
+            meetingInsights: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+    } catch (invalidationError) {
+      // Log but don't fail the contact update if insight invalidation fails
+      reportException(invalidationError, {
+        context: "Invalidating meeting insights for linked calendar events",
+        tags: { component: "contacts-api", contactId },
+      });
+    }
+
     // Fetch the updated contact to return in response
     const updatedDoc = await adminDb
       .collection("users")

@@ -30,25 +30,17 @@ export function useCalendarEvents(
       });
 
       const url = `/api/calendar/events?${params.toString()}`;
-      console.log('[useCalendarEvents] Fetching:', url);
       
       const response = await fetch(url, {
         credentials: 'include', // Include session cookie
       });
       
-      console.log('[useCalendarEvents] Response status:', response.status);
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[useCalendarEvents] Error response:', errorData);
         throw new Error(errorData.error || "Failed to fetch calendar events");
       }
 
       const data = await response.json() as CalendarEventsResponse;
-      console.log('[useCalendarEvents] Success, events count:', data.events?.length || 0);
-      if (data.syncStats) {
-        console.log('[useCalendarEvents] Sync stats:', data.syncStats);
-      }
       return data.events;
     },
     enabled: !!userId && (options?.enabled !== false),
@@ -133,26 +125,46 @@ export function useUnlinkEventFromContact() {
       const data = await response.json();
       return data.event as CalendarEvent;
     },
-    onSuccess: (updatedEvent, eventId) => {
-      // Invalidate all calendar events queries to refetch with updated data
-      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
-      
-      // Optimistically update the specific event in cache if it exists
-      queryClient.setQueriesData(
+    onMutate: async (eventId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["calendar-events"] });
+
+      // Snapshot the previous value
+      const previousEvents = queryClient.getQueriesData<CalendarEvent[]>({
+        queryKey: ["calendar-events"],
+      });
+
+      // Optimistically update the event to remove matchedContactId
+      queryClient.setQueriesData<CalendarEvent[]>(
         { queryKey: ["calendar-events"] },
-        (oldData: CalendarEvent[] | undefined) => {
+        (oldData) => {
           if (!oldData) return oldData;
           return oldData.map((event) =>
-            event.eventId === eventId ? updatedEvent : event
+            event.eventId === eventId
+              ? { ...event, matchedContactId: null }
+              : event
           );
         }
       );
+
+      // Return context with snapshot for rollback
+      return { previousEvents };
     },
-    onError: (error) => {
+    onError: (error, eventId, context) => {
+      // Rollback on error
+      if (context?.previousEvents) {
+        context.previousEvents.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
       reportException(error, {
         context: "Unlinking calendar event from contact",
         tags: { component: "useUnlinkEventFromContact" },
       });
+    },
+    onSuccess: () => {
+      // Invalidate all calendar events queries to refetch with updated data
+      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
     },
   });
 }
@@ -171,8 +183,9 @@ export interface EventContext {
  */
 export function useGenerateEventContext() {
   return useMutation({
-    mutationFn: async (eventId: string): Promise<EventContext> => {
-      const response = await fetch(`/api/calendar/events/${eventId}/ai-context`, {
+    mutationFn: async (input: { eventId: string; regenerate?: boolean }): Promise<EventContext> => {
+      const url = `/api/calendar/events/${input.eventId}/ai-context${input.regenerate ? '?regenerate=true' : ''}`;
+      const response = await fetch(url, {
         method: "GET",
         credentials: "include",
       });

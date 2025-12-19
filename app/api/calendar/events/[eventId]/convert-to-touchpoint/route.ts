@@ -4,6 +4,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { reportException } from "@/lib/error-reporting";
 import { toUserFriendlyError } from "@/lib/error-utils";
 import { convertEventToTouchpoint } from "@/lib/calendar/event-to-touchpoint";
+import { FieldValue } from "firebase-admin/firestore";
 
 /**
  * POST /api/calendar/events/[eventId]/convert-to-touchpoint
@@ -68,6 +69,48 @@ export async function POST(
     }
 
     const contact = contactDoc.data();
+
+    // Invalidate meeting insights for the converted event and all other events linked to this contact
+    // (new timeline item was created)
+    try {
+      const eventsCollection = adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("calendarEvents");
+      
+      // Invalidate the converted event
+      await eventsCollection.doc(eventId).update({
+        meetingInsights: FieldValue.delete(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+
+      // Invalidate all other events linked to this contact
+      const linkedEventsSnapshot = await eventsCollection
+        .where("matchedContactId", "==", contactId)
+        .get();
+
+      if (!linkedEventsSnapshot.empty) {
+        const batch = adminDb.batch();
+        linkedEventsSnapshot.docs.forEach((doc) => {
+          // Skip the event we already updated
+          if (doc.id !== eventId) {
+            batch.update(doc.ref, {
+              meetingInsights: FieldValue.delete(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          }
+        });
+        if (linkedEventsSnapshot.docs.some((doc) => doc.id !== eventId)) {
+          await batch.commit();
+        }
+      }
+    } catch (invalidationError) {
+      // Log but don't fail if insight invalidation fails
+      reportException(invalidationError, {
+        context: "Invalidating meeting insights after event conversion",
+        tags: { component: "event-convert-api", eventId, contactId },
+      });
+    }
 
     return NextResponse.json({
       ok: true,

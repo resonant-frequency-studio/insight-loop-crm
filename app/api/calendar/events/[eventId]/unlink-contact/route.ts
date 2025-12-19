@@ -39,6 +39,7 @@ export async function POST(
       matchedContactId: null,
       matchOverriddenByUser: true,
       contactSnapshot: null,
+      meetingInsights: FieldValue.delete(), // Invalidate insights since contact link changed
       updatedAt: FieldValue.serverTimestamp(),
     });
 

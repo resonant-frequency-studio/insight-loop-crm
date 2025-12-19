@@ -4,6 +4,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import { reportException } from "@/lib/error-reporting";
 import { toUserFriendlyError } from "@/lib/error-utils";
 import { convertTouchpointToEvent } from "@/lib/calendar/touchpoint-to-event";
+import { FieldValue } from "firebase-admin/firestore";
 
 /**
  * POST /api/touchpoints/convert-to-event
@@ -127,6 +128,36 @@ export async function POST(req: Request) {
     }
 
     const event = eventDoc.data();
+
+    // Invalidate meeting insights for all calendar events linked to this contact
+    // (new timeline item was created)
+    try {
+      const eventsCollection = adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("calendarEvents");
+      
+      const linkedEventsSnapshot = await eventsCollection
+        .where("matchedContactId", "==", contactId)
+        .get();
+
+      if (!linkedEventsSnapshot.empty) {
+        const batch = adminDb.batch();
+        linkedEventsSnapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, {
+            meetingInsights: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+    } catch (invalidationError) {
+      // Log but don't fail if insight invalidation fails
+      reportException(invalidationError, {
+        context: "Invalidating meeting insights after touchpoint conversion",
+        tags: { component: "touchpoint-convert-api", contactId },
+      });
+    }
 
     return NextResponse.json({
       ok: true,

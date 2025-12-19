@@ -10,6 +10,7 @@ import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import Select from "@/components/Select";
 import Modal from "@/components/Modal";
+import { reportException } from "@/lib/error-reporting";
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -320,7 +321,10 @@ export default function CreateEventModal({
                     // Redirect to OAuth flow with force re-auth
                     window.location.href = "/api/oauth/gmail/start?force=true";
                   } catch (error) {
-                    console.error("Failed to disconnect:", error);
+                    reportException(error, {
+                      context: "Disconnecting Google account for re-authentication",
+                      tags: { component: "CreateEventModal" },
+                    });
                   }
                 }}
               >

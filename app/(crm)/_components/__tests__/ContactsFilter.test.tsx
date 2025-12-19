@@ -47,6 +47,14 @@ describe("ContactsFilter", () => {
     onClearFilters: jest.fn(),
   };
 
+  // Default date range: last 12 months
+  const getDefaultDateRange = () => {
+    const end = new Date();
+    const start = new Date();
+    start.setMonth(start.getMonth() - 12);
+    return { start, end };
+  };
+
   const createMockContextValue = (overrides = {}) => ({
     filteredContacts: mockContacts,
     totalContactsCount: mockContacts.length,
@@ -60,6 +68,9 @@ describe("ContactsFilter", () => {
     setLastNameSearch: jest.fn(),
     setCompanySearch: jest.fn(),
     setCustomFilter: jest.fn(),
+    lastEmailDateRange: getDefaultDateRange(),
+    setLastEmailDateRange: jest.fn(),
+    onLastEmailDateRangeChange: jest.fn(),
     onClearFilters: mockHandlers.onClearFilters,
     currentPage: 1,
     setCurrentPage: jest.fn(),

@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
 import { TimelineItem, TimelineItemType } from "@/types/firestore";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
+import { DEFAULT_TIMELINE_DAYS, MAX_TIMELINE_DAYS } from "@/lib/timeline/constants";
+import { parseDescription, formatLinkPath } from "@/lib/timeline/sanitize-description";
+import { groupMeetingsIntoSeries, MeetingSeries } from "@/lib/timeline/group-meetings";
 
 interface ContactTimelineCardProps {
   contactId: string;
@@ -15,18 +18,80 @@ interface ContactTimelineCardProps {
 
 type TimelineFilter = "all" | "calendar_event" | "touchpoint" | "action_item" | "email";
 
+// Memoized component for description rendering to avoid re-parsing on every render
+const DescriptionContent = React.memo(({ description }: { description: string }) => {
+  const parsed = useMemo(() => parseDescription(description), [description]);
+  const hasLinks = parsed.links.length > 0;
+  
+  // Reconstruct text without link placeholders
+  const displayText = useMemo(() => {
+    let text = parsed.text;
+    parsed.links.forEach((_, idx) => {
+      text = text.replace(`[LINK_${idx}]`, "");
+    });
+    return text.trim();
+  }, [parsed.text, parsed.links]);
+  
+  return (
+    <div className="mb-2">
+      {displayText && (
+        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+          {displayText}
+        </p>
+      )}
+      {hasLinks && (
+        <div className="space-y-1 mt-2">
+          <p className="text-xs font-medium text-gray-500 mb-1">Documents:</p>
+          {parsed.links.map((link, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-xs">
+              <span className="text-gray-600 truncate flex-1">
+                {link.hostname}
+                {link.path && ` ${formatLinkPath(link.path, 40)}`}
+              </span>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(link.url);
+                  } catch (err) {
+                    // Silently fail - clipboard errors are usually user permission issues
+                  }
+                }}
+                className="px-2 py-0.5 text-gray-600 hover:bg-gray-100 rounded"
+                title="Copy link"
+              >
+                Copy
+              </button>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-0.5 text-blue-600 hover:bg-blue-50 rounded"
+              >
+                Open
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+DescriptionContent.displayName = "DescriptionContent";
+
 export default function ContactTimelineCard({
   contactId,
   userId,
 }: ContactTimelineCardProps) {
   const [filter, setFilter] = useState<TimelineFilter>("all");
+  const [days, setDays] = useState<number>(DEFAULT_TIMELINE_DAYS);
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: timelineItems = [], isLoading } = useQuery({
-    queryKey: ["contact-timeline", userId, contactId],
+    queryKey: ["contact-timeline", userId, contactId, days],
     queryFn: async () => {
-      const response = await fetch(`/api/contacts/${encodeURIComponent(contactId)}/timeline?limit=50`);
+      const response = await fetch(`/api/contacts/${encodeURIComponent(contactId)}/timeline?limit=30&days=${days}`);
       if (!response.ok) {
         throw new Error("Failed to fetch timeline");
       }
@@ -36,10 +101,24 @@ export default function ContactTimelineCard({
     staleTime: 30 * 1000, // 30 seconds
   });
 
-  // Filter timeline items based on selected filter
-  const filteredItems = filter === "all"
-    ? timelineItems
-    : timelineItems.filter((item) => item.type === filter);
+  // Memoize grouped items - only recompute when timelineItems changes
+  const groupedItems = useMemo(() => {
+    return groupMeetingsIntoSeries(timelineItems);
+  }, [timelineItems]);
+  
+  // Memoize filtered items - only recompute when groupedItems or filter changes
+  const filteredItems = useMemo(() => {
+    if (filter === "all") return groupedItems;
+    
+    return groupedItems.filter((item) => {
+      if ("items" in item) {
+        // It's a MeetingSeries - show if filter is "calendar_event"
+        return filter === "calendar_event";
+      }
+      // It's a TimelineItem
+      return item.type === filter;
+    });
+  }, [groupedItems, filter]);
 
   const getItemIcon = (type: TimelineItemType) => {
     switch (type) {
@@ -142,8 +221,7 @@ export default function ContactTimelineCard({
       case "view-email":
         if (item.threadId) {
           // Open email thread (if we have a route for this)
-          // For now, just log
-          console.log("View email thread:", item.threadId);
+          // TODO: Implement email thread view
         }
         break;
       case "complete-action":
@@ -174,10 +252,17 @@ export default function ContactTimelineCard({
     );
   }
 
+  const handleLoadOlder = () => {
+    // Increment by 15 days up to MAX_TIMELINE_DAYS
+    const newDays = Math.min(days + 15, MAX_TIMELINE_DAYS);
+    setDays(newDays);
+  };
+
   return (
     <Card padding="md">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-theme-darkest">Timeline</h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-theme-darkest mb-3">Timeline</h2>
+        {/* Filter buttons */}
         <div className="flex gap-2">
           {(["all", "calendar_event", "touchpoint", "action_item", "email"] as TimelineFilter[]).map((filterType) => (
             <button
@@ -194,9 +279,32 @@ export default function ContactTimelineCard({
           ))}
         </div>
       </div>
-      <p className="text-sm text-theme-dark mb-6">
-        View all interactions, meetings, touchpoints, and action items in chronological order.
-      </p>
+      <div className="mb-6">
+        <p className="text-sm text-theme-dark mb-3">
+          View all interactions, meetings, touchpoints, and action items in chronological order.
+        </p>
+        <div className="flex items-center justify-between">
+          {/* Date range selector */}
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="px-2 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value={15}>Last 15 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={45}>Last 45 days</option>
+            <option value={60}>Last 60 days</option>
+          </select>
+          {days < MAX_TIMELINE_DAYS && (
+            <button
+              onClick={handleLoadOlder}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Load older activity
+            </button>
+          )}
+        </div>
+      </div>
 
       {filteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
@@ -205,6 +313,107 @@ export default function ContactTimelineCard({
       ) : (
         <div className="space-y-4">
           {filteredItems.map((item) => {
+            // Check if this is a MeetingSeries
+            if ("items" in item) {
+              const series = item as MeetingSeries;
+              const lastDate = series.lastOccurrenceDate;
+              const lastDateStr = format(lastDate, "MMM d");
+              
+              // Determine frequency based on occurrence count and time span
+              let frequency = "Recurring";
+              if (series.items.length >= 2) {
+                const dates = series.items.map((i) => {
+                  const ts = i.timestamp;
+                  if (ts instanceof Date) return ts;
+                  if (typeof ts === "string") return new Date(ts);
+                  if (ts && typeof ts === "object" && "toDate" in ts) {
+                    return (ts as { toDate: () => Date }).toDate();
+                  }
+                  if (ts && typeof ts === "object" && "seconds" in ts) {
+                    return new Date((ts as { seconds: number }).seconds * 1000);
+                  }
+                  return new Date();
+                }).sort((a, b) => a.getTime() - b.getTime());
+                
+                if (dates.length >= 2) {
+                  const timeSpan = dates[dates.length - 1].getTime() - dates[0].getTime();
+                  const daysSpan = timeSpan / (1000 * 60 * 60 * 24);
+                  const avgDaysBetween = daysSpan / (dates.length - 1);
+                  
+                  if (avgDaysBetween >= 6 && avgDaysBetween <= 8) {
+                    frequency = "Weekly";
+                  } else if (avgDaysBetween >= 13 && avgDaysBetween <= 15) {
+                    frequency = "Bi-weekly";
+                  } else if (avgDaysBetween >= 28 && avgDaysBetween <= 31) {
+                    frequency = "Monthly";
+                  }
+                }
+              }
+              
+              // Get the most recent event
+              const mostRecentEvent = series.items[0];
+              
+              return (
+                <div
+                  key={series.seriesId}
+                  className="flex gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    {getItemIcon("calendar_event")}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-medium text-gray-500 uppercase">
+                            Meeting
+                          </span>
+                          <span className="text-xs text-gray-400">·</span>
+                          <span className="text-sm font-semibold text-theme-darkest">
+                            {series.title}
+                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                            Recurring
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="inline-block mr-1">↳</span>
+                          <span>{series.occurrenceCount} occurrences</span>
+                          {frequency !== "Recurring" && (
+                            <>
+                              <span className="mx-1">·</span>
+                              <span>{frequency}</span>
+                            </>
+                          )}
+                          <span className="mx-1">·</span>
+                          <span>Last: {lastDateStr}</span>
+                        </div>
+                      </div>
+                      <div className="shrink-0 flex gap-2">
+                        <button
+                          onClick={() => {
+                            // TODO: Expand series accordion (will implement in next step)
+                          }}
+                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                        >
+                          View series
+                        </button>
+                        {mostRecentEvent?.eventId && (
+                          <button
+                            onClick={() => handleQuickAction(mostRecentEvent, "view-event")}
+                            className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          >
+                            View most recent
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Regular timeline item
             let timestamp: Date;
             try {
               if (item.timestamp instanceof Date) {
@@ -250,11 +459,7 @@ export default function ContactTimelineCard({
                         </span>
                       </div>
                       <h3 className="font-semibold text-theme-darkest mb-1">{item.title}</h3>
-                      {item.description && (
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
+                      {item.description && <DescriptionContent description={item.description} />}
                       {item.type === "calendar_event" && item.location && (
                         <p className="text-xs text-gray-500 mb-2">
                           📍 {item.location}
@@ -291,12 +496,6 @@ export default function ContactTimelineCard({
                           View Email
                         </button>
                       )}
-                      <button
-                        onClick={() => handleQuickAction(item, "create-touchpoint")}
-                        className="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100"
-                      >
-                        Follow-up
-                      </button>
                     </div>
                   </div>
                 </div>

@@ -168,9 +168,10 @@ export async function runSyncJob(
         }
         
         // Fallback to full sync if incremental fails (e.g., historyId invalid)
-        console.warn(
-          `Incremental sync failed, falling back to full sync: ${error}`
-        );
+        reportException(error, {
+          context: "Incremental Gmail sync failed, falling back to full sync",
+          tags: { component: "gmail-sync-job-runner", userId },
+        });
         syncResult = await performFullSync(adminDb, userId, accessToken);
       }
     } else {

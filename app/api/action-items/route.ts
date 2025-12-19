@@ -8,6 +8,8 @@ import {
 } from "@/lib/action-items";
 import { reportException } from "@/lib/error-reporting";
 import { revalidateTag } from "next/cache";
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 /**
  * GET /api/action-items?contactId=xxx
@@ -75,6 +77,35 @@ export async function POST(req: Request) {
       text,
       dueDate: dueDate || null,
     });
+
+    // Invalidate meeting insights for all calendar events linked to this contact
+    try {
+      const eventsCollection = adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("calendarEvents");
+      
+      const linkedEventsSnapshot = await eventsCollection
+        .where("matchedContactId", "==", contactId)
+        .get();
+
+      if (!linkedEventsSnapshot.empty) {
+        const batch = adminDb.batch();
+        linkedEventsSnapshot.docs.forEach((doc) => {
+          batch.update(doc.ref, {
+            meetingInsights: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+    } catch (invalidationError) {
+      // Log but don't fail if insight invalidation fails
+      reportException(invalidationError, {
+        context: "Invalidating meeting insights after action item creation",
+        tags: { component: "action-items-api", contactId },
+      });
+    }
 
     // Invalidate cache
     revalidateTag("action-items", "max");

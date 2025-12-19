@@ -3,6 +3,11 @@ import { useSearchParams } from "next/navigation";
 import { useFilterContacts } from "./useFilterContacts";
 import { Contact } from "@/types/firestore";
 
+interface DateRange {
+  start: Date | null;
+  end: Date | null;
+}
+
 interface ContactWithId extends Contact {
   id: string;
 }
@@ -16,6 +21,7 @@ interface UseContactsPageFiltersReturn {
   // Filter state
   filteredContacts: ContactWithId[];
   hasActiveFilters: boolean;
+  lastEmailDateRange: DateRange;
   showArchived: boolean;
   setShowArchived: (value: boolean) => void;
   setSelectedSegment: (segment: string) => void;
@@ -25,6 +31,7 @@ interface UseContactsPageFiltersReturn {
   setLastNameSearch: (lastName: string) => void;
   setCompanySearch: (company: string) => void;
   setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setLastEmailDateRange: (range: DateRange) => void;
   onClearFilters: () => void;
   
   // Filter change handlers (for ContactsFilter component)
@@ -36,6 +43,7 @@ interface UseContactsPageFiltersReturn {
   onCompanySearchChange: (company: string) => void;
   onShowArchivedChange: (show: boolean) => void;
   onCustomFilterChange: (filter: "at-risk" | "warm" | null) => void;
+  onLastEmailDateRangeChange: (range: DateRange) => void;
   
   // Pagination
   currentPage: number;
@@ -93,6 +101,8 @@ export function useContactsPageFilters({
     lastNameSearch,
     companySearch,
     customFilter,
+    lastEmailDateRange,
+    setLastEmailDateRange,
   } = filterContacts;
 
   // Initialize filters from URL search params on mount
@@ -137,6 +147,7 @@ export function useContactsPageFilters({
     companySearch,
     customFilter,
     showArchived,
+    lastEmailDateRange,
   ]);
 
   // Paginate filtered contacts
@@ -239,6 +250,9 @@ export function useContactsPageFilters({
     onCompanySearchChange: filterContacts.setCompanySearch,
     onShowArchivedChange: setShowArchived,
     onCustomFilterChange: setCustomFilter,
+    lastEmailDateRange,
+    setLastEmailDateRange,
+    onLastEmailDateRangeChange: setLastEmailDateRange,
     
     // Pagination
     currentPage,

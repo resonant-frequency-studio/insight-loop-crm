@@ -179,7 +179,11 @@ export async function PATCH(
     // Preserve existing fields that shouldn't be overwritten
     // (matchedContactId, matchConfidence, contactSnapshot, etc. are preserved automatically)
 
-    await eventsCollection.doc(eventId).update(updateData);
+    // Invalidate meeting insights since event data has changed
+    await eventsCollection.doc(eventId).update({
+      ...updateData,
+      meetingInsights: FieldValue.delete(),
+    });
 
     // Fetch updated event
     const updatedEventDoc = await eventsCollection.doc(eventId).get();

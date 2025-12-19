@@ -71,6 +71,7 @@ export async function POST(
       matchConfidence: "high", // Manual matches are always high confidence
       matchOverriddenByUser: true,
       contactSnapshot: contactSnapshot,
+      meetingInsights: FieldValue.delete(), // Invalidate insights since contact link changed
       updatedAt: FieldValue.serverTimestamp(),
     });
 

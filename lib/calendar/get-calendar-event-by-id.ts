@@ -53,6 +53,10 @@ export async function getCalendarEventById(
       ...data.contactSnapshot,
       snapshotUpdatedAt: convertTimestamp(data.contactSnapshot.snapshotUpdatedAt) as string,
     } : null,
+    meetingInsights: data.meetingInsights ? {
+      ...data.meetingInsights,
+      generatedAt: convertTimestamp(data.meetingInsights.generatedAt) as string,
+    } : null,
     createdAt: convertTimestamp(data.createdAt) as string,
     updatedAt: convertTimestamp(data.updatedAt) as string,
   } as CalendarEvent;
