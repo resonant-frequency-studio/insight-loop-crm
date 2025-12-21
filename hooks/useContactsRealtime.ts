@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { Contact } from "@/types/firestore";
@@ -10,6 +10,7 @@ interface UseContactsRealtimeReturn {
   contacts: Contact[];
   loading: boolean;
   error: Error | null;
+  hasConfirmedNoContacts: boolean; // True when both cache and server confirm no contacts
 }
 
 /**
@@ -20,6 +21,9 @@ export function useContactsRealtime(userId: string | null): UseContactsRealtimeR
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [hasConfirmedNoContacts, setHasConfirmedNoContacts] = useState(false);
+  const hasReceivedServerSnapshotRef = useRef(false);
+  const cachedSnapshotWasEmptyRef = useRef(false);
 
   useEffect(() => {
     if (!userId) {
@@ -27,11 +31,20 @@ export function useContactsRealtime(userId: string | null): UseContactsRealtimeR
       queueMicrotask(() => {
         setLoading(false);
         setContacts([]);
+        setHasConfirmedNoContacts(false);
       });
+      hasReceivedServerSnapshotRef.current = false;
+      cachedSnapshotWasEmptyRef.current = false;
       return;
     }
 
     let isMounted = true;
+    hasReceivedServerSnapshotRef.current = false;
+    cachedSnapshotWasEmptyRef.current = false;
+    queueMicrotask(() => {
+      setLoading(true);
+      setHasConfirmedNoContacts(false);
+    });
 
     try {
       const contactsRef = collection(db, `users/${userId}/contacts`);
@@ -50,7 +63,30 @@ export function useContactsRealtime(userId: string | null): UseContactsRealtimeR
           });
 
           setContacts(contactsData);
-          setLoading(false);
+          
+          const isFromCache = snapshot.metadata.fromCache;
+          
+          if (!isFromCache) {
+            // Server snapshot received
+            hasReceivedServerSnapshotRef.current = true;
+            setLoading(false);
+            
+            // Check if both cache and server confirmed no contacts
+            if (contactsData.length === 0 && cachedSnapshotWasEmptyRef.current) {
+              setHasConfirmedNoContacts(true);
+            } else {
+              setHasConfirmedNoContacts(false);
+            }
+          } else {
+            // Cached snapshot
+            if (contactsData.length === 0) {
+              cachedSnapshotWasEmptyRef.current = true;
+            } else {
+              cachedSnapshotWasEmptyRef.current = false;
+            }
+            // Keep loading true until server snapshot arrives
+          }
+          
           setError(null);
         },
         (err) => {
@@ -89,6 +125,6 @@ export function useContactsRealtime(userId: string | null): UseContactsRealtimeR
     }
   }, [userId]);
 
-  return { contacts, loading, error };
+  return { contacts, loading, error, hasConfirmedNoContacts };
 }
 

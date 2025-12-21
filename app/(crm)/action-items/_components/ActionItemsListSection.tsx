@@ -16,12 +16,16 @@ import Pagination from "@/components/Pagination";
 
 interface ActionItemsListSectionProps {
   actionItems: EnrichedActionItem[];
+  isLoading?: boolean;
+  hasConfirmedNoActionItems?: boolean;
 }
 
 const ITEMS_PER_PAGE = 20;
 
 export default function ActionItemsListSection({
   actionItems,
+  isLoading = false,
+  hasConfirmedNoActionItems = false,
 }: ActionItemsListSectionProps) {
   const updateActionItemMutation = useUpdateActionItem();
   const deleteActionItemMutation = useDeleteActionItem();
@@ -274,27 +278,37 @@ export default function ActionItemsListSection({
       </Modal>
 
       <Card padding="md">
-        <ThemedSuspense
-          fallback={
-            <div>
-              <div className="h-6 bg-theme-light rounded w-40 mb-4 animate-pulse" />
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-card-highlight-light rounded-sm p-4 animate-pulse">
-                    <div className="h-5 bg-theme-light rounded w-3/4 mb-2" />
-                    <div className="h-4 bg-theme-light rounded w-1/2" />
-                  </div>
-                ))}
+        {/* Show skeletons only when loading AND no action items available */}
+        {/* If action items exist (even from cache), show them immediately */}
+        {isLoading && actionItems.length === 0 ? (
+          <ThemedSuspense
+            isLoading={true}
+            fallback={
+              <div>
+                <div className="h-6 bg-theme-light rounded w-40 mb-4 animate-pulse" />
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="bg-card-highlight-light rounded-sm p-4 animate-pulse">
+                      <div className="h-5 bg-theme-light rounded w-3/4 mb-2" />
+                      <div className="h-4 bg-theme-light rounded w-1/2" />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          }
-        >
-          <h2 className="text-lg font-semibold text-theme-darkest mb-4">
-            {filteredItems.length} Action Item{filteredItems.length !== 1 ? "s" : ""}
-          </h2>
-          {filteredItems.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No action items match your filters</p>
-          ) : (
+            }
+          />
+        ) : hasConfirmedNoActionItems && actionItems.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No action items</p>
+          </div>
+        ) : (
+          <>
+            <h2 className="text-lg font-semibold text-theme-darkest mb-4">
+              {filteredItems.length} Action Item{filteredItems.length !== 1 ? "s" : ""}
+            </h2>
+            {filteredItems.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No action items match your filters</p>
+            ) : (
             <>
               {/* Top Pagination */}
               <Pagination
@@ -420,8 +434,9 @@ export default function ActionItemsListSection({
                 onPageChange={setCurrentPage}
               />
             </>
-          )}
-        </ThemedSuspense>
+            )}
+          </>
+        )}
       </Card>
     </>
   );

@@ -6,7 +6,7 @@ import { Contact } from "@/types/firestore";
 import ExportContactsButton from "../_components/ExportContactsButton";
 import ContactsFilter from "../_components/ContactsFilter";
 import { Button } from "@/components/Button";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { ContactsFilterProvider, useContactsFilter } from "./_components/ContactsFilterContext";
 import ContactsGrid from "./_components/ContactsGrid";
@@ -73,7 +73,8 @@ function ContactsPageHeader({ contacts }: { contacts: ContactWithId[] }) {
 export default function ContactsPageClient({
   userId,
 }: ContactsPageClientProps) {
-  const { data: contactsData = [], isLoading } = useContacts(userId);
+  // Use Firebase real-time listeners
+  const { contacts: contactsData = [], loading: isLoading, hasConfirmedNoContacts } = useContactsRealtime(userId || null);
   const contacts: ContactWithId[] = useMemo(() => {
     return contactsData.map((contact) => ({
       ...contact,
@@ -83,14 +84,15 @@ export default function ContactsPageClient({
     }));
   }, [contactsData]);
 
-  // When loading (suspense mode), render structure but let ThemedSuspense show loading
-  // We need to provide context even when loading so components don't crash
+  // Always render structure - provide context even when loading so components don't crash
   return (
-    <ContactsFilterProvider contacts={contacts} itemsPerPage={ITEMS_PER_PAGE} isLoading={isLoading}>
+    <ContactsFilterProvider contacts={contacts} itemsPerPage={ITEMS_PER_PAGE} isLoading={isLoading} hasConfirmedNoContacts={hasConfirmedNoContacts}>
       <div className="space-y-6">
         <ContactsPageHeader contacts={contacts} />
-        {!isLoading && <ContactsFilter contacts={contacts} />}
-        {!isLoading && <ContactsBulkActions userId={userId} contacts={contacts} />}
+        {/* Always render Filter & Search - disabled when loading or no contacts */}
+        <ContactsFilter contacts={contacts} disabled={!userId || isLoading || contacts.length === 0} />
+        {/* Always render Bulk Actions - it handles its own visibility */}
+        <ContactsBulkActions userId={userId} contacts={contacts} />
         <ContactsGrid userId={userId} />
       </div>
     </ContactsFilterProvider>

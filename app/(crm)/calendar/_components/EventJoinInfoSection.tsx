@@ -24,7 +24,7 @@ export default function EventJoinInfoSection({
       await navigator.clipboard.writeText(url);
       setCopiedIndex(index);
       setTimeout(() => setCopiedIndex(null), 2000);
-    } catch (error) {
+    } catch (error: unknown) {
       // Silently fail - clipboard errors are usually user permission issues
     }
   };

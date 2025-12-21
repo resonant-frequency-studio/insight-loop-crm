@@ -20,12 +20,14 @@ interface CalendarFilterBarProps {
   events: CalendarEvent[];
   filters: CalendarFilters;
   onFiltersChange: (filters: CalendarFilters) => void;
+  disabled?: boolean; // Disable inputs when loading or no events
 }
 
 export default function CalendarFilterBar({
   events,
   filters,
   onFiltersChange,
+  disabled = false,
 }: CalendarFilterBarProps) {
   const [tagSearch, setTagSearch] = useState<string>("");
   const [showTagDropdown, setShowTagDropdown] = useState(false);
@@ -90,10 +92,7 @@ export default function CalendarFilterBar({
     });
   };
 
-  // Hide filter component when no events
-  if (events.length === 0) {
-    return null;
-  }
+  // Always render - no early return
 
   const filteredTags = uniqueTags.filter((tag) =>
     tag.toLowerCase().includes(tagSearch.toLowerCase())
@@ -103,7 +102,7 @@ export default function CalendarFilterBar({
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-theme-darkest">Filters & Search</h2>
-        {hasActiveFilters && (
+        {hasActiveFilters && !disabled && (
           <Button
             onClick={handleClearFilters}
             variant="link"
@@ -130,6 +129,7 @@ export default function CalendarFilterBar({
                 segment: e.target.value || undefined,
               })
             }
+            disabled={disabled || events.length === 0}
           >
             <option value="">All Segments</option>
             {uniqueSegments.map((segment) => (
@@ -153,6 +153,7 @@ export default function CalendarFilterBar({
               onFocus={() => setShowTagDropdown(true)}
               placeholder="Search tags..."
               className="pr-10"
+              disabled={disabled || events.length === 0}
             />
             {showTagDropdown && filteredTags.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -216,6 +217,7 @@ export default function CalendarFilterBar({
               })
             }
             placeholder="Search by title or contact name..."
+            disabled={disabled || events.length === 0}
           />
         </div>
       </div>
@@ -231,6 +233,7 @@ export default function CalendarFilterBar({
             })
           }
           label="Only Linked Events"
+          disabled={disabled || events.length === 0}
         />
         <Checkbox
           checked={filters.onlyTouchpoints || false}
@@ -241,6 +244,7 @@ export default function CalendarFilterBar({
             })
           }
           label="Only Touchpoints"
+          disabled={disabled || events.length === 0}
         />
       </div>
     </Card>

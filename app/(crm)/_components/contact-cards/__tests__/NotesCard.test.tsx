@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import NotesCard from "../NotesCard";
 import { useContact } from "@/hooks/useContact";
 import { useUpdateContact } from "@/hooks/useContactMutations";

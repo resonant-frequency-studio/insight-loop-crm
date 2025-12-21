@@ -40,11 +40,20 @@ export default function EngagementChart({ data }: EngagementChartProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Handle null/undefined data
+  if (!data || typeof data !== "object") {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <p>No engagement data available</p>
+      </div>
+    );
+  }
+
   const chartData = [
-    { name: "High (70+)", value: data.high, color: "#14b8a6" }, // sophisticated teal
-    { name: "Medium (40-69)", value: data.medium, color: "#f59e0b" }, // warm amber
-    { name: "Low (1-39)", value: data.low, color: "#ec4899" }, // muted rose
-    { name: "None (0)", value: data.none, color: "#94a3b8" }, // elegant slate
+    { name: "High (70+)", value: data.high ?? 0, color: "#14b8a6" }, // sophisticated teal
+    { name: "Medium (40-69)", value: data.medium ?? 0, color: "#f59e0b" }, // warm amber
+    { name: "Low (1-39)", value: data.low ?? 0, color: "#ec4899" }, // muted rose
+    { name: "None (0)", value: data.none ?? 0, color: "#94a3b8" }, // elegant slate
   ];
 
   return (

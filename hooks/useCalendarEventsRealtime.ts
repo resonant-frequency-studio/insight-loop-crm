@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { CalendarEvent } from "@/types/firestore";
@@ -10,6 +10,7 @@ interface UseCalendarEventsRealtimeReturn {
   events: CalendarEvent[];
   loading: boolean;
   error: Error | null;
+  hasConfirmedNoEvents: boolean; // True when both cache and server confirm no events
 }
 
 /**
@@ -42,6 +43,9 @@ export function useCalendarEventsRealtime(
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [hasConfirmedNoEvents, setHasConfirmedNoEvents] = useState(false);
+  const hasReceivedServerSnapshotRef = useRef(false);
+  const cachedSnapshotWasEmptyRef = useRef(false);
 
   useEffect(() => {
     if (!userId || !timeMin || !timeMax) {
@@ -49,11 +53,20 @@ export function useCalendarEventsRealtime(
       queueMicrotask(() => {
         setLoading(false);
         setEvents([]);
+        setHasConfirmedNoEvents(false);
       });
+      hasReceivedServerSnapshotRef.current = false;
+      cachedSnapshotWasEmptyRef.current = false;
       return;
     }
 
     let isMounted = true;
+    hasReceivedServerSnapshotRef.current = false;
+    cachedSnapshotWasEmptyRef.current = false;
+    queueMicrotask(() => {
+      setLoading(true);
+      setHasConfirmedNoEvents(false);
+    });
 
     try {
       // Convert Date to Firestore Timestamp for query
@@ -81,7 +94,30 @@ export function useCalendarEventsRealtime(
           });
 
           setEvents(eventsData);
-          setLoading(false);
+          
+          const isFromCache = snapshot.metadata.fromCache;
+          
+          if (!isFromCache) {
+            // Server snapshot received
+            hasReceivedServerSnapshotRef.current = true;
+            setLoading(false);
+            
+            // Check if both cache and server confirmed no events
+            if (eventsData.length === 0 && cachedSnapshotWasEmptyRef.current) {
+              setHasConfirmedNoEvents(true);
+            } else {
+              setHasConfirmedNoEvents(false);
+            }
+          } else {
+            // Cached snapshot
+            if (eventsData.length === 0) {
+              cachedSnapshotWasEmptyRef.current = true;
+            } else {
+              cachedSnapshotWasEmptyRef.current = false;
+            }
+            // Keep loading true until server snapshot arrives
+          }
+          
           setError(null);
         },
         (err) => {
@@ -137,6 +173,6 @@ export function useCalendarEventsRealtime(
     }
   }, [userId, timeMin, timeMax]);
 
-  return { events, loading, error };
+  return { events, loading, error, hasConfirmedNoEvents };
 }
 

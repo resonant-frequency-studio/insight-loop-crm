@@ -76,6 +76,15 @@ export default function LeadSourceChart({ data }: LeadSourceChartProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Handle null/undefined data
+  if (!data || typeof data !== "object") {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <p>No lead source data available</p>
+      </div>
+    );
+  }
+
   const allData = Object.entries(data)
     .map(([name, value]) => ({ name: name.trim() || "Unknown", value }))
     .filter((item) => item.value > 0)
