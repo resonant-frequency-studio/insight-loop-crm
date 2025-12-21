@@ -22,11 +22,15 @@ export interface EnrichedActionItem extends ActionItem {
 interface ActionItemsPageClientProps {
   initialActionItems: EnrichedActionItem[];
   contacts: Array<[string, Contact]>;
+  isLoading?: boolean;
+  hasConfirmedNoActionItems?: boolean;
 }
 
 export default function ActionItemsPageClient({
   initialActionItems,
   contacts,
+  isLoading = false,
+  hasConfirmedNoActionItems = false,
 }: ActionItemsPageClientProps) {
   // Recalculate stats from current actionItems state
   const pendingItems = initialActionItems.filter((i) => i.status === "pending");
@@ -52,22 +56,28 @@ export default function ActionItemsPageClient({
           </p>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Always render, show 0 when loading */}
         <ActionItemsStats
           total={stats.total}
           pending={stats.pending}
           overdue={stats.overdue}
           today={stats.today}
+          isLoading={isLoading}
         />
 
-        {/* Filters */}
+        {/* Filters - Always render, disabled when loading or no items */}
         <ActionItemsFilters
           contacts={contacts}
           uniqueContactIds={uniqueContactIds}
+          disabled={isLoading || initialActionItems.length === 0}
         />
 
-        {/* Action Items List */}
-        <ActionItemsListSection actionItems={initialActionItems} />
+        {/* Action Items List - Always render, show skeletons when loading */}
+        <ActionItemsListSection
+          actionItems={initialActionItems}
+          isLoading={isLoading}
+          hasConfirmedNoActionItems={hasConfirmedNoActionItems}
+        />
       </div>
     </ActionItemsFiltersProvider>
   );

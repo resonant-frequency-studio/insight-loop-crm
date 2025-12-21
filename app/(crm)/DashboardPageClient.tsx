@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import DashboardTouchpoints from "./_components/DashboardTouchpoints";
-import { DashboardStats } from "@/hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 import RightColumnMetrics from "@/components/dashboard/RightColumnMetrics";
 import PipelineSnapshot from "@/components/dashboard/PipelineSnapshot";
 import AiInsights from "@/components/dashboard/AiInsights";
@@ -10,21 +10,19 @@ import SavedSegments from "@/components/dashboard/SavedSegments";
 
 interface DashboardPageClientProps {
   userId: string;
-  initialStats?: DashboardStats;
+  contacts: Contact[];
   contactsWithUpcomingTouchpoints?: unknown[];
   contactsWithOverdueTouchpoints?: unknown[];
   recentContacts?: unknown[];
 }
 
-export default function DashboardPageClient({ userId, initialStats }: DashboardPageClientProps) {
+export default function DashboardPageClient({ userId, contacts }: DashboardPageClientProps) {
   const { user, loading } = useAuth();
 
   // Wait for auth to load before checking for user
   // In production, user should be available after Google login
   // In E2E mode, we might not have Firebase user but session cookie is valid
-  // If we have userId from SSR, we can render even without Firebase user (data will load via session cookie)
   if (loading && !userId) {
-    // Only wait if we don't have userId from SSR
     return null;
   }
 
@@ -50,7 +48,7 @@ export default function DashboardPageClient({ userId, initialStats }: DashboardP
 
         {/* Right Column - Metrics & Insights */}
         <div className="space-y-6">
-          <RightColumnMetrics userId={userId} initialStats={initialStats} />
+          <RightColumnMetrics userId={userId} contacts={contacts} />
           <AiInsights userId={userId} />
           <PipelineSnapshot userId={userId} />
           <SavedSegments userId={userId} />

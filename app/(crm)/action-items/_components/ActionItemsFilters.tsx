@@ -8,11 +8,13 @@ import { Contact } from "@/types/firestore";
 interface ActionItemsFiltersProps {
   contacts: Array<[string, Contact]>;
   uniqueContactIds: string[];
+  disabled?: boolean; // Disable inputs when loading or no action items
 }
 
 export default function ActionItemsFilters({
   contacts,
   uniqueContactIds,
+  disabled = false,
 }: ActionItemsFiltersProps) {
   const {
     filterStatus,
@@ -36,6 +38,7 @@ export default function ActionItemsFilters({
             id="filter-status"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+            disabled={disabled || uniqueContactIds.length === 0}
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
@@ -50,6 +53,7 @@ export default function ActionItemsFilters({
             id="filter-date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value as FilterDate)}
+            disabled={disabled || uniqueContactIds.length === 0}
           >
             <option value="all">All Dates</option>
             <option value="overdue">Overdue</option>
@@ -69,6 +73,7 @@ export default function ActionItemsFilters({
               const value = e.target.value;
               setSelectedContactId(value === "" ? null : value);
             }}
+            disabled={disabled || uniqueContactIds.length === 0}
           >
             <option value="">All Contacts</option>
             {uniqueContactIds.map((contactId) => {

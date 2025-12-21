@@ -1,15 +1,16 @@
 "use client";
 
-import { useDashboardStats, type DashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "@/hooks/useDashboardStatsRealtime";
+import { Contact } from "@/types/firestore";
 import Card from "@/components/Card";
 
 interface RightColumnMetricsProps {
   userId: string;
-  initialStats?: DashboardStats;
+  contacts: Contact[];
 }
 
-export default function RightColumnMetrics({ userId, initialStats }: RightColumnMetricsProps) {
-  const { data: stats } = useDashboardStats(userId, initialStats);
+export default function RightColumnMetrics({ contacts }: RightColumnMetricsProps) {
+  const { data: stats } = useDashboardStatsRealtime(contacts);
 
   if (!stats) {
     return (

@@ -18,6 +18,7 @@ interface ContactsFilterContextValue {
   filteredContacts: ContactWithId[];
   totalContactsCount: number;
   isLoading?: boolean;
+  hasConfirmedNoContacts?: boolean;
   hasActiveFilters: boolean;
   lastEmailDateRange: DateRange;
   showArchived: boolean;
@@ -75,6 +76,7 @@ interface ContactsFilterProviderProps {
   contacts: ContactWithId[];
   itemsPerPage?: number;
   isLoading?: boolean;
+  hasConfirmedNoContacts?: boolean;
 }
 
 export function ContactsFilterProvider({
@@ -82,6 +84,7 @@ export function ContactsFilterProvider({
   contacts,
   itemsPerPage = 20,
   isLoading = false,
+  hasConfirmedNoContacts = false,
 }: ContactsFilterProviderProps) {
   const filterState = useContactsPageFilters({
     contacts,
@@ -93,6 +96,7 @@ export function ContactsFilterProvider({
       ...filterState,
       totalContactsCount: contacts.length,
       isLoading,
+      hasConfirmedNoContacts,
     }}>
       {children}
     </ContactsFilterContext.Provider>

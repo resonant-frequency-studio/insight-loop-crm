@@ -1,24 +1,25 @@
 "use client";
 
-import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "@/hooks/useDashboardStatsRealtime";
+import { DashboardStats } from "@/hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 import EmptyState from "@/components/dashboard/EmptyState";
 import Skeleton from "@/components/Skeleton";
 
 interface ChartCardProps {
-  userId: string;
+  contacts: Contact[];
   title: string;
-  children: (stats: NonNullable<ReturnType<typeof useDashboardStats>["data"]>) => React.ReactNode;
+  children: (stats: DashboardStats) => React.ReactNode;
 }
 
 interface ChartContentProps {
-  userId: string;
-  children: (stats: NonNullable<ReturnType<typeof useDashboardStats>["data"]>) => React.ReactNode;
+  contacts: Contact[];
+  children: (stats: DashboardStats) => React.ReactNode;
 }
 
-function ChartContent({ userId, children }: ChartContentProps) {
-  const { data: stats } = useDashboardStats(userId);
+function ChartContent({ contacts, children }: ChartContentProps) {
+  const { data: stats } = useDashboardStatsRealtime(contacts);
   if (!stats) return <Skeleton width="w-full" height="h-64" />;
   
   // Show empty state when no contacts
@@ -37,13 +38,11 @@ function ChartContent({ userId, children }: ChartContentProps) {
   return <>{children(stats)}</>;
 }
 
-export default function ChartCard({ userId, title, children }: ChartCardProps) {
+export default function ChartCard({ contacts, title, children }: ChartCardProps) {
   return (
     <Card padding="md">
       <h2 className="text-lg font-semibold text-theme-darkest mb-4">{title}</h2>
-      <ThemedSuspense fallback={<div className="h-64 bg-theme-light rounded animate-pulse" />}>
-        <ChartContent userId={userId}>{children}</ChartContent>
-      </ThemedSuspense>
+      <ChartContent contacts={contacts}>{children}</ChartContent>
     </Card>
   );
 }

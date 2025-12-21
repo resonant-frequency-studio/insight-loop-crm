@@ -1,3 +1,0 @@
-{"sent_at":"2025-12-19T19:48:27.664Z","sdk":{"name":"sentry.javascript.nextjs","version":"10.29.0"},"dsn":"https://33779a77bec9a036bf398ca6fbcb6985@o4510492494462976.ingest.us.sentry.io/4510492495773696"}
-{"type":"session"}
-{"sid":"14f6f60f3006468886f81bc6f52e72e2","init":true,"started":"2025-12-19T19:48:27.664Z","timestamp":"2025-12-19T19:48:27.664Z","status":"ok","errors":0,"attrs":{"release":"9be295abfd55d60008ceea23903cef096a584ead","environment":"development","ip_address":"{{auto}}","user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36"}}

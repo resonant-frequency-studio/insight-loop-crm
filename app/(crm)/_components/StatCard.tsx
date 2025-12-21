@@ -1,22 +1,23 @@
 "use client";
 
-import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "@/hooks/useDashboardStatsRealtime";
+import { DashboardStats } from "@/hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 import Skeleton from "@/components/Skeleton";
 
 interface StatCardProps {
-  userId: string;
+  contacts: Contact[];
   title: string;
   description: string;
   icon: React.ReactNode;
   iconBgColor: string;
-  getValue: (stats: NonNullable<ReturnType<typeof useDashboardStats>["data"]>) => number | string;
+  getValue: (stats: DashboardStats) => number | string;
   showEmptyMessage?: boolean;
 }
 
-function StatValue({ userId, getValue, showEmptyMessage }: { userId: string; getValue: StatCardProps["getValue"]; showEmptyMessage?: boolean }) {
-  const { data: stats } = useDashboardStats(userId);
+function StatValue({ contacts, getValue, showEmptyMessage }: { contacts: Contact[]; getValue: StatCardProps["getValue"]; showEmptyMessage?: boolean }) {
+  const { data: stats } = useDashboardStatsRealtime(contacts);
   if (!stats) return <Skeleton width="w-16" height="h-8" />;
   
   const value = getValue(stats);
@@ -34,7 +35,7 @@ function StatValue({ userId, getValue, showEmptyMessage }: { userId: string; get
   return <div className="text-3xl font-bold text-theme-darkest mb-1">{value}</div>;
 }
 
-export default function StatCard({ userId, title, description, icon, iconBgColor, getValue, showEmptyMessage }: StatCardProps) {
+export default function StatCard({ contacts, title, description, icon, iconBgColor, getValue, showEmptyMessage }: StatCardProps) {
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
@@ -43,9 +44,7 @@ export default function StatCard({ userId, title, description, icon, iconBgColor
           {icon}
         </div>
       </div>
-      <ThemedSuspense variant="simple">
-        <StatValue userId={userId} getValue={getValue} showEmptyMessage={showEmptyMessage} />
-      </ThemedSuspense>
+      <StatValue contacts={contacts} getValue={getValue} showEmptyMessage={showEmptyMessage} />
       <p className="text-sm text-gray-500">{description}</p>
     </Card>
   );

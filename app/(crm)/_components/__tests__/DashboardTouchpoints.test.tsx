@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DashboardTouchpoints from "../DashboardTouchpoints";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { useUpdateTouchpointStatus } from "@/hooks/useContactMutations";
 import { useAuth } from "@/hooks/useAuth";
-import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
+import { createMockContact, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 import { Timestamp } from "firebase/firestore";
 import type { Contact } from "@/types/firestore";
 import type { User } from "firebase/auth";
 
-jest.mock("@/hooks/useContacts");
+jest.mock("@/hooks/useContactsRealtime");
 jest.mock("@/hooks/useContactMutations");
 jest.mock("@/hooks/useAuth");
 jest.mock("../ContactCard", () => ({
@@ -26,7 +26,7 @@ jest.mock("../ContactCard", () => ({
   ),
 }));
 
-const mockUseContacts = useContacts as jest.MockedFunction<typeof useContacts>;
+const mockUseContactsRealtime = useContactsRealtime as jest.MockedFunction<typeof useContactsRealtime>;
 const mockUseUpdateTouchpointStatus = useUpdateTouchpointStatus as jest.MockedFunction<typeof useUpdateTouchpointStatus>;
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
@@ -54,11 +54,13 @@ describe("DashboardTouchpoints", () => {
 
   describe("Loading Fallback", () => {
     it("shows loading fallback", () => {
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(undefined, true));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: [],
+        loading: true,
+        error: null,
+      });
       
       const { container } = render(<DashboardTouchpoints userId={mockUserId} />);
-      // Suspense fallback renders a Card with animate-pulse div
-      // In test environment, Suspense may resolve immediately, so we check for the component rendering
       // If contacts are loading, the component should still render the structure
       expect(container).toBeTruthy();
     });
@@ -84,7 +86,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 
@@ -125,7 +131,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 
@@ -147,7 +157,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 
@@ -171,7 +185,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 
@@ -207,7 +225,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       mockMutateAsync.mockResolvedValue({});
 
@@ -261,7 +283,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       mockMutateAsync.mockResolvedValue({});
 
@@ -314,7 +340,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 
@@ -345,7 +375,11 @@ describe("DashboardTouchpoints", () => {
         }),
       ];
 
-      mockUseContacts.mockReturnValue(createMockUseQueryResult<Contact[]>(mockContacts));
+      mockUseContactsRealtime.mockReturnValue({
+        contacts: mockContacts,
+        loading: false,
+        error: null,
+      });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
 

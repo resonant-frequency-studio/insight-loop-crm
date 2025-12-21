@@ -50,6 +50,38 @@ FAILED_PRECONDITION: The query requires an index. You can create it here: [link]
 
 This is expected! Click the link in the error message to automatically create the index in Firebase Console. The page will continue to work using the fallback method until the index is built.
 
+## Calendar Indexes
+
+### Calendar Events by Date Range
+
+**Purpose**: Query calendar events within a specific date range.
+
+**Index Configuration**:
+- Collection ID: `calendarEvents` (subcollection under `users/{userId}`)
+- Fields:
+  1. `startTime` (Ascending)
+
+**How to Create**: Click the link in the error message when you first load the calendar page, or create manually in Firebase Console.
+
+**Status**: Required for the calendar page to load events. The error message will provide a direct link to create this index.
+
+### Calendar Sync Status
+
+**Purpose**: Query the latest calendar sync job filtered by service type.
+
+**Index Configuration**:
+- Collection ID: `syncJobs` (subcollection under `users/{userId}`)
+- Fields:
+  1. `service` (Ascending)
+  2. `startedAt` (Descending)
+
+**How to Create**: 
+1. When you see the error "The query requires an index", click the link provided in the error message
+2. This will open Firebase Console with the index pre-configured
+3. Click **"Create Index"** and wait for it to build (usually a few minutes)
+
+**Status**: Required for the calendar page to show sync status. Without this index, you'll see a permissions/index error.
+
 ## Other Indexes
 
 ### Action Items per Contact (Ordered by Created Date)

@@ -1,53 +1,20 @@
 import { getUserId } from "@/lib/auth-utils";
-import { getAllContactsForUserUncached } from "@/lib/contacts-server";
-import { getDashboardStats } from "@/lib/dashboard-stats-server";
-import { getQueryClient } from "@/lib/query-client";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { isPlaywrightTest } from "@/util/test-utils";
 import DashboardPageClientWrapper from "./DashboardPageClientWrapper";
 
 export default async function DashboardData() {
   // In E2E mode, try to get userId but don't fail if cookie isn't ready yet
   // Client-side auth will handle it
-  let userId: string = "";
-  const queryClient = getQueryClient();
-
-  if (isPlaywrightTest()) {
+  // Note: We no longer prefetch data here - client will use Firebase real-time listeners
+  if (!isPlaywrightTest()) {
     try {
-      userId = await getUserId();
+      await getUserId();
     } catch {
-      // In E2E mode, cookie might not be recognized by SSR yet
-      // Render without prefetch - client will fetch data once auth is ready
-      userId = "";
+      // Auth check failed - page-level redirect will handle it
     }
-  } else {
-    // In production, getUserId should always succeed if user is authenticated
-    // If it fails, the page-level redirect will handle it
-    userId = await getUserId();
   }
 
-  // Only prefetch if we have userId
-  // Use Promise.allSettled to not block navigation on failures
-  if (userId) {
-    Promise.allSettled([
-      queryClient.prefetchQuery({
-        queryKey: ["contacts", userId],
-        queryFn: () => getAllContactsForUserUncached(userId),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ["dashboard-stats", userId],
-        queryFn: () => getDashboardStats(userId),
-      }),
-    ]).catch(() => {
-      // Silently handle errors - client will fetch on mount
-    });
-  }
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {/* Client wrapper will get userId from useAuth if not provided */}
-      <DashboardPageClientWrapper userId={userId} />
-    </HydrationBoundary>
-  );
+  // Client wrapper will get userId from useAuth and use Firebase real-time listeners
+  return <DashboardPageClientWrapper />;
 }
 

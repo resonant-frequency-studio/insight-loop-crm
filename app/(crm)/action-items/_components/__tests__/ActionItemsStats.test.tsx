@@ -1,6 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import ActionItemsStats from "../ActionItemsStats";
 
+// Mock the useAnimatedNumber hook to return the target value immediately
+jest.mock("@/hooks/useAnimatedNumber", () => ({
+  useAnimatedNumber: (target: number) => target,
+}));
+
 describe("ActionItemsStats", () => {
   it("renders all stat cards with correct values", () => {
     render(

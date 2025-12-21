@@ -15,9 +15,10 @@ interface ContactWithId extends Contact {
 
 interface ContactsFilterProps {
   contacts: ContactWithId[];
+  disabled?: boolean; // Disable inputs when loading or no contacts
 }
 
-export default function ContactsFilter({ contacts }: ContactsFilterProps) {
+export default function ContactsFilter({ contacts, disabled = false }: ContactsFilterProps) {
   const {
     selectedSegment,
     selectedTags,
@@ -115,16 +116,13 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
 
   const hasActiveFilters = selectedSegment || selectedTags.length > 0 || emailSearch.trim() || firstNameSearch.trim() || lastNameSearch.trim() || companySearch.trim() || !!customFilter || !isDefaultDateRange;
 
-  // Hide filter component when no contacts
-  if (contacts.length === 0) {
-    return null;
-  }
+  // Always render - no early return
 
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-theme-darkest">Filters & Search</h2>
-        {hasActiveFilters && (
+        {hasActiveFilters && !disabled && (
           <Button
             onClick={onClearFilters}
             variant="link"
@@ -149,6 +147,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
             value={emailSearch}
             onChange={(e) => onEmailSearchChange(e.target.value)}
             placeholder="Enter email address..."
+            disabled={disabled || contacts.length === 0}
           />
         </div>
 
@@ -163,6 +162,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
             value={lastNameSearch}
             onChange={(e) => onLastNameSearchChange(e.target.value)}
             placeholder="Enter last name..."
+            disabled={disabled || contacts.length === 0}
           />
         </div>
 
@@ -177,6 +177,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
             value={firstNameSearch}
             onChange={(e) => onFirstNameSearchChange(e.target.value)}
             placeholder="Enter first name..."
+            disabled={disabled || contacts.length === 0}
           />
         </div>
 
@@ -191,6 +192,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
             value={companySearch}
             onChange={(e) => onCompanySearchChange(e.target.value)}
             placeholder="Enter company name..."
+            disabled={disabled || contacts.length === 0}
           />
         </div>
       </div>
@@ -206,6 +208,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
             id="segment-filter"
             value={selectedSegment}
             onChange={(e) => onSegmentChange(e.target.value)}
+            disabled={disabled || contacts.length === 0}
           >
             <option value="">All Segments</option>
             {uniqueSegments.map(segment => (
@@ -227,6 +230,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
                 const value = e.target.value;
                 onCustomFilterChange(value === "" ? null : (value as "at-risk" | "warm"));
               }}
+              disabled={disabled || contacts.length === 0}
             >
               <option value="">None</option>
               <option value="at-risk">At-Risk (14+ days no reply)</option>
@@ -258,6 +262,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
                   placeholder="Search and select tags..."
                   aria-expanded={showTagDropdown}
                   aria-haspopup="listbox"
+                  disabled={disabled || contacts.length === 0}
                 />
                 
                 {/* Dropdown - positioned absolutely to prevent layout shift */}
@@ -360,6 +365,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
               type="date"
               value={formatDateForInput(lastEmailDateRange.start)}
               onChange={handleStartDateChange}
+              disabled={disabled || contacts.length === 0}
             />
           </div>
           <div>
@@ -371,6 +377,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
               type="date"
               value={formatDateForInput(lastEmailDateRange.end)}
               onChange={handleEndDateChange}
+              disabled={disabled || contacts.length === 0}
             />
           </div>
         </div>
@@ -387,6 +394,7 @@ export default function ContactsFilter({ contacts }: ContactsFilterProps) {
           checked={showArchived}
           onChange={(e) => onShowArchivedChange(e.target.checked)}
           label={showArchived ? "Showing archived contacts" : "Show archived contacts"}
+          disabled={disabled || contacts.length === 0}
         />
       </div>
     </Card>

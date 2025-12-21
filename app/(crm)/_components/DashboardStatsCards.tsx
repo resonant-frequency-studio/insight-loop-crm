@@ -1,15 +1,14 @@
 "use client";
 
-import ThemedSuspense from "@/components/ThemedSuspense";
 import StatCard from "./StatCard";
-import { useDashboardStats, DashboardStats } from "@/hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "@/hooks/useDashboardStatsRealtime";
+import { Contact } from "@/types/firestore";
 import Skeleton from "@/components/Skeleton";
 
-function DashboardStatsContent({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
-  const { data: stats, isLoading } = useDashboardStats(userId, initialStats);
+function DashboardStatsContent({ contacts }: { contacts: Contact[] }) {
+  const { data: stats, isLoading } = useDashboardStatsRealtime(contacts);
   
-  // Show loading skeleton only if actually loading, not if data is temporarily undefined
-  // React Query with prefetched data should have data available immediately on hydration
+  // Show loading skeleton only on initial load
   if (isLoading && !stats) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -26,11 +25,10 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
   
   // If no stats but not loading, show empty state or default values
   if (!stats) {
-    // This shouldn't happen in production with prefetched data, but handle gracefully
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#EEEEEC] rounded-xl shadow p-6">
-          <p className="text-gray-500">Loading stats...</p>
+        <div className="bg-card-highlight-light rounded-xl shadow p-6">
+          <p className="text-theme-dark">Loading stats...</p>
         </div>
       </div>
     );
@@ -39,7 +37,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <StatCard
-        userId={userId}
+        contacts={contacts}
         title="Total Contacts"
         description="Active contacts in your CRM"
         iconBgColor="bg-blue-100"
@@ -57,7 +55,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
         showEmptyMessage={true}
       />
       <StatCard
-        userId={userId}
+        contacts={contacts}
         title="Active Threads"
         description="Contacts with email threads"
         iconBgColor="bg-green-100"
@@ -74,7 +72,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
         getValue={(stats) => stats?.contactsWithThreads ?? 0}
       />
       <StatCard
-        userId={userId}
+        contacts={contacts}
         title="Avg Engagement"
         description="Average engagement score"
         iconBgColor="bg-purple-100"
@@ -94,28 +92,7 @@ function DashboardStatsContent({ userId, initialStats }: { userId: string; initi
   );
 }
 
-export default function DashboardStatsCards({ userId, initialStats }: { userId: string; initialStats?: DashboardStats }) {
-  // If we have initialStats, render directly without Suspense to avoid loading state
-  if (initialStats) {
-    return <DashboardStatsContent userId={userId} initialStats={initialStats} />;
-  }
-
-  return (
-    <ThemedSuspense
-      fallback={
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-card-highlight-light rounded-xl shadow p-6 animate-pulse">
-              <div className="h-4 bg-theme-light rounded w-24 mb-4" />
-              <div className="h-8 bg-theme-light rounded w-16 mb-1" />
-              <div className="h-4 bg-theme-light rounded w-32" />
-            </div>
-          ))}
-        </div>
-      }
-    >
-      <DashboardStatsContent userId={userId} />
-    </ThemedSuspense>
-  );
+export default function DashboardStatsCards({ contacts }: { contacts: Contact[] }) {
+  return <DashboardStatsContent contacts={contacts} />;
 }
 

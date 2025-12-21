@@ -1,39 +1,61 @@
 import { screen } from "@testing-library/react";
 import ChartCard from "../ChartCard";
 import { renderWithProviders } from "@/components/__tests__/test-utils";
-import { UseQueryResult } from "@tanstack/react-query";
 import { DashboardStats } from "../../../../hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 
-// Mock useDashboardStats hook
-jest.mock("../../../../hooks/useDashboardStats", () => ({
-  useDashboardStats: jest.fn(),
+// Mock useDashboardStatsRealtime hook
+jest.mock("../../../../hooks/useDashboardStatsRealtime", () => ({
+  useDashboardStatsRealtime: jest.fn(),
 }));
 
-import { useDashboardStats } from "../../../../hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "../../../../hooks/useDashboardStatsRealtime";
 
-const mockUseDashboardStats = useDashboardStats as jest.MockedFunction<typeof useDashboardStats>;
+const mockUseDashboardStatsRealtime = useDashboardStatsRealtime as jest.MockedFunction<typeof useDashboardStatsRealtime>;
 
 describe("ChartCard", () => {
-  const mockStats = {
+  const mockStats: DashboardStats = {
     totalContacts: 100,
-    activeThreads: 25,
+    contactsWithEmail: 80,
+    contactsWithThreads: 25,
     averageEngagementScore: 75,
+    segmentDistribution: {},
+    leadSourceDistribution: {},
+    tagDistribution: {},
+    sentimentDistribution: {},
+    engagementLevels: {
+      high: 20,
+      medium: 30,
+      low: 25,
+      none: 25,
+    },
     upcomingTouchpoints: 10,
   };
 
+  const mockContacts: Contact[] = [
+    {
+      contactId: "contact-1",
+      primaryEmail: "test@example.com",
+      firstName: "Test",
+      lastName: "User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseDashboardStats.mockReturnValue({
+    mockUseDashboardStatsRealtime.mockReturnValue({
       data: mockStats,
       isLoading: false,
       error: null,
-    } as unknown as UseQueryResult<DashboardStats, Error>);
+    });
   });
 
   describe("Rendering", () => {
     it("renders title", () => {
       renderWithProviders(
-        <ChartCard userId="user-1" title="Segment Distribution">
+        <ChartCard contacts={mockContacts} title="Segment Distribution">
           {() => <div>Chart Content</div>}
         </ChartCard>
       );
@@ -42,7 +64,7 @@ describe("ChartCard", () => {
 
     it("renders children (chart)", () => {
       renderWithProviders(
-        <ChartCard userId="user-1" title="Chart Title">
+        <ChartCard contacts={mockContacts} title="Chart Title">
           {() => <div data-testid="chart-content">Chart Content</div>}
         </ChartCard>
       );
@@ -51,7 +73,7 @@ describe("ChartCard", () => {
 
     it("applies Card wrapper", () => {
       const { container } = renderWithProviders(
-        <ChartCard userId="user-1" title="Chart Title">
+        <ChartCard contacts={mockContacts} title="Chart Title">
           {() => <div>Chart</div>}
         </ChartCard>
       );
@@ -61,16 +83,16 @@ describe("ChartCard", () => {
     });
   });
 
-  describe("Suspense", () => {
+  describe("Loading State", () => {
     it("shows loading skeleton when data is not available", () => {
-      mockUseDashboardStats.mockReturnValue({
+      mockUseDashboardStatsRealtime.mockReturnValue({
         data: undefined,
         isLoading: true,
         error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
+      });
 
       const { container } = renderWithProviders(
-        <ChartCard userId="user-1" title="Chart Title">
+        <ChartCard contacts={mockContacts} title="Chart Title">
           {() => <div>Chart</div>}
         </ChartCard>
       );
@@ -83,7 +105,7 @@ describe("ChartCard", () => {
   describe("Children Function", () => {
     it("passes stats to children function", () => {
       renderWithProviders(
-        <ChartCard userId="user-1" title="Chart Title">
+        <ChartCard contacts={mockContacts} title="Chart Title">
           {(stats) => (
             <div data-testid="chart-content">
               {stats ? `Contacts: ${stats.totalContacts}` : "Loading"}

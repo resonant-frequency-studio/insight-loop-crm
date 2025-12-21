@@ -1,17 +1,17 @@
 import { screen } from "@testing-library/react";
 import DashboardCharts from "../DashboardCharts";
 import { renderWithProviders } from "@/components/__tests__/test-utils";
-import { UseQueryResult } from "@tanstack/react-query";
 import { DashboardStats } from "../../../../hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 
-// Mock useDashboardStats hook
-jest.mock("../../../../hooks/useDashboardStats", () => ({
-  useDashboardStats: jest.fn(),
+// Mock useDashboardStatsRealtime hook
+jest.mock("../../../../hooks/useDashboardStatsRealtime", () => ({
+  useDashboardStatsRealtime: jest.fn(),
 }));
 
-import { useDashboardStats } from "../../../../hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "../../../../hooks/useDashboardStatsRealtime";
 
-const mockUseDashboardStats = useDashboardStats as jest.MockedFunction<typeof useDashboardStats>;
+const mockUseDashboardStatsRealtime = useDashboardStatsRealtime as jest.MockedFunction<typeof useDashboardStatsRealtime>;
 
 describe("DashboardCharts", () => {
   const mockStats: DashboardStats = {
@@ -32,29 +32,40 @@ describe("DashboardCharts", () => {
     upcomingTouchpoints: 10,
   };
 
+  const mockContacts: Contact[] = [
+    {
+      contactId: "contact-1",
+      primaryEmail: "test@example.com",
+      firstName: "Test",
+      lastName: "User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseDashboardStats.mockReturnValue({
+    mockUseDashboardStatsRealtime.mockReturnValue({
       data: mockStats,
       isLoading: false,
       error: null,
-    } as unknown as UseQueryResult<DashboardStats, Error>);
+    });
   });
 
   it("renders loading skeleton when data is not available", () => {
-    mockUseDashboardStats.mockReturnValue({
+    mockUseDashboardStatsRealtime.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
-    } as unknown as UseQueryResult<DashboardStats, Error>);
+    });
 
-    const { container } = renderWithProviders(<DashboardCharts userId="user-1" />);
+    const { container } = renderWithProviders(<DashboardCharts contacts={mockContacts} />);
     const skeletons = container.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it("renders all chart cards when data is available", () => {
-    renderWithProviders(<DashboardCharts userId="user-1" />);
+    renderWithProviders(<DashboardCharts contacts={mockContacts} />);
     expect(screen.getByText("Segment Distribution")).toBeInTheDocument();
     expect(screen.getByText("Lead Source Distribution")).toBeInTheDocument();
     expect(screen.getByText("Engagement Levels")).toBeInTheDocument();
@@ -63,7 +74,7 @@ describe("DashboardCharts", () => {
   });
 
   it("renders chart components with correct data", () => {
-    const { container } = renderWithProviders(<DashboardCharts userId="user-1" />);
+    const { container } = renderWithProviders(<DashboardCharts contacts={mockContacts} />);
     // Charts should be rendered (check for chart containers)
     const chartCards = container.querySelectorAll(".bg-card-light.rounded-sm");
     expect(chartCards.length).toBeGreaterThan(0);

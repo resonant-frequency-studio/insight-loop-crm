@@ -161,8 +161,15 @@ npm install
    - See `env.example` for detailed comments on each variable
 
 4. Configure Firestore security rules:
-   - Ensure users can only read/write their own contacts
-   - Rule should be: `match /users/{userId}/contacts/{contactId} { allow read, write: if request.auth != null && request.auth.uid == userId; }`
+   - Deploy the `firestore.rules` file to your Firebase project
+   - Rules allow authenticated users to read/write their own data in:
+     - `users/{userId}/contacts/{contactId}`
+     - `users/{userId}/calendarEvents/{eventId}`
+     - `users/{userId}/syncJobs/{syncJobId}`
+     - `users/{userId}/threads/{threadId}` and subcollections
+     - `users/{userId}/contacts/{contactId}/actionItems/{actionItemId}`
+   - To deploy: `firebase deploy --only firestore:rules` (requires Firebase CLI)
+   - Or manually copy the rules from `firestore.rules` to Firebase Console > Firestore Database > Rules
 
 5. Create required Firestore indexes:
    - See [Firestore Indexes Documentation](docs/firestore-indexes.md) for required composite indexes

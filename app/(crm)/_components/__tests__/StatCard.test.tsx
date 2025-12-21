@@ -1,17 +1,17 @@
 import { screen } from "@testing-library/react";
 import StatCard from "../StatCard";
 import { renderWithProviders } from "@/components/__tests__/test-utils";
-import { UseQueryResult } from "@tanstack/react-query";
 import { DashboardStats } from "../../../../hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 
-// Mock useDashboardStats hook
-jest.mock("../../../../hooks/useDashboardStats", () => ({
-  useDashboardStats: jest.fn(),
+// Mock useDashboardStatsRealtime hook
+jest.mock("../../../../hooks/useDashboardStatsRealtime", () => ({
+  useDashboardStatsRealtime: jest.fn(),
 }));
 
-import { useDashboardStats } from "../../../../hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "../../../../hooks/useDashboardStatsRealtime";
 
-const mockUseDashboardStats = useDashboardStats as jest.MockedFunction<typeof useDashboardStats>;
+const mockUseDashboardStatsRealtime = useDashboardStatsRealtime as jest.MockedFunction<typeof useDashboardStatsRealtime>;
 
 describe("StatCard", () => {
   const mockStats: DashboardStats = {
@@ -32,8 +32,19 @@ describe("StatCard", () => {
     upcomingTouchpoints: 10,
   };
 
+  const mockContacts: Contact[] = [
+    {
+      contactId: "contact-1",
+      primaryEmail: "test@example.com",
+      firstName: "Test",
+      lastName: "User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+
   const mockProps = {
-    userId: "user-1",
+    contacts: mockContacts,
     title: "Total Contacts",
     description: "All contacts in your CRM",
     icon: <div data-testid="icon">📊</div>,
@@ -43,41 +54,34 @@ describe("StatCard", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseDashboardStatsRealtime.mockReturnValue({
+      data: mockStats,
+      isLoading: false,
+      error: null,
+    });
   });
 
   describe("Rendering", () => {
     it("renders title and description", () => {
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
-
       renderWithProviders(<StatCard {...mockProps} />);
       expect(screen.getByText("Total Contacts")).toBeInTheDocument();
       expect(screen.getByText("All contacts in your CRM")).toBeInTheDocument();
     });
 
     it("icon displays with correct background color", () => {
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
-
       renderWithProviders(<StatCard {...mockProps} />);
       const iconContainer = screen.getByTestId("icon").parentElement;
       expect(iconContainer).toHaveClass("bg-blue-100");
     });
   });
 
-  describe("Suspense", () => {
+  describe("Loading State", () => {
     it("shows loading skeleton when data is not available", () => {
-      mockUseDashboardStats.mockReturnValue({
+      mockUseDashboardStatsRealtime.mockReturnValue({
         data: undefined,
         isLoading: true,
         error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
+      });
 
       const { container } = renderWithProviders(<StatCard {...mockProps} />);
       const skeleton = container.querySelector(".animate-pulse");
@@ -85,11 +89,11 @@ describe("StatCard", () => {
     });
 
     it("StatValue shows loading skeleton when data is not available", () => {
-      mockUseDashboardStats.mockReturnValue({
+      mockUseDashboardStatsRealtime.mockReturnValue({
         data: undefined,
         isLoading: true,
         error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
+      });
 
       const { container } = renderWithProviders(<StatCard {...mockProps} />);
       // Should show skeleton in StatValue
@@ -100,23 +104,12 @@ describe("StatCard", () => {
 
   describe("Data Display", () => {
     it("StatValue displays when data is available", () => {
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
-
       renderWithProviders(<StatCard {...mockProps} />);
       expect(screen.getByText("100")).toBeInTheDocument();
     });
 
     it("getValue function is called with stats data", () => {
       const mockGetValue = jest.fn((stats: DashboardStats) => stats.totalContacts);
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
 
       renderWithProviders(
         <StatCard
@@ -128,12 +121,6 @@ describe("StatCard", () => {
     });
 
     it("displays different values for different getValue functions", () => {
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
-
       const { rerender } = renderWithProviders(
         <StatCard
           {...mockProps}
@@ -155,12 +142,6 @@ describe("StatCard", () => {
 
   describe("Card Wrapper", () => {
     it("Card component wraps content", () => {
-      mockUseDashboardStats.mockReturnValue({
-        data: mockStats,
-        isLoading: false,
-        error: null,
-      } as unknown as UseQueryResult<DashboardStats, Error>);
-
       const { container } = renderWithProviders(<StatCard {...mockProps} />);
       // Card should have base card styles
       const card = container.querySelector(".bg-card-light.rounded-sm");

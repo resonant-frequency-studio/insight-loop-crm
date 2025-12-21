@@ -3,7 +3,7 @@
 import ThemedSuspense from "@/components/ThemedSuspense";
 import Card from "@/components/Card";
 import ContactCard from "./ContactCard";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { getDaysUntilTouchpoint } from "@/util/date-utils-server";
 import { Contact } from "@/types/firestore";
 import { useUpdateTouchpointStatus } from "@/hooks/useContactMutations";
@@ -24,22 +24,14 @@ interface ContactWithTouchpoint extends Contact {
 
 function TouchpointsContent({ userId }: { userId: string }) {
   const { user } = useAuth();
-  const { data: contacts = [], isLoading: contactsLoading } = useContacts(userId);
+  const { contacts = [], loading: contactsLoading } = useContactsRealtime(userId);
   const [selectedTouchpointIds, setSelectedTouchpointIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
   const updateTouchpointStatusMutation = useUpdateTouchpointStatus(user?.uid);
   
-  // Show loading state if contacts are loading (suspense mode)
-  if (contactsLoading) {
-    return (
-      <Card padding="sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
-        </div>
-        <ThemedSuspense isLoading={true} variant="list" />
-      </Card>
-    );
-  }
+  // Always render - show skeletons only when loading AND no contacts available
+  // If contacts exist (even from cache), show them immediately
+  const showSkeletons = contactsLoading && contacts.length === 0;
 
   const toggleTouchpointSelection = (contactId: string) => {
     setSelectedTouchpointIds((prev) => {
@@ -257,24 +249,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
   const totalTodayPriorities = totalTodayCount + totalOverdueCount;
 
-  // Show empty state when no contacts at all
-  if (contacts.length === 0) {
-    return (
-      <Card padding="sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
-        </div>
-        <EmptyState
-          message="No contacts yet"
-          description="Get started by importing your contacts or adding your first contact"
-          showActions={true}
-          wrapInCard={false}
-          size="sm"
-        />
-      </Card>
-    );
-  }
-
+  // Always render - no early returns
   return (
     <div className="space-y-6">
       {/* Today's Priorities - Combined Section */}
@@ -460,20 +435,30 @@ function TouchpointsContent({ userId }: { userId: string }) {
         </Card>
       )}
 
-      {/* Recent Contacts */}
-      {recentContacts.length > 0 && (
-        <Card padding="sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
-            <ViewAllLink href="/contacts" />
-          </div>
+      {/* Recent Contacts - Always render */}
+      <Card padding="sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-theme-darkest">Recent Contacts</h2>
+          {!showSkeletons && recentContacts.length > 0 && <ViewAllLink href="/contacts" />}
+        </div>
+        {showSkeletons ? (
+          <ThemedSuspense isLoading={true} variant="list" />
+        ) : recentContacts.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
             {recentContacts.map((contact) => (
               <ContactCard key={contact.contactId} contact={{ ...contact, id: contact.contactId }} showArrow={true} userId={userId} />
             ))}
           </div>
-        </Card>
-      )}
+        ) : (
+          <EmptyState
+            message="No contacts yet"
+            description="Get started by importing your contacts or adding your first contact"
+            showActions={true}
+            wrapInCard={false}
+            size="sm"
+          />
+        )}
+      </Card>
     </div>
   );
 }

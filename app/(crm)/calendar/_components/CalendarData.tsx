@@ -1,58 +1,19 @@
 import { getUserId } from "@/lib/auth-utils";
-import { getCalendarEventsForUser } from "@/lib/calendar/get-calendar-events-server";
-import { getQueryClient } from "@/lib/query-client";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { isPlaywrightTest } from "@/util/test-utils";
-import { adminDb } from "@/lib/firebase-admin";
 import CalendarPageClientWrapper from "./CalendarPageClientWrapper";
 
 export default async function CalendarData() {
   // In E2E mode, try to get userId but don't fail if cookie isn't ready yet
-  let userId: string = "";
-  const queryClient = getQueryClient();
-
-  if (isPlaywrightTest()) {
+  // Note: We no longer prefetch data here - client will use Firebase real-time listeners
+  if (!isPlaywrightTest()) {
     try {
-      userId = await getUserId();
+      await getUserId();
     } catch {
-      // In E2E mode, cookie might not be recognized by SSR yet
-      userId = "";
+      // Auth check failed - page-level redirect will handle it
     }
-  } else {
-    userId = await getUserId();
   }
 
-  // Only prefetch if we have userId
-  // Don't block navigation - prefetch in background
-  if (userId) {
-    // Prefetch events for current month
-    const now = new Date();
-    const timeMin = new Date(now.getFullYear(), now.getMonth(), 1);
-    const timeMax = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
-    Promise.allSettled([
-      queryClient.prefetchQuery({
-        queryKey: ["calendar-events", userId, timeMin.toISOString(), timeMax.toISOString()],
-        queryFn: async () => {
-          // Try to get from cache first
-          const cachedEvents = await getCalendarEventsForUser(
-            adminDb,
-            userId,
-            timeMin,
-            timeMax
-          );
-          return cachedEvents;
-        },
-      }),
-    ]).catch(() => {
-      // Silently handle errors - client will fetch on mount
-    });
-  }
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <CalendarPageClientWrapper userId={userId} />
-    </HydrationBoundary>
-  );
+  // Client wrapper will get userId from useAuth and use Firebase real-time listeners
+  return <CalendarPageClientWrapper />;
 }
 

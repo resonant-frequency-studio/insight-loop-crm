@@ -2,12 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useCalendarEvents } from "@/hooks/useCalendarEvents";
-import { useContacts } from "@/hooks/useContacts";
-import { useCalendarSyncStatus } from "@/hooks/useCalendarSyncStatus";
+import { useCalendarEventsRealtime } from "@/hooks/useCalendarEventsRealtime";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
+import { useCalendarSyncStatusRealtime } from "@/hooks/useCalendarSyncStatusRealtime";
 import { formatRelativeTime } from "@/util/time-utils";
 import CalendarView from "./CalendarView";
-import CalendarSkeleton from "./CalendarSkeleton";
 import CalendarFilterBar, { CalendarFilters } from "./CalendarFilterBar";
 import CreateEventModal from "./CreateEventModal";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -20,15 +19,14 @@ import { reportException } from "@/lib/error-reporting";
 
 const SYNC_RANGE_STORAGE_KEY = "calendar-sync-range-days";
 
-export default function CalendarPageClientWrapper({ userId }: { userId: string }) {
+export default function CalendarPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalPrefill, setCreateModalPrefill] = useState<{ startTime?: Date; endTime?: Date; contactId?: string } | null>(null);
   
-  // Prioritize userId prop from SSR (production should always have this)
-  // Only fallback to client auth if userId prop is empty (E2E mode)
-  const effectiveUserId = userId || (!authLoading && user?.uid ? user.uid : "");
+  // Get userId from auth (no longer passed as prop from SSR)
+  const effectiveUserId = !authLoading && user?.uid ? user.uid : null;
 
   // Sync range state with localStorage persistence
   const [syncRangeDays, setSyncRangeDays] = useState<number>(() => {
@@ -45,7 +43,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
   });
 
   // Calendar sync status
-  const { lastSync, loading: syncStatusLoading } = useCalendarSyncStatus(effectiveUserId);
+  const { lastSync, loading: syncStatusLoading } = useCalendarSyncStatusRealtime(effectiveUserId);
 
   // Persist range to localStorage when it changes
   useEffect(() => {
@@ -65,15 +63,18 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
     return { timeMin: min, timeMax: max };
   }, [currentDate]);
 
-  const { data: events = [], isLoading, isError, error, refetch } = useCalendarEvents(
+  // Use Firebase real-time listeners
+  const { events = [], loading: isLoading, error, hasConfirmedNoEvents } = useCalendarEventsRealtime(
     effectiveUserId,
     timeMin,
-    timeMax,
-    { enabled: !!effectiveUserId }
+    timeMax
   );
 
   // Fetch contacts for event card suggestions
-  const { data: contacts = [] } = useContacts(effectiveUserId, undefined);
+  const { contacts = [] } = useContactsRealtime(effectiveUserId);
+  
+  // For error handling, check if error exists
+  const isError = error !== null;
 
   // Filter state
   const [filters, setFilters] = useState<CalendarFilters>({
@@ -133,6 +134,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
   }, [events, filters]);
 
   // Sync Calendar button handler - shared between loading and loaded states
+  // After sync, events will update automatically via Firebase listener
   const handleSyncCalendar = async () => {
     setSyncingCalendar(true);
     try {
@@ -141,9 +143,10 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
         credentials: 'include',
       });
       const data = await response.json();
-      if (data.ok) {
-        await refetch();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to sync calendar");
       }
+      // Events will update automatically via Firebase listener when sync completes
     } catch (err) {
       reportException(err, {
         context: "Syncing calendar events",
@@ -154,166 +157,22 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
     }
   };
 
-  // Show loading if we don't have userId yet
-  if (!effectiveUserId) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <CalendarSkeleton />
-      </div>
-    );
-  }
+  // Prepare error message and helpers if there is an error (but still render static content below)
+  const errorMessage = isError && error instanceof Error ? error.message : (isError ? "Failed to load calendar events" : null);
+  const needsReconnect = errorMessage ? (
+    errorMessage.includes("Calendar access not granted") || 
+    errorMessage.includes("reconnect your Google account with Calendar") ||
+    errorMessage.includes("Calendar scope")
+  ) : false;
+  
+  const needsApiEnabled = errorMessage ? (
+    errorMessage.includes("Google Calendar API has not been used") ||
+    errorMessage.includes("calendar-json.googleapis.com") ||
+    errorMessage.includes("Enable it by visiting")
+  ) : false;
 
-  // Show error if there is one
-  if (isError) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to load calendar events";
-    const needsReconnect = errorMessage.includes("Calendar access not granted") || 
-                          errorMessage.includes("reconnect your Google account with Calendar") ||
-                          errorMessage.includes("Calendar scope");
-    
-    const needsApiEnabled = errorMessage.includes("Google Calendar API has not been used") ||
-                            errorMessage.includes("calendar-json.googleapis.com") ||
-                            errorMessage.includes("Enable it by visiting");
-    
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <ErrorMessage 
-          message={errorMessage}
-          dismissible={false}
-        />
-        {needsApiEnabled && (
-          <Card padding="md" className="bg-yellow-50 border-yellow-200">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-theme-darkest mb-2">
-                  Google Calendar API Not Enabled
-                </h3>
-                <p className="text-theme-dark mb-4">
-                  The Google Calendar API needs to be enabled in your Google Cloud Console before you can sync calendar events.
-                </p>
-                <div className="bg-white p-3 rounded border border-yellow-300 mb-4">
-                  <p className="text-sm text-theme-darkest font-mono break-all">
-                    {errorMessage}
-                  </p>
-                </div>
-                <p className="text-sm text-theme-dark mb-4">
-                  <strong>To fix this:</strong>
-                </p>
-                <ol className="text-sm text-theme-dark list-decimal list-inside space-y-2 mb-4">
-                  <li>Open the Google Cloud Console</li>
-                  <li>Navigate to APIs & Services → Library</li>
-                  <li>Search for &quot;Google Calendar API&quot;</li>
-                  <li>Click &quot;Enable&quot;</li>
-                  <li>Wait a few minutes for the API to be fully enabled</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    // Extract the URL from the error message if present
-                    const urlMatch = errorMessage.match(/https:\/\/[^\s]+/);
-                    if (urlMatch) {
-                      window.open(urlMatch[0], '_blank');
-                    } else {
-                      window.open('https://console.cloud.google.com/apis/library/calendar-json.googleapis.com', '_blank');
-                    }
-                  }}
-                >
-                  Open Google Cloud Console
-                </Button>
-                <Button variant="outline" onClick={() => refetch()}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-        {needsReconnect && !needsApiEnabled && (
-          <Card padding="md" className="bg-blue-50 border-blue-200">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-theme-darkest mb-2">
-                  Calendar Access Required
-                </h3>
-                <p className="text-theme-dark mb-4">
-                  Your Google account needs to be reconnected with Calendar permissions to view your events.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    window.location.href = "/api/oauth/gmail/start?redirect=/calendar";
-                  }}
-                >
-                  Reconnect Google Account
-                </Button>
-                <Button variant="outline" onClick={() => refetch()}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-        {!needsReconnect && (
-          <Button onClick={() => refetch()}>Retry</Button>
-        )}
-      </div>
-    );
-  }
-
-  // Show empty state if no events
-  if (!isLoading && events.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <EmptyState
-          message="No calendar events"
-          description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
-          showActions={false}
-          wrapInCard={true}
-          size="lg"
-        />
-        <div className="flex gap-3 justify-center">
-          <Button onClick={() => refetch()} size="sm" variant="secondary">Refresh Calendar</Button>
-          <Button 
-            onClick={handleSyncCalendar}
-            disabled={syncingCalendar}
-            loading={syncingCalendar}
-            size="sm"
-            variant="secondary"
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            }
-          >
-            Sync Calendar
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Show empty state only after loading completes AND there's no data
+  // Don't show empty state while loading - let the calendar view handle loading state
 
   // Sync Calendar button component - just the button
   const syncButton = (
@@ -413,29 +272,123 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
         </div>
       </div>
 
-      {/* Calendar Filter Bar */}
-      {events.length > 0 && (
-        <CalendarFilterBar
-          events={events}
-          filters={filters}
-          onFiltersChange={setFilters}
+      {/* Error Message - show if there's an error */}
+      {isError && errorMessage && (
+        <>
+          <ErrorMessage 
+            message={errorMessage}
+            dismissible={false}
+          />
+          {needsApiEnabled && (
+            <Card padding="md" className="bg-yellow-50 border-yellow-200">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-theme-darkest mb-2">
+                    Google Calendar API Not Enabled
+                  </h3>
+                  <p className="text-theme-dark mb-4">
+                    The Google Calendar API needs to be enabled in your Google Cloud Console before you can sync calendar events.
+                  </p>
+                  <div className="bg-white p-3 rounded border border-yellow-300 mb-4">
+                    <p className="text-sm text-theme-darkest font-mono break-all">
+                      {errorMessage}
+                    </p>
+                  </div>
+                  <p className="text-sm text-theme-dark mb-4">
+                    <strong>To fix this:</strong>
+                  </p>
+                  <ol className="text-sm text-theme-dark list-decimal list-inside space-y-2 mb-4">
+                    <li>Open the Google Cloud Console</li>
+                    <li>Navigate to APIs & Services → Library</li>
+                    <li>Search for &quot;Google Calendar API&quot;</li>
+                    <li>Click &quot;Enable&quot;</li>
+                    <li>Wait a few minutes for the API to be fully enabled</li>
+                    <li>Refresh this page</li>
+                  </ol>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      // Extract the URL from the error message if present
+                      const urlMatch = errorMessage.match(/https:\/\/[^\s]+/);
+                      if (urlMatch) {
+                        window.open(urlMatch[0], '_blank');
+                      } else {
+                        window.open('https://console.cloud.google.com/apis/library/calendar-json.googleapis.com', '_blank');
+                      }
+                    }}
+                  >
+                    Open Google Cloud Console
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+          {needsReconnect && !needsApiEnabled && (
+            <Card padding="md" className="bg-blue-50 border-blue-200">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-theme-darkest mb-2">
+                    Calendar Access Required
+                  </h3>
+                  <p className="text-theme-dark mb-4">
+                    Your Google account needs to be reconnected with Calendar permissions to view your events.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      window.location.href = "/api/oauth/gmail/start?redirect=/calendar";
+                    }}
+                  >
+                    Reconnect Google Account
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+          {!needsReconnect && !needsApiEnabled && (
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          )}
+        </>
+      )}
+
+      {/* Calendar Filter Bar - ALWAYS render */}
+      <CalendarFilterBar
+        events={events}
+        filters={filters}
+        onFiltersChange={setFilters}
+        disabled={!effectiveUserId || isLoading || events.length === 0}
+      />
+
+      {/* Empty State - only show when both cache and server confirm no events */}
+      {hasConfirmedNoEvents && (
+        <EmptyState
+          message="No calendar events"
+          description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
+          showActions={false}
+          wrapInCard={true}
+          size="lg"
         />
       )}
 
-      {isLoading && events.length === 0 ? (
-        <CalendarSkeleton />
-      ) : (
-        <CalendarView
-          events={filteredEvents}
-          currentDate={currentDate}
-          onNavigate={(date) => setCurrentDate(date)}
-          contacts={contacts}
-          onSlotSelect={(start, end) => {
-            setCreateModalPrefill({ startTime: start, endTime: end });
-            setShowCreateModal(true);
-          }}
-        />
-      )}
+      {/* Calendar View - ALWAYS render */}
+      <CalendarView
+        events={filteredEvents}
+        currentDate={currentDate}
+        onNavigate={(date) => setCurrentDate(date)}
+        contacts={contacts}
+        onSlotSelect={(start, end) => {
+          setCreateModalPrefill({ startTime: start, endTime: end });
+          setShowCreateModal(true);
+        }}
+      />
 
       <CreateEventModal
         isOpen={showCreateModal}

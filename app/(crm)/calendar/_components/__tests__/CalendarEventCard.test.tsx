@@ -46,9 +46,11 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
   }),
 }));
 
-jest.mock("@/hooks/useContacts", () => ({
-  useContacts: () => ({
-    data: [],
+jest.mock("@/hooks/useContactsRealtime", () => ({
+  useContactsRealtime: () => ({
+    contacts: [],
+    loading: false,
+    error: null,
   }),
 }));
 

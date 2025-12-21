@@ -1,7 +1,6 @@
 "use client";
 
-import { useContacts } from "@/hooks/useContacts";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { useAuth } from "@/hooks/useAuth";
 import { getDaysUntilTouchpoint } from "@/util/date-utils-server";
 import { Contact } from "@/types/firestore";
@@ -15,19 +14,18 @@ interface ContactWithTouchpoint extends Contact {
   needsReminder: boolean;
 }
 
-export default function DashboardPageClientWrapper({ userId }: { userId: string }) {
+export default function DashboardPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
   
-  // Prioritize userId prop from SSR (production should always have this)
-  // Only fallback to client auth if userId prop is empty (E2E mode)
-  const effectiveUserId = userId || (!authLoading && user?.uid ? user.uid : "");
+  // Get userId from auth (no longer passed as prop from SSR)
+  const effectiveUserId = !authLoading && user?.uid ? user.uid : null;
   
-  const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
-  const { data: stats, isLoading: statsLoading } = useDashboardStats(effectiveUserId);
+  // Use Firebase real-time listeners
+  const { contacts, loading: contactsLoading } = useContactsRealtime(effectiveUserId);
 
-  // Show loading if we don't have userId yet OR if stats/contacts are loading (suspense mode)
-  // In production, this should only be true briefly during initial render
-  if (!effectiveUserId || (statsLoading && !stats) || (contactsLoading && contacts.length === 0)) {
+  // Show loading if we don't have userId yet OR if contacts are loading (initial load)
+  // Once contacts load, real-time updates happen silently
+  if (!effectiveUserId || (contactsLoading && contacts.length === 0)) {
     return (
       <div className="space-y-6">
         <div>
@@ -138,7 +136,7 @@ export default function DashboardPageClientWrapper({ userId }: { userId: string 
   return (
     <DashboardPageClient
       userId={effectiveUserId}
-      initialStats={stats}
+      contacts={contacts}
       contactsWithUpcomingTouchpoints={contactsWithUpcomingTouchpoints}
       contactsWithOverdueTouchpoints={contactsWithOverdueTouchpoints}
       recentContacts={recentContacts}

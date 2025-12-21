@@ -1,17 +1,17 @@
 import { screen } from "@testing-library/react";
 import DashboardStatsCards from "../DashboardStatsCards";
 import { renderWithProviders } from "@/components/__tests__/test-utils";
-import { UseQueryResult } from "@tanstack/react-query";
 import { DashboardStats } from "../../../../hooks/useDashboardStats";
+import { Contact } from "@/types/firestore";
 
-// Mock useDashboardStats hook
-jest.mock("../../../../hooks/useDashboardStats", () => ({
-  useDashboardStats: jest.fn(),
+// Mock useDashboardStatsRealtime hook
+jest.mock("../../../../hooks/useDashboardStatsRealtime", () => ({
+  useDashboardStatsRealtime: jest.fn(),
 }));
 
-import { useDashboardStats } from "../../../../hooks/useDashboardStats";
+import { useDashboardStatsRealtime } from "../../../../hooks/useDashboardStatsRealtime";
 
-const mockUseDashboardStats = useDashboardStats as jest.MockedFunction<typeof useDashboardStats>;
+const mockUseDashboardStatsRealtime = useDashboardStatsRealtime as jest.MockedFunction<typeof useDashboardStatsRealtime>;
 
 describe("DashboardStatsCards", () => {
   const mockStats: DashboardStats = {
@@ -32,23 +32,34 @@ describe("DashboardStatsCards", () => {
     upcomingTouchpoints: 10,
   };
 
+  const mockContacts: Contact[] = [
+    {
+      contactId: "contact-1",
+      primaryEmail: "test@example.com",
+      firstName: "Test",
+      lastName: "User",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseDashboardStats.mockReturnValue({
+    mockUseDashboardStatsRealtime.mockReturnValue({
       data: mockStats,
       isLoading: false,
       error: null,
-    } as unknown as UseQueryResult<DashboardStats, Error>);
+    });
   });
 
   it("renders loading skeleton when data is not available", () => {
-    mockUseDashboardStats.mockReturnValue({
+    mockUseDashboardStatsRealtime.mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
-    } as unknown as UseQueryResult<DashboardStats, Error>);
+    });
 
-    const { container } = renderWithProviders(<DashboardStatsCards userId="user-1" />);
+    const { container } = renderWithProviders(<DashboardStatsCards contacts={mockContacts} />);
     // Each card has 3 skeleton elements (title, value, description), so 3 cards = 9 skeletons
     const skeletons = container.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBe(9);
@@ -58,14 +69,14 @@ describe("DashboardStatsCards", () => {
   });
 
   it("renders all three stat cards when data is available", () => {
-    renderWithProviders(<DashboardStatsCards userId="user-1" />);
+    renderWithProviders(<DashboardStatsCards contacts={mockContacts} />);
     expect(screen.getByText("Total Contacts")).toBeInTheDocument();
     expect(screen.getByText("Active Threads")).toBeInTheDocument();
     expect(screen.getByText("Avg Engagement")).toBeInTheDocument();
   });
 
   it("displays correct stat values", () => {
-    renderWithProviders(<DashboardStatsCards userId="user-1" />);
+    renderWithProviders(<DashboardStatsCards contacts={mockContacts} />);
     expect(screen.getByText("100")).toBeInTheDocument();
     expect(screen.getByText("25")).toBeInTheDocument();
     expect(screen.getByText("75")).toBeInTheDocument();

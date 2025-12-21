@@ -16,10 +16,10 @@ jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { uid: "test-user" }, loading: false }),
 }));
 
-const mockRefetch = jest.fn();
-jest.mock("@/hooks/useCalendarEvents", () => ({
-  useCalendarEvents: () => ({
-    data: [
+// Mock Firebase real-time hooks
+jest.mock("@/hooks/useCalendarEventsRealtime", () => ({
+  useCalendarEventsRealtime: () => ({
+    events: [
       {
         eventId: "e1",
         googleEventId: "g1",
@@ -33,11 +33,21 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
         sourceOfTruth: "google",
       },
     ],
-    isLoading: false,
-    isError: false,
+    loading: false,
     error: null,
-    refetch: mockRefetch,
   }),
+}));
+
+jest.mock("@/hooks/useContactsRealtime", () => ({
+  useContactsRealtime: () => ({
+    contacts: [],
+    loading: false,
+    error: null,
+  }),
+}));
+
+// Mock mutation hooks (still use React Query)
+jest.mock("@/hooks/useCalendarEvents", () => ({
   useCreateCalendarEvent: () => ({
     mutate: jest.fn(),
     mutateAsync: jest.fn(),
@@ -52,12 +62,6 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
     mutate: jest.fn(),
     mutateAsync: jest.fn(),
     isPending: false,
-  }),
-}));
-
-jest.mock("@/hooks/useContacts", () => ({
-  useContacts: () => ({
-    data: [],
   }),
 }));
 
@@ -82,16 +86,16 @@ jest.mock("@/components/Select", () => {
   };
 });
 
-// Mock useCalendarSyncStatus
+// Mock useCalendarSyncStatusRealtime
 let mockLastSync: SyncJob | null = null;
-const mockUseCalendarSyncStatus = jest.fn(() => ({
+const mockUseCalendarSyncStatusRealtime = jest.fn(() => ({
   lastSync: mockLastSync as SyncJob | null,
   loading: false,
   error: null,
 }));
 
-jest.mock("@/hooks/useCalendarSyncStatus", () => ({
-  useCalendarSyncStatus: () => mockUseCalendarSyncStatus(),
+jest.mock("@/hooks/useCalendarSyncStatusRealtime", () => ({
+  useCalendarSyncStatusRealtime: () => mockUseCalendarSyncStatusRealtime(),
 }));
 
 // Mock formatRelativeTime
@@ -142,7 +146,7 @@ describe("CalendarPageClientWrapper", () => {
     localStorageMock.clear();
     // Reset mock to default
     mockLastSync = null;
-    mockUseCalendarSyncStatus.mockReturnValue({
+    mockUseCalendarSyncStatusRealtime.mockReturnValue({
       lastSync: null,
       loading: false,
       error: null,
@@ -150,7 +154,7 @@ describe("CalendarPageClientWrapper", () => {
   });
 
   it("should display 'Never synced' when no sync history exists", () => {
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     expect(screen.getByText(/Last synced: Never synced/i)).toBeInTheDocument();
   });
@@ -168,19 +172,19 @@ describe("CalendarPageClientWrapper", () => {
     };
 
     mockLastSync = lastSync;
-    mockUseCalendarSyncStatus.mockReturnValue({
+    mockUseCalendarSyncStatusRealtime.mockReturnValue({
       lastSync: lastSync as SyncJob | null,
       loading: false,
       error: null,
     });
 
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     expect(screen.getByText(/Last synced: 2 hours ago/i)).toBeInTheDocument();
   });
 
   it("should display range selector with default value of 60 days", () => {
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
     const rangeSelect = rangeSelects[0]; // Get first one
@@ -189,7 +193,7 @@ describe("CalendarPageClientWrapper", () => {
   });
 
   it("should persist range selection to localStorage", () => {
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
     const rangeSelect = rangeSelects[0]; // Get first one
@@ -204,7 +208,7 @@ describe("CalendarPageClientWrapper", () => {
   it("should restore range from localStorage on mount", () => {
     localStorageMock.setItem("calendar-sync-range-days", "180");
     
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
     const rangeSelect = rangeSelects[0]; // Get first one
@@ -214,7 +218,7 @@ describe("CalendarPageClientWrapper", () => {
   it("should use default range if localStorage value is invalid", () => {
     localStorageMock.setItem("calendar-sync-range-days", "999"); // Invalid value
     
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
     const rangeSelect = rangeSelects[0]; // Get first one
@@ -228,7 +232,7 @@ describe("CalendarPageClientWrapper", () => {
     });
     global.fetch = mockFetch;
 
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     // Change range to 90 days
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
@@ -252,20 +256,20 @@ describe("CalendarPageClientWrapper", () => {
   });
 
   it("should show loading state when sync status is loading", () => {
-    mockUseCalendarSyncStatus.mockReturnValue({
+    mockUseCalendarSyncStatusRealtime.mockReturnValue({
       lastSync: null,
       loading: true,
       error: null,
     });
 
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     // Should not show "Never synced" when loading
     expect(screen.queryByText(/Last synced:/i)).not.toBeInTheDocument();
   });
 
   it("should display range selector with all options", () => {
-    renderWithProviders(<CalendarPageClientWrapper userId="test-user" />);
+    renderWithProviders(<CalendarPageClientWrapper />);
     
     const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
     const rangeSelect = rangeSelects[0]; // Get first one
