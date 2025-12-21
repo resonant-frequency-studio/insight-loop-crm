@@ -1,21 +1,23 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import DashboardCharts from "../_components/DashboardCharts";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
 import EmptyState from "@/components/dashboard/EmptyState";
 import ThemedSuspense from "@/components/ThemedSuspense";
 
-export default function ChartsPageClient({ userId }: { userId: string }) {
-  const { loading } = useAuth();
-  const { data: initialStats, isLoading: statsLoading } = useDashboardStats(userId);
-
-  if (loading && !userId) {
-    return null;
-  }
+export default function ChartsPageClient({ userId: ssrUserId }: { userId: string | null }) {
+  const { user, loading: authLoading } = useAuth();
   
-  // Show loading state if stats are loading (suspense mode)
-  if (statsLoading) {
+  // Prioritize userId prop from SSR (production should always have this)
+  // Only fallback to client auth if userId prop is empty (E2E mode)
+  const effectiveUserId = ssrUserId || (!authLoading && user?.uid ? user.uid : null);
+  
+  // Use Firebase real-time listeners
+  const { contacts, loading: contactsLoading } = useContactsRealtime(effectiveUserId);
+
+  // Show loading state if we don't have userId yet OR if contacts are loading (initial load)
+  if (!effectiveUserId || (contactsLoading && contacts.length === 0)) {
     return (
       <div className="space-y-6">
         <div>
@@ -39,8 +41,8 @@ export default function ChartsPageClient({ userId }: { userId: string }) {
     );
   }
   
-  // Show empty state if no contacts
-  if (initialStats?.totalContacts === 0) {
+  // Show empty state only after loading completes AND there's no data
+  if (!contactsLoading && contacts.length === 0) {
     return (
       <div className="space-y-6">
         <div>
@@ -65,7 +67,7 @@ export default function ChartsPageClient({ userId }: { userId: string }) {
       </div>
 
       {/* Charts Section */}
-      <DashboardCharts userId={userId} initialStats={initialStats} />
+      <DashboardCharts contacts={contacts} />
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import { render } from "@testing-library/react";
 import ContactsPageClient from "../ContactsPageClient";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { 
   useBulkArchiveContacts,
   useBulkUpdateSegments,
   useBulkUpdateTags,
   useBulkUpdateCompanies 
 } from "@/hooks/useContactMutations";
-import { createMockContact, createMockUseQueryResult, createMockUseMutationResult } from "@/components/__tests__/test-utils";
+import { createMockContact, createMockUseMutationResult } from "@/components/__tests__/test-utils";
 
 // Mock hooks
-jest.mock("@/hooks/useContacts");
+jest.mock("@/hooks/useContactsRealtime");
 jest.mock("@/hooks/useContactMutations");
 // Default date range: last 12 months
 const getDefaultDateRange = () => {
@@ -42,7 +42,7 @@ jest.mock("@/hooks/useFilterContacts", () => ({
   })),
 }));
 
-const mockUseContacts = useContacts as jest.MockedFunction<typeof useContacts>;
+const mockUseContactsRealtime = useContactsRealtime as jest.MockedFunction<typeof useContactsRealtime>;
 const mockUseBulkArchiveContacts = useBulkArchiveContacts as jest.MockedFunction<typeof useBulkArchiveContacts>;
 const mockUseBulkUpdateSegments = useBulkUpdateSegments as jest.MockedFunction<typeof useBulkUpdateSegments>;
 const mockUseBulkUpdateTags = useBulkUpdateTags as jest.MockedFunction<typeof useBulkUpdateTags>;
@@ -107,9 +107,12 @@ describe("ContactsPageClient - Bulk Company Update", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseContacts.mockReturnValue(
-      createMockUseQueryResult<typeof mockContacts, Error>(mockContacts, false, null)
-    );
+    // Mock Firebase real-time hook - returns { contacts, loading, error }
+    mockUseContactsRealtime.mockReturnValue({
+      contacts: mockContacts,
+      loading: false,
+      error: null,
+    });
     mockUseBulkArchiveContacts.mockReturnValue(archiveMutationMock);
     mockUseBulkUpdateSegments.mockReturnValue(segmentMutationMock);
     mockUseBulkUpdateTags.mockReturnValue(tagsMutationMock);

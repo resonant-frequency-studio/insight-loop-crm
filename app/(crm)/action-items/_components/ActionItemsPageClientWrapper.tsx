@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionItems } from "@/hooks/useActionItems";
+import { useActionItemsRealtime } from "@/hooks/useActionItemsRealtime";
 import { useAuth } from "@/hooks/useAuth";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { computeIsOverdue, getDateCategory } from "@/util/date-utils-server";
 import { ActionItem, Contact } from "@/types/firestore";
@@ -29,30 +29,19 @@ type ActionItemWithContactFields = ActionItem & {
   contactEmail?: string;
 };
 
-export default function ActionItemsPageClientWrapper({ userId }: { userId: string }) {
+export default function ActionItemsPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
-  // Use userId prop if provided (from SSR), otherwise get from client auth (for E2E mode or if SSR didn't have it)
-  // In production, userId prop should always be provided from SSR
-  // In E2E mode, it might be empty, so we wait for auth to load and use user?.uid
-  const effectiveUserId = userId || (authLoading ? "" : user?.uid || "");
-  // React Query automatically uses prefetched data from HydrationBoundary
-  const { data: actionItems = [], isLoading: actionItemsLoading } = useActionItems(effectiveUserId);
-  const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
   
-  // Show loading state if either is loading (suspense mode)
-  if (contactsLoading || actionItemsLoading) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
-          <p className="text-theme-dark text-lg">Manage tasks and action items across all your contacts</p>
-        </div>
-        <ThemedSuspense isLoading={true} variant="default" />
-      </div>
-    );
-  }
+  // Get userId from auth (no longer passed as prop from SSR)
+  // For Firebase listeners, null is acceptable - the hook will handle it
+  const userId = !authLoading && user?.uid ? user.uid : null;
   
-  // Show empty state if no contacts
+  // Use Firebase real-time listeners
+  const { actionItems = [], loading: actionItemsLoading } = useActionItemsRealtime(userId);
+  const { contacts = [], loading: contactsLoading } = useContactsRealtime(userId);
+  
+  // Show empty state only after loading completes AND there's no data
+  // Wrap in ThemedSuspense to show skeletons while loading
   if (contacts.length === 0) {
     return (
       <div className="space-y-8">
@@ -60,7 +49,11 @@ export default function ActionItemsPageClientWrapper({ userId }: { userId: strin
           <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
           <p className="text-theme-dark text-lg">Manage tasks and action items across all your contacts</p>
         </div>
-        <EmptyState wrapInCard={true} size="lg" />
+        <ThemedSuspense isLoading={contactsLoading || actionItemsLoading}>
+          {!contactsLoading && !actionItemsLoading && (
+            <EmptyState wrapInCard={true} size="lg" />
+          )}
+        </ThemedSuspense>
       </div>
     );
   }
@@ -68,21 +61,24 @@ export default function ActionItemsPageClientWrapper({ userId }: { userId: strin
   // Use consistent server time for all calculations
   const serverTime = new Date();
 
-  // Pre-compute all derived values using enriched contact data from action items
-  const enrichedItems: EnrichedActionItem[] = (actionItems as ActionItemWithContactFields[]).map((item) => {
-    // Create contact object for utility functions using enriched data
+  // Enrich action items with contact data from contacts array (client-side enrichment)
+  const enrichedItems: EnrichedActionItem[] = actionItems.map((item) => {
+    // Find matching contact for this action item
+    const contact = contacts.find((c) => c.contactId === item.contactId);
+    
+    // Create contact object for utility functions
     const contactForUtils: Contact = {
       contactId: item.contactId,
-      firstName: item.contactFirstName || null,
-      lastName: item.contactLastName || null,
-      company: null,
-      primaryEmail: item.contactEmail || "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      firstName: contact?.firstName || null,
+      lastName: contact?.lastName || null,
+      company: contact?.company || null,
+      primaryEmail: contact?.primaryEmail || "",
+      createdAt: contact?.createdAt || new Date(),
+      updatedAt: contact?.updatedAt || new Date(),
     };
 
     const displayName = getDisplayName(contactForUtils);
-    const contactName = displayName || item.contactEmail || "";
+    const contactName = displayName || contact?.primaryEmail || "";
     const initials = getInitials(contactForUtils);
     const isOverdue = computeIsOverdue(item, serverTime);
     const dateCategory = getDateCategory(item.dueDate, serverTime);
@@ -90,9 +86,9 @@ export default function ActionItemsPageClientWrapper({ userId }: { userId: strin
     return {
       ...item,
       contactName,
-      contactEmail: item.contactEmail,
-      contactFirstName: item.contactFirstName || undefined,
-      contactLastName: item.contactLastName || undefined,
+      contactEmail: contact?.primaryEmail || undefined,
+      contactFirstName: contact?.firstName || undefined,
+      contactLastName: contact?.lastName || undefined,
       displayName,
       initials,
       isOverdue,

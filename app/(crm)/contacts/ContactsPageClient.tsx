@@ -6,7 +6,7 @@ import { Contact } from "@/types/firestore";
 import ExportContactsButton from "../_components/ExportContactsButton";
 import ContactsFilter from "../_components/ContactsFilter";
 import { Button } from "@/components/Button";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { ContactsFilterProvider, useContactsFilter } from "./_components/ContactsFilterContext";
 import ContactsGrid from "./_components/ContactsGrid";
@@ -73,7 +73,8 @@ function ContactsPageHeader({ contacts }: { contacts: ContactWithId[] }) {
 export default function ContactsPageClient({
   userId,
 }: ContactsPageClientProps) {
-  const { data: contactsData = [], isLoading } = useContacts(userId);
+  // Use Firebase real-time listeners
+  const { contacts: contactsData = [], loading: isLoading } = useContactsRealtime(userId || null);
   const contacts: ContactWithId[] = useMemo(() => {
     return contactsData.map((contact) => ({
       ...contact,

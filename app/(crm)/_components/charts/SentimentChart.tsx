@@ -49,6 +49,15 @@ export default function SentimentChart({ data }: SentimentChartProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Handle null/undefined data
+  if (!data || typeof data !== "object") {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <p>No sentiment data available</p>
+      </div>
+    );
+  }
+
   const chartData = Object.entries(data)
     .map(([name, value]) => ({ name: name.trim(), value }))
     .filter((item) => item.value > 0)

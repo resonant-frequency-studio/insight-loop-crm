@@ -1,9 +1,6 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
-import { getDashboardStats } from "@/lib/dashboard-stats-server";
-import { getQueryClient } from "@/lib/query-client";
-import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { isPlaywrightTest } from "@/util/test-utils";
 import ChartsPageClient from "./ChartsPageClient";
 
@@ -13,33 +10,23 @@ export const metadata: Metadata = {
 };
 
 export default async function ChartsPage() {
-  // Bypass SSR auth redirect for E2E tests - let client-side auth handle it
+  let userId: string | null = null;
+
   if (!isPlaywrightTest()) {
     try {
-      await getUserId();
+      userId = await getUserId();
     } catch {
       redirect("/login");
     }
+  } else {
+    // In E2E mode, userId might be empty initially, client-side auth will handle it
+    try {
+      userId = await getUserId();
+    } catch {
+      userId = null;
+    }
   }
 
-  const userId = await getUserId();
-  const queryClient = getQueryClient();
-
-  // Prefetch dashboard stats for charts
-  // Don't block navigation - prefetch in background
-  Promise.allSettled([
-    queryClient.prefetchQuery({
-      queryKey: ["dashboard-stats", userId],
-      queryFn: () => getDashboardStats(userId),
-    }),
-  ]).catch(() => {
-    // Silently handle errors - client will fetch on mount
-  });
-
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <ChartsPageClient userId={userId} />
-    </HydrationBoundary>
-  );
+  return <ChartsPageClient userId={userId} />;
 }
 

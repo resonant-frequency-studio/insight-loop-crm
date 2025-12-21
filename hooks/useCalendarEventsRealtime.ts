@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { CalendarEvent } from "@/types/firestore";
@@ -42,6 +42,7 @@ export function useCalendarEventsRealtime(
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const hasReceivedServerSnapshotRef = useRef(false);
 
   useEffect(() => {
     if (!userId || !timeMin || !timeMax) {
@@ -50,10 +51,13 @@ export function useCalendarEventsRealtime(
         setLoading(false);
         setEvents([]);
       });
+      hasReceivedServerSnapshotRef.current = false;
       return;
     }
 
     let isMounted = true;
+    hasReceivedServerSnapshotRef.current = false;
+    setLoading(true);
 
     try {
       // Convert Date to Firestore Timestamp for query
@@ -81,7 +85,18 @@ export function useCalendarEventsRealtime(
           });
 
           setEvents(eventsData);
-          setLoading(false);
+          
+          const isFromCache = snapshot.metadata.fromCache;
+          
+          // Only set loading to false when we receive a server snapshot
+          // This prevents showing empty state when cached snapshot is empty but server has data
+          if (!isFromCache) {
+            hasReceivedServerSnapshotRef.current = true;
+            setLoading(false);
+          }
+          // If cached snapshot, keep loading true until server snapshot arrives
+          // This prevents empty state from flashing when cache is empty but server has data
+          
           setError(null);
         },
         (err) => {

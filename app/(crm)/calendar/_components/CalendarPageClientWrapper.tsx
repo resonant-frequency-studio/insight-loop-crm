@@ -273,51 +273,8 @@ export default function CalendarPageClientWrapper() {
     );
   }
 
-  // Show empty state if no events
-  if (!isLoading && events.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <EmptyState
-          message="No calendar events"
-          description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
-          showActions={false}
-          wrapInCard={true}
-          size="lg"
-        />
-        <div className="flex gap-3 justify-center">
-          <Button onClick={() => window.location.reload()} size="sm" variant="secondary">Refresh Calendar</Button>
-          <Button 
-            onClick={handleSyncCalendar}
-            disabled={syncingCalendar}
-            loading={syncingCalendar}
-            size="sm"
-            variant="secondary"
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            }
-          >
-            Sync Calendar
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // Show empty state only after loading completes AND there's no data
+  // Don't show empty state while loading - let the calendar view handle loading state
 
   // Sync Calendar button component - just the button
   const syncButton = (
@@ -428,6 +385,43 @@ export default function CalendarPageClientWrapper() {
 
       {isLoading && events.length === 0 ? (
         <CalendarSkeleton />
+      ) : !isLoading && events.length === 0 ? (
+        <>
+          <EmptyState
+            message="No calendar events"
+            description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
+            showActions={false}
+            wrapInCard={true}
+            size="lg"
+          />
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => window.location.reload()} size="sm" variant="secondary">Refresh Calendar</Button>
+            <Button 
+              onClick={handleSyncCalendar}
+              disabled={syncingCalendar}
+              loading={syncingCalendar}
+              size="sm"
+              variant="secondary"
+              icon={
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              }
+            >
+              Sync Calendar
+            </Button>
+          </div>
+        </>
       ) : (
         <CalendarView
           events={filteredEvents}

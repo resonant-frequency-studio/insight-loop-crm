@@ -46,8 +46,8 @@ export default function SyncPageClient({
     return <ThemedSuspense isLoading={true} variant="sync" />;
   }
   
-  // Show empty state if no contacts
-  if (contacts.length === 0) {
+  // Show empty state only after loading completes AND there's no data
+  if (!contactsLoading && !syncLoading && contacts.length === 0) {
     return <EmptyState wrapInCard={true} size="lg" />;
   }
 

@@ -257,8 +257,8 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
   const totalTodayPriorities = totalTodayCount + totalOverdueCount;
 
-  // Show empty state when no contacts at all
-  if (contacts.length === 0) {
+  // Show empty state only after loading completes AND there's no data
+  if (!contactsLoading && contacts.length === 0) {
     return (
       <Card padding="sm">
         <div className="flex items-center justify-between mb-4">

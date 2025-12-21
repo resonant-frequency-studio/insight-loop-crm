@@ -1,42 +1,35 @@
 "use client";
 
-import ThemedSuspense from "@/components/ThemedSuspense";
 import ContactEditor from "../../_components/ContactEditor";
 import ContactsLink from "../../_components/ContactsLink";
 import ContactDetailMenu from "../../_components/ContactDetailMenu";
 import ContactSaveBar from "@/components/contacts/ContactSaveBar";
 import { ContactAutosaveProvider } from "@/components/contacts/ContactAutosaveProvider";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
-import { ActionItem } from "@/types/firestore";
-import { useContact } from "@/hooks/useContact";
-import { useActionItems } from "@/hooks/useActionItems";
+import { ActionItem, Contact } from "@/types/firestore";
 import Skeleton from "@/components/Skeleton";
 
 interface ContactDetailPageClientProps {
   contactDocumentId: string;
   userId: string;
-  initialActionItems?: ActionItem[];
+  contact: Contact | null;
+  actionItems: ActionItem[];
   uniqueSegments?: string[];
 }
 
 function ContactDetailContent({
   contactDocumentId,
   userId,
-  initialActionItems,
+  contact,
+  actionItems,
   uniqueSegments,
 }: {
   contactDocumentId: string;
   userId: string;
-  initialActionItems?: ActionItem[];
+  contact: Contact | null;
+  actionItems: ActionItem[];
   uniqueSegments?: string[];
 }) {
-  const { data: contact } = useContact(userId, contactDocumentId);
-  const { data: actionItems = initialActionItems || [] } = useActionItems(
-    userId,
-    contactDocumentId,
-    initialActionItems
-  );
-
   if (!contact) {
     return (
       <div className="space-y-6">
@@ -93,7 +86,7 @@ function ContactDetailContent({
         contactDocumentId={contactDocumentId}
         userId={userId}
         initialActionItems={actionItems}
-        uniqueSegments={uniqueSegments}
+        uniqueSegments={uniqueSegments || []}
       />
     </>
   );
@@ -102,7 +95,8 @@ function ContactDetailContent({
 export default function ContactDetailPageClient({
   contactDocumentId,
   userId,
-  initialActionItems,
+  contact,
+  actionItems,
   uniqueSegments,
 }: ContactDetailPageClientProps) {
   return (
@@ -114,28 +108,27 @@ export default function ContactDetailPageClient({
           <ContactDetailMenu contactId={contactDocumentId} userId={userId} />
         </div>
 
-        {/* Contact Data - Only dynamic data is suspended */}
-        <ThemedSuspense
-          fallback={
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-theme-light rounded-full animate-pulse" />
-                <div className="space-y-2">
-                  <div className="h-8 bg-theme-light rounded w-48 animate-pulse" />
-                  <div className="h-5 bg-theme-light rounded w-64 animate-pulse" />
-                </div>
-              </div>
-              <div className="h-96 bg-theme-light rounded animate-pulse" />
-            </div>
-          }
-        >
+        {/* Contact Data - Data comes from props (no suspense needed for real-time data) */}
+        {contact ? (
           <ContactDetailContent
             contactDocumentId={contactDocumentId}
             userId={userId}
-            initialActionItems={initialActionItems}
-            uniqueSegments={uniqueSegments}
+            contact={contact}
+            actionItems={actionItems}
+            uniqueSegments={uniqueSegments || []}
           />
-        </ThemedSuspense>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-theme-light rounded-full animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-8 bg-theme-light rounded w-48 animate-pulse" />
+                <div className="h-5 bg-theme-light rounded w-64 animate-pulse" />
+              </div>
+            </div>
+            <div className="h-96 bg-theme-light rounded animate-pulse" />
+          </div>
+        )}
       </div>
     </ContactAutosaveProvider>
   );

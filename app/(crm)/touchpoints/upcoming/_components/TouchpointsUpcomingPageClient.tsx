@@ -41,8 +41,8 @@ export default function TouchpointsUpcomingPageClient() {
     );
   }
   
-  // Show empty state if no contacts
-  if (contacts.length === 0) {
+  // Show empty state only after loading completes AND there's no data
+  if (!contactsLoading && contacts.length === 0) {
     return (
       <div className="space-y-6">
         <div>

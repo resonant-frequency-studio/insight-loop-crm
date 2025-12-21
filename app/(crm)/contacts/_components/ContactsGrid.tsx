@@ -32,8 +32,8 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
 
   return (
     <Card padding="md">
-      <ThemedSuspense isLoading={isLoading}>
-        {filteredContacts.length === 0 && totalContactsCount > 0 ? (
+      <ThemedSuspense isLoading={isLoading || !userId}>
+        {!isLoading && userId && filteredContacts.length === 0 && totalContactsCount > 0 ? (
           <Card padding="xl" className="text-center">
             <svg
               className="w-16 h-16 mx-auto mb-4 text-gray-300"
@@ -56,69 +56,69 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
               Clear Filters
             </Button>
           </Card>
-        ) : filteredContacts.length === 0 ? (
+        ) : !isLoading && userId && totalContactsCount === 0 ? (
           <EmptyState wrapInCard={false} size="lg" />
-        ) : (
+        ) : !isLoading && userId ? (
           <div className="space-y-3">
-            {/* Select All Checkbox */}
-            {filteredContacts.length > 0 && (
-              <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={allFilteredSelected}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-theme-darker">
-                    Select all {filteredContacts.length}{" "}
-                    {filteredContacts.length === 1 ? "contact" : "contacts"}
-                  </span>
-                </label>
+                {/* Select All Checkbox */}
+                {filteredContacts.length > 0 && (
+                  <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-theme-darker">
+                        Select all {filteredContacts.length}{" "}
+                        {filteredContacts.length === 1 ? "contact" : "contacts"}
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Top Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredContacts.length}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  itemLabel="contact"
+                  onPageChange={setCurrentPage}
+                  hideItemCount={true}
+                />
+
+                <div className="grid grid-cols-1 gap-4">
+                  {paginatedContacts.map((contact) => {
+                    const isSelected = selectedContactIds.has(contact.id);
+                    return (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        showCheckbox={true}
+                        isSelected={isSelected}
+                        onSelectChange={toggleContactSelection}
+                        variant={isSelected ? "selected" : "default"}
+                        userId={userId}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredContacts.length}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  itemLabel="contact"
+                  onPageChange={setCurrentPage}
+                />
               </div>
-            )}
-
-            {/* Top Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredContacts.length}
-              startIndex={startIndex}
-              endIndex={endIndex}
-              itemLabel="contact"
-              onPageChange={setCurrentPage}
-              hideItemCount={true}
-            />
-
-            <div className="grid grid-cols-1 gap-4">
-              {paginatedContacts.map((contact) => {
-                const isSelected = selectedContactIds.has(contact.id);
-                return (
-                  <ContactCard
-                    key={contact.id}
-                    contact={contact}
-                    showCheckbox={true}
-                    isSelected={isSelected}
-                    onSelectChange={toggleContactSelection}
-                    variant={isSelected ? "selected" : "default"}
-                    userId={userId}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredContacts.length}
-              startIndex={startIndex}
-              endIndex={endIndex}
-              itemLabel="contact"
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
+        ) : null}
       </ThemedSuspense>
     </Card>
   );
