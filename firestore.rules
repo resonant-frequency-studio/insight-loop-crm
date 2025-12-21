@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /contacts/{contactId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Action items subcollection
+        match /actionItems/{actionItemId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      // Calendar events collection (MISSING - this is causing the permissions error!)
+      match /calendarEvents/{eventId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /threads/{threadId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /threads/{threadId}/messages/{messageId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      match /syncJobs/{jobId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    match /googleAccounts/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Only server admin writes tokens
+    }
+  }
+}

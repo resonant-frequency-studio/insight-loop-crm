@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useCalendarEvents } from "@/hooks/useCalendarEvents";
-import { useContacts } from "@/hooks/useContacts";
-import { useCalendarSyncStatus } from "@/hooks/useCalendarSyncStatus";
+import { useCalendarEventsRealtime } from "@/hooks/useCalendarEventsRealtime";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
+import { useCalendarSyncStatusRealtime } from "@/hooks/useCalendarSyncStatusRealtime";
 import { formatRelativeTime } from "@/util/time-utils";
 import CalendarView from "./CalendarView";
 import CalendarSkeleton from "./CalendarSkeleton";
@@ -20,15 +20,14 @@ import { reportException } from "@/lib/error-reporting";
 
 const SYNC_RANGE_STORAGE_KEY = "calendar-sync-range-days";
 
-export default function CalendarPageClientWrapper({ userId }: { userId: string }) {
+export default function CalendarPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalPrefill, setCreateModalPrefill] = useState<{ startTime?: Date; endTime?: Date; contactId?: string } | null>(null);
   
-  // Prioritize userId prop from SSR (production should always have this)
-  // Only fallback to client auth if userId prop is empty (E2E mode)
-  const effectiveUserId = userId || (!authLoading && user?.uid ? user.uid : "");
+  // Get userId from auth (no longer passed as prop from SSR)
+  const effectiveUserId = !authLoading && user?.uid ? user.uid : null;
 
   // Sync range state with localStorage persistence
   const [syncRangeDays, setSyncRangeDays] = useState<number>(() => {
@@ -45,7 +44,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
   });
 
   // Calendar sync status
-  const { lastSync, loading: syncStatusLoading } = useCalendarSyncStatus(effectiveUserId);
+  const { lastSync, loading: syncStatusLoading } = useCalendarSyncStatusRealtime(effectiveUserId);
 
   // Persist range to localStorage when it changes
   useEffect(() => {
@@ -65,15 +64,18 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
     return { timeMin: min, timeMax: max };
   }, [currentDate]);
 
-  const { data: events = [], isLoading, isError, error, refetch } = useCalendarEvents(
+  // Use Firebase real-time listeners
+  const { events = [], loading: isLoading, error } = useCalendarEventsRealtime(
     effectiveUserId,
     timeMin,
-    timeMax,
-    { enabled: !!effectiveUserId }
+    timeMax
   );
 
   // Fetch contacts for event card suggestions
-  const { data: contacts = [] } = useContacts(effectiveUserId, undefined);
+  const { contacts = [] } = useContactsRealtime(effectiveUserId);
+  
+  // For error handling, check if error exists
+  const isError = error !== null;
 
   // Filter state
   const [filters, setFilters] = useState<CalendarFilters>({
@@ -133,6 +135,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
   }, [events, filters]);
 
   // Sync Calendar button handler - shared between loading and loaded states
+  // After sync, events will update automatically via Firebase listener
   const handleSyncCalendar = async () => {
     setSyncingCalendar(true);
     try {
@@ -141,9 +144,10 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
         credentials: 'include',
       });
       const data = await response.json();
-      if (data.ok) {
-        await refetch();
+      if (!data.ok) {
+        throw new Error(data.error || "Failed to sync calendar");
       }
+      // Events will update automatically via Firebase listener when sync completes
     } catch (err) {
       reportException(err, {
         context: "Syncing calendar events",
@@ -229,7 +233,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
                 >
                   Open Google Cloud Console
                 </Button>
-                <Button variant="outline" onClick={() => refetch()}>
+                <Button variant="outline" onClick={() => window.location.reload()}>
                   Retry
                 </Button>
               </div>
@@ -255,7 +259,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
                 >
                   Reconnect Google Account
                 </Button>
-                <Button variant="outline" onClick={() => refetch()}>
+                <Button variant="outline" onClick={() => window.location.reload()}>
                   Retry
                 </Button>
               </div>
@@ -263,7 +267,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
           </Card>
         )}
         {!needsReconnect && (
-          <Button onClick={() => refetch()}>Retry</Button>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         )}
       </div>
     );
@@ -285,7 +289,7 @@ export default function CalendarPageClientWrapper({ userId }: { userId: string }
           size="lg"
         />
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => refetch()} size="sm" variant="secondary">Refresh Calendar</Button>
+          <Button onClick={() => window.location.reload()} size="sm" variant="secondary">Refresh Calendar</Button>
           <Button 
             onClick={handleSyncCalendar}
             disabled={syncingCalendar}

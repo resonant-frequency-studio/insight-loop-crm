@@ -2,7 +2,6 @@
 
 import { CalendarEvent, Contact } from "@/types/firestore";
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { 
   useLinkEventToContact, 
   useUnlinkEventFromContact, 
@@ -11,7 +10,7 @@ import {
   useDeleteCalendarEvent,
   UpdateEventInput
 } from "@/hooks/useCalendarEvents";
-import { useContacts } from "@/hooks/useContacts";
+import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
@@ -37,25 +36,14 @@ interface CalendarEventCardProps {
 export default function CalendarEventCard({ event: eventProp, onClose, contacts: providedContacts }: CalendarEventCardProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const linkMutation = useLinkEventToContact();
   const unlinkMutation = useUnlinkEventFromContact();
   const generateContextMutation = useGenerateEventContext();
   const updateMutation = useUpdateCalendarEvent();
   const deleteMutation = useDeleteCalendarEvent();
 
-  // Get the latest event from query cache if available, otherwise use prop
-  // This ensures optimistic updates are reflected immediately
-  const event = useMemo(() => {
-    const cachedEvents = queryClient.getQueryData<CalendarEvent[]>(["calendar-events"]);
-    if (cachedEvents) {
-      const cachedEvent = cachedEvents.find((e) => e.eventId === eventProp.eventId);
-      if (cachedEvent) {
-        return cachedEvent;
-      }
-    }
-    return eventProp;
-  }, [eventProp, queryClient]);
+  // Use event prop directly - Firebase listeners will update it automatically
+  const event = eventProp;
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
@@ -65,7 +53,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
   const [showConflictModal, setShowConflictModal] = useState(false);
   
   // Fetch contacts if not provided
-  const { data: fetchedContacts = [] } = useContacts(user?.uid || "", undefined);
+  const { contacts: fetchedContacts = [] } = useContactsRealtime(user?.uid || null);
   const contacts = providedContacts || fetchedContacts;
   
   // Convert Firestore timestamp to Date
@@ -544,8 +532,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
 
       const data = await response.json();
       
-      // Invalidate queries to refresh the event
-      queryClient.invalidateQueries({ queryKey: ["calendar-events"] });
+      // Event will update automatically via Firebase listener
 
       // Close conflict modal and edit mode
       setShowConflictModal(false);
