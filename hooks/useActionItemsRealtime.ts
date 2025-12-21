@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collectionGroup, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-client";
 import { ActionItem } from "@/types/firestore";
@@ -10,6 +10,7 @@ interface UseActionItemsRealtimeReturn {
   actionItems: ActionItem[];
   loading: boolean;
   error: Error | null;
+  hasConfirmedNoActionItems: boolean; // True when both cache and server confirm no action items
 }
 
 /**
@@ -30,17 +31,29 @@ export function useActionItemsRealtime(userId: string | null): UseActionItemsRea
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [hasConfirmedNoActionItems, setHasConfirmedNoActionItems] = useState(false);
+  const hasReceivedServerSnapshotRef = useRef(false);
+  const cachedSnapshotWasEmptyRef = useRef(false);
 
   useEffect(() => {
     if (!userId) {
       queueMicrotask(() => {
         setLoading(false);
         setActionItems([]);
+        setHasConfirmedNoActionItems(false);
       });
+      hasReceivedServerSnapshotRef.current = false;
+      cachedSnapshotWasEmptyRef.current = false;
       return;
     }
 
     let isMounted = true;
+    hasReceivedServerSnapshotRef.current = false;
+    cachedSnapshotWasEmptyRef.current = false;
+    queueMicrotask(() => {
+      setLoading(true);
+      setHasConfirmedNoActionItems(false);
+    });
 
     try {
       // Use collection group query to fetch all actionItems across all contacts
@@ -70,7 +83,30 @@ export function useActionItemsRealtime(userId: string | null): UseActionItemsRea
           });
 
           setActionItems(itemsData);
-          setLoading(false);
+          
+          const isFromCache = snapshot.metadata.fromCache;
+          
+          if (!isFromCache) {
+            // Server snapshot received
+            hasReceivedServerSnapshotRef.current = true;
+            setLoading(false);
+            
+            // Check if both cache and server confirmed no action items
+            if (itemsData.length === 0 && cachedSnapshotWasEmptyRef.current) {
+              setHasConfirmedNoActionItems(true);
+            } else {
+              setHasConfirmedNoActionItems(false);
+            }
+          } else {
+            // Cached snapshot
+            if (itemsData.length === 0) {
+              cachedSnapshotWasEmptyRef.current = true;
+            } else {
+              cachedSnapshotWasEmptyRef.current = false;
+            }
+            // Keep loading true until server snapshot arrives
+          }
+          
           setError(null);
         },
         (err) => {
@@ -122,6 +158,6 @@ export function useActionItemsRealtime(userId: string | null): UseActionItemsRea
     }
   }, [userId]);
 
-  return { actionItems, loading, error };
+  return { actionItems, loading, error, hasConfirmedNoActionItems };
 }
 

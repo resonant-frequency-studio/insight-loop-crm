@@ -20,13 +20,15 @@ jest.mock("@/components/Select", () => {
     children,
     value,
     onChange,
+    disabled,
   }: {
     children: React.ReactNode;
     value: string;
     onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    disabled?: boolean;
   }) {
     return (
-      <select value={value} onChange={onChange}>
+      <select value={value} onChange={onChange} disabled={disabled}>
         {children}
       </select>
     );
@@ -39,11 +41,13 @@ jest.mock("@/components/Input", () => {
     onChange,
     onFocus,
     placeholder,
+    disabled,
   }: {
     value: string;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onFocus?: () => void;
     placeholder?: string;
+    disabled?: boolean;
   }) {
     return (
       <input
@@ -52,6 +56,7 @@ jest.mock("@/components/Input", () => {
         onChange={onChange}
         onFocus={onFocus}
         placeholder={placeholder}
+        disabled={disabled}
       />
     );
   };
@@ -62,14 +67,16 @@ jest.mock("@/components/Checkbox", () => {
     checked,
     onChange,
     label,
+    disabled,
   }: {
     checked: boolean;
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     label?: string;
+    disabled?: boolean;
   }) {
     return (
       <label>
-        <input type="checkbox" checked={checked} onChange={onChange} />
+        <input type="checkbox" checked={checked} onChange={onChange} disabled={disabled} />
         {label}
       </label>
     );
@@ -149,8 +156,8 @@ describe("CalendarFilterBar", () => {
     expect(screen.getByLabelText("Only Touchpoints")).toBeInTheDocument();
   });
 
-  it("should not render when no events", () => {
-    const { container } = render(
+  it("should render when no events (but with disabled state)", () => {
+    render(
       <CalendarFilterBar
         events={[]}
         filters={mockFilters}
@@ -158,7 +165,10 @@ describe("CalendarFilterBar", () => {
       />
     );
 
-    expect(container.firstChild).toBeNull();
+    // Component should still render, but inputs should be disabled when events.length === 0
+    expect(screen.getByText("Filters & Search")).toBeInTheDocument();
+    const segmentSelect = screen.getAllByRole("combobox")[0] as HTMLSelectElement;
+    expect(segmentSelect).toBeDisabled();
   });
 
   it("should update segment filter", () => {

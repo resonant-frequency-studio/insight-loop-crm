@@ -7,8 +7,6 @@ import { getInitials, getDisplayName } from "@/util/contact-utils";
 import { computeIsOverdue, getDateCategory } from "@/util/date-utils-server";
 import { ActionItem, Contact } from "@/types/firestore";
 import ActionItemsPageClient from "../ActionItemsPageClient";
-import EmptyState from "@/components/dashboard/EmptyState";
-import ThemedSuspense from "@/components/ThemedSuspense";
 
 interface EnrichedActionItem extends ActionItem {
   contactId: string;
@@ -22,12 +20,6 @@ interface EnrichedActionItem extends ActionItem {
   dateCategory: "overdue" | "today" | "thisWeek" | "upcoming";
 }
 
-type ActionItemWithContactFields = ActionItem & {
-  contactId: string;
-  contactFirstName?: string | null;
-  contactLastName?: string | null;
-  contactEmail?: string;
-};
 
 export default function ActionItemsPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
@@ -37,26 +29,11 @@ export default function ActionItemsPageClientWrapper() {
   const userId = !authLoading && user?.uid ? user.uid : null;
   
   // Use Firebase real-time listeners
-  const { actionItems = [], loading: actionItemsLoading } = useActionItemsRealtime(userId);
+  const { actionItems = [], loading: actionItemsLoading, hasConfirmedNoActionItems } = useActionItemsRealtime(userId);
   const { contacts = [], loading: contactsLoading } = useContactsRealtime(userId);
   
-  // Show empty state only after loading completes AND there's no data
-  // Wrap in ThemedSuspense to show skeletons while loading
-  if (contacts.length === 0) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Action Items</h1>
-          <p className="text-theme-dark text-lg">Manage tasks and action items across all your contacts</p>
-        </div>
-        <ThemedSuspense isLoading={contactsLoading || actionItemsLoading}>
-          {!contactsLoading && !actionItemsLoading && (
-            <EmptyState wrapInCard={true} size="lg" />
-          )}
-        </ThemedSuspense>
-      </div>
-    );
-  }
+  // Always render - no early returns
+  const isLoading = contactsLoading || actionItemsLoading;
 
   // Use consistent server time for all calculations
   const serverTime = new Date();
@@ -121,6 +98,8 @@ export default function ActionItemsPageClientWrapper() {
     <ActionItemsPageClient
       initialActionItems={enrichedItems}
       contacts={contactsArray}
+      isLoading={isLoading}
+      hasConfirmedNoActionItems={hasConfirmedNoActionItems}
     />
   );
 }

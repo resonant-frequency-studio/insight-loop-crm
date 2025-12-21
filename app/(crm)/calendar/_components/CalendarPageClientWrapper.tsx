@@ -7,7 +7,6 @@ import { useContactsRealtime } from "@/hooks/useContactsRealtime";
 import { useCalendarSyncStatusRealtime } from "@/hooks/useCalendarSyncStatusRealtime";
 import { formatRelativeTime } from "@/util/time-utils";
 import CalendarView from "./CalendarView";
-import CalendarSkeleton from "./CalendarSkeleton";
 import CalendarFilterBar, { CalendarFilters } from "./CalendarFilterBar";
 import CreateEventModal from "./CreateEventModal";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -65,7 +64,7 @@ export default function CalendarPageClientWrapper() {
   }, [currentDate]);
 
   // Use Firebase real-time listeners
-  const { events = [], loading: isLoading, error } = useCalendarEventsRealtime(
+  const { events = [], loading: isLoading, error, hasConfirmedNoEvents } = useCalendarEventsRealtime(
     effectiveUserId,
     timeMin,
     timeMax
@@ -158,120 +157,19 @@ export default function CalendarPageClientWrapper() {
     }
   };
 
-  // Show loading if we don't have userId yet
-  if (!effectiveUserId) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <CalendarSkeleton />
-      </div>
-    );
-  }
-
-  // Show error if there is one
-  if (isError) {
-    const errorMessage = error instanceof Error ? error.message : "Failed to load calendar events";
-    const needsReconnect = errorMessage.includes("Calendar access not granted") || 
-                          errorMessage.includes("reconnect your Google account with Calendar") ||
-                          errorMessage.includes("Calendar scope");
-    
-    const needsApiEnabled = errorMessage.includes("Google Calendar API has not been used") ||
-                            errorMessage.includes("calendar-json.googleapis.com") ||
-                            errorMessage.includes("Enable it by visiting");
-    
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
-        </div>
-        <ErrorMessage 
-          message={errorMessage}
-          dismissible={false}
-        />
-        {needsApiEnabled && (
-          <Card padding="md" className="bg-yellow-50 border-yellow-200">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-theme-darkest mb-2">
-                  Google Calendar API Not Enabled
-                </h3>
-                <p className="text-theme-dark mb-4">
-                  The Google Calendar API needs to be enabled in your Google Cloud Console before you can sync calendar events.
-                </p>
-                <div className="bg-white p-3 rounded border border-yellow-300 mb-4">
-                  <p className="text-sm text-theme-darkest font-mono break-all">
-                    {errorMessage}
-                  </p>
-                </div>
-                <p className="text-sm text-theme-dark mb-4">
-                  <strong>To fix this:</strong>
-                </p>
-                <ol className="text-sm text-theme-dark list-decimal list-inside space-y-2 mb-4">
-                  <li>Open the Google Cloud Console</li>
-                  <li>Navigate to APIs & Services → Library</li>
-                  <li>Search for &quot;Google Calendar API&quot;</li>
-                  <li>Click &quot;Enable&quot;</li>
-                  <li>Wait a few minutes for the API to be fully enabled</li>
-                  <li>Refresh this page</li>
-                </ol>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    // Extract the URL from the error message if present
-                    const urlMatch = errorMessage.match(/https:\/\/[^\s]+/);
-                    if (urlMatch) {
-                      window.open(urlMatch[0], '_blank');
-                    } else {
-                      window.open('https://console.cloud.google.com/apis/library/calendar-json.googleapis.com', '_blank');
-                    }
-                  }}
-                >
-                  Open Google Cloud Console
-                </Button>
-                <Button variant="outline" onClick={() => window.location.reload()}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-        {needsReconnect && !needsApiEnabled && (
-          <Card padding="md" className="bg-blue-50 border-blue-200">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-theme-darkest mb-2">
-                  Calendar Access Required
-                </h3>
-                <p className="text-theme-dark mb-4">
-                  Your Google account needs to be reconnected with Calendar permissions to view your events.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    window.location.href = "/api/oauth/gmail/start?redirect=/calendar";
-                  }}
-                >
-                  Reconnect Google Account
-                </Button>
-                <Button variant="outline" onClick={() => window.location.reload()}>
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-        {!needsReconnect && (
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        )}
-      </div>
-    );
-  }
+  // Prepare error message and helpers if there is an error (but still render static content below)
+  const errorMessage = isError && error instanceof Error ? error.message : (isError ? "Failed to load calendar events" : null);
+  const needsReconnect = errorMessage ? (
+    errorMessage.includes("Calendar access not granted") || 
+    errorMessage.includes("reconnect your Google account with Calendar") ||
+    errorMessage.includes("Calendar scope")
+  ) : false;
+  
+  const needsApiEnabled = errorMessage ? (
+    errorMessage.includes("Google Calendar API has not been used") ||
+    errorMessage.includes("calendar-json.googleapis.com") ||
+    errorMessage.includes("Enable it by visiting")
+  ) : false;
 
   // Show empty state only after loading completes AND there's no data
   // Don't show empty state while loading - let the calendar view handle loading state
@@ -374,66 +272,123 @@ export default function CalendarPageClientWrapper() {
         </div>
       </div>
 
-      {/* Calendar Filter Bar */}
-      {events.length > 0 && (
-        <CalendarFilterBar
-          events={events}
-          filters={filters}
-          onFiltersChange={setFilters}
+      {/* Error Message - show if there's an error */}
+      {isError && errorMessage && (
+        <>
+          <ErrorMessage 
+            message={errorMessage}
+            dismissible={false}
+          />
+          {needsApiEnabled && (
+            <Card padding="md" className="bg-yellow-50 border-yellow-200">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-theme-darkest mb-2">
+                    Google Calendar API Not Enabled
+                  </h3>
+                  <p className="text-theme-dark mb-4">
+                    The Google Calendar API needs to be enabled in your Google Cloud Console before you can sync calendar events.
+                  </p>
+                  <div className="bg-white p-3 rounded border border-yellow-300 mb-4">
+                    <p className="text-sm text-theme-darkest font-mono break-all">
+                      {errorMessage}
+                    </p>
+                  </div>
+                  <p className="text-sm text-theme-dark mb-4">
+                    <strong>To fix this:</strong>
+                  </p>
+                  <ol className="text-sm text-theme-dark list-decimal list-inside space-y-2 mb-4">
+                    <li>Open the Google Cloud Console</li>
+                    <li>Navigate to APIs & Services → Library</li>
+                    <li>Search for &quot;Google Calendar API&quot;</li>
+                    <li>Click &quot;Enable&quot;</li>
+                    <li>Wait a few minutes for the API to be fully enabled</li>
+                    <li>Refresh this page</li>
+                  </ol>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      // Extract the URL from the error message if present
+                      const urlMatch = errorMessage.match(/https:\/\/[^\s]+/);
+                      if (urlMatch) {
+                        window.open(urlMatch[0], '_blank');
+                      } else {
+                        window.open('https://console.cloud.google.com/apis/library/calendar-json.googleapis.com', '_blank');
+                      }
+                    }}
+                  >
+                    Open Google Cloud Console
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+          {needsReconnect && !needsApiEnabled && (
+            <Card padding="md" className="bg-blue-50 border-blue-200">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-theme-darkest mb-2">
+                    Calendar Access Required
+                  </h3>
+                  <p className="text-theme-dark mb-4">
+                    Your Google account needs to be reconnected with Calendar permissions to view your events.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      window.location.href = "/api/oauth/gmail/start?redirect=/calendar";
+                    }}
+                  >
+                    Reconnect Google Account
+                  </Button>
+                  <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+          {!needsReconnect && !needsApiEnabled && (
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          )}
+        </>
+      )}
+
+      {/* Calendar Filter Bar - ALWAYS render */}
+      <CalendarFilterBar
+        events={events}
+        filters={filters}
+        onFiltersChange={setFilters}
+        disabled={!effectiveUserId || isLoading || events.length === 0}
+      />
+
+      {/* Empty State - only show when both cache and server confirm no events */}
+      {hasConfirmedNoEvents && (
+        <EmptyState
+          message="No calendar events"
+          description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
+          showActions={false}
+          wrapInCard={true}
+          size="lg"
         />
       )}
 
-      {isLoading && events.length === 0 ? (
-        <CalendarSkeleton />
-      ) : !isLoading && events.length === 0 ? (
-        <>
-          <EmptyState
-            message="No calendar events"
-            description={`No events found for ${currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}. Try navigating to a different month or sync your calendar.`}
-            showActions={false}
-            wrapInCard={true}
-            size="lg"
-          />
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => window.location.reload()} size="sm" variant="secondary">Refresh Calendar</Button>
-            <Button 
-              onClick={handleSyncCalendar}
-              disabled={syncingCalendar}
-              loading={syncingCalendar}
-              size="sm"
-              variant="secondary"
-              icon={
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              }
-            >
-              Sync Calendar
-            </Button>
-          </div>
-        </>
-      ) : (
-        <CalendarView
-          events={filteredEvents}
-          currentDate={currentDate}
-          onNavigate={(date) => setCurrentDate(date)}
-          contacts={contacts}
-          onSlotSelect={(start, end) => {
-            setCreateModalPrefill({ startTime: start, endTime: end });
-            setShowCreateModal(true);
-          }}
-        />
-      )}
+      {/* Calendar View - ALWAYS render */}
+      <CalendarView
+        events={filteredEvents}
+        currentDate={currentDate}
+        onNavigate={(date) => setCurrentDate(date)}
+        contacts={contacts}
+        onSlotSelect={(start, end) => {
+          setCreateModalPrefill({ startTime: start, endTime: end });
+          setShowCreateModal(true);
+        }}
+      />
 
       <CreateEventModal
         isOpen={showCreateModal}

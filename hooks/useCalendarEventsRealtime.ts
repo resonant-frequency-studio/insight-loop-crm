@@ -10,6 +10,7 @@ interface UseCalendarEventsRealtimeReturn {
   events: CalendarEvent[];
   loading: boolean;
   error: Error | null;
+  hasConfirmedNoEvents: boolean; // True when both cache and server confirm no events
 }
 
 /**
@@ -42,7 +43,9 @@ export function useCalendarEventsRealtime(
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [hasConfirmedNoEvents, setHasConfirmedNoEvents] = useState(false);
   const hasReceivedServerSnapshotRef = useRef(false);
+  const cachedSnapshotWasEmptyRef = useRef(false);
 
   useEffect(() => {
     if (!userId || !timeMin || !timeMax) {
@@ -50,14 +53,20 @@ export function useCalendarEventsRealtime(
       queueMicrotask(() => {
         setLoading(false);
         setEvents([]);
+        setHasConfirmedNoEvents(false);
       });
       hasReceivedServerSnapshotRef.current = false;
+      cachedSnapshotWasEmptyRef.current = false;
       return;
     }
 
     let isMounted = true;
     hasReceivedServerSnapshotRef.current = false;
-    setLoading(true);
+    cachedSnapshotWasEmptyRef.current = false;
+    queueMicrotask(() => {
+      setLoading(true);
+      setHasConfirmedNoEvents(false);
+    });
 
     try {
       // Convert Date to Firestore Timestamp for query
@@ -88,14 +97,26 @@ export function useCalendarEventsRealtime(
           
           const isFromCache = snapshot.metadata.fromCache;
           
-          // Only set loading to false when we receive a server snapshot
-          // This prevents showing empty state when cached snapshot is empty but server has data
           if (!isFromCache) {
+            // Server snapshot received
             hasReceivedServerSnapshotRef.current = true;
             setLoading(false);
+            
+            // Check if both cache and server confirmed no events
+            if (eventsData.length === 0 && cachedSnapshotWasEmptyRef.current) {
+              setHasConfirmedNoEvents(true);
+            } else {
+              setHasConfirmedNoEvents(false);
+            }
+          } else {
+            // Cached snapshot
+            if (eventsData.length === 0) {
+              cachedSnapshotWasEmptyRef.current = true;
+            } else {
+              cachedSnapshotWasEmptyRef.current = false;
+            }
+            // Keep loading true until server snapshot arrives
           }
-          // If cached snapshot, keep loading true until server snapshot arrives
-          // This prevents empty state from flashing when cache is empty but server has data
           
           setError(null);
         },
@@ -152,6 +173,6 @@ export function useCalendarEventsRealtime(
     }
   }, [userId, timeMin, timeMax]);
 
-  return { events, loading, error };
+  return { events, loading, error, hasConfirmedNoEvents };
 }
 

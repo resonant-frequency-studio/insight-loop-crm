@@ -13,8 +13,9 @@ export default function Checkbox({
   className = "",
   ...props
 }: CheckboxProps) {
+  const isDisabled = props.disabled;
   return (
-    <label className={`flex items-center gap-3 cursor-pointer ${labelClassName}`}>
+    <label className={`flex items-center gap-3 ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${labelClassName}`}>
       <input
         type="checkbox"
         {...props}
