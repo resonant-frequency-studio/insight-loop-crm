@@ -14,7 +14,6 @@ import ActivityCard from "./contact-cards/ActivityCard";
 import ContactTimelineCard from "./contact-cards/ContactTimelineCard";
 import { useContactAutosave } from "@/components/contacts/ContactAutosaveProvider";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
-import ContactSaveBar from "@/components/contacts/ContactSaveBar";
 
 interface ContactEditorProps {
   contactDocumentId: string;
@@ -96,10 +95,6 @@ function ContactEditorContent({
             initialContact={initialContact}
           />
           <ActivityCard contactId={contactDocumentId} userId={userId} />
-          {/* Save bar - Desktop only, sticky with right column at bottom */}
-          <div className="hidden xl:block">
-            <ContactSaveBar />
-          </div>
         </div>
       </div>
     </div>

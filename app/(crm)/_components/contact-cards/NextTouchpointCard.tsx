@@ -11,6 +11,7 @@ import Textarea from "@/components/Textarea";
 import { formatContactDate, getDisplayName } from "@/util/contact-utils";
 import { reportException } from "@/lib/error-reporting";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
+import SavingIndicator from "@/components/contacts/SavingIndicator";
 import { Button } from "@/components/Button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -210,7 +211,8 @@ export default function NextTouchpointCard({
   }
 
   return (
-    <Card padding="md">
+    <Card padding="md" className="relative">
+      <SavingIndicator cardKey="touchpoint" />
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">

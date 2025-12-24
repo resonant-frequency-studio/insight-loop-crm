@@ -10,6 +10,7 @@ import SegmentSelect from "../SegmentSelect";
 import { reportException } from "@/lib/error-reporting";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
 import Input from "@/components/Input";
+import SavingIndicator from "@/components/contacts/SavingIndicator";
 
 interface TagsClassificationCardProps {
   contactId: string;
@@ -189,7 +190,8 @@ export default function TagsClassificationCard({
   }
 
   return (
-    <Card padding="md">
+    <Card padding="md" className="relative">
+      <SavingIndicator cardKey="tags" />
       <div className="mb-2">
         <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg

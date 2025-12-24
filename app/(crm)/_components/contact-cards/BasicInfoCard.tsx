@@ -8,6 +8,7 @@ import Skeleton from "@/components/Skeleton";
 import Input from "@/components/Input";
 import { reportException } from "@/lib/error-reporting";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
+import SavingIndicator from "@/components/contacts/SavingIndicator";
 
 interface BasicInfoCardProps {
   contactId: string;
@@ -165,7 +166,8 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
   }
 
   return (
-    <Card padding="md">
+    <Card padding="md" className="relative">
+      <SavingIndicator cardKey="basic" />
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg

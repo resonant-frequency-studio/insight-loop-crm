@@ -10,6 +10,7 @@ import Modal from "@/components/Modal";
 import Textarea from "@/components/Textarea";
 import { reportException } from "@/lib/error-reporting";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
+import SavingIndicator from "@/components/contacts/SavingIndicator";
 
 interface OutreachDraftCardProps {
   contactId: string;
@@ -164,6 +165,7 @@ export default function OutreachDraftCard({
       </Modal>
 
       <Card padding="md" className="relative">
+        <SavingIndicator cardKey="draft" />
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mb-2">
           <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
             <svg

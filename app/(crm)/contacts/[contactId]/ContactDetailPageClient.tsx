@@ -3,7 +3,6 @@
 import ContactEditor from "../../_components/ContactEditor";
 import ContactsLink from "../../_components/ContactsLink";
 import ContactDetailMenu from "../../_components/ContactDetailMenu";
-import ContactSaveBar from "@/components/contacts/ContactSaveBar";
 import { ContactAutosaveProvider } from "@/components/contacts/ContactAutosaveProvider";
 import { getDisplayName } from "@/util/contact-utils";
 import { ActionItem, Contact } from "@/types/firestore";
@@ -73,10 +72,6 @@ function ContactDetailContent({
             <ContactsLink variant="default" />
             <ContactDetailMenu contactId={contactDocumentId} userId={userId} />
           </div>
-        </div>
-        {/* Mobile: Save bar below header */}
-        <div className="xl:hidden flex items-center justify-end">
-          <ContactSaveBar />
         </div>
       </div>
 

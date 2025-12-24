@@ -8,6 +8,7 @@ import Skeleton from "@/components/Skeleton";
 import Textarea from "@/components/Textarea";
 import { reportException } from "@/lib/error-reporting";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
+import SavingIndicator from "@/components/contacts/SavingIndicator";
 
 interface NotesCardProps {
   contactId: string;
@@ -107,7 +108,8 @@ export default function NotesCard({ contactId, userId }: NotesCardProps) {
   }
 
   return (
-    <Card padding="md">
+    <Card padding="md" className="relative">
+      <SavingIndicator cardKey="notes" />
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-theme-darkest flex items-center gap-2">
           <svg
