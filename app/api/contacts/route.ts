@@ -75,16 +75,21 @@ export async function POST(req: Request) {
       );
     }
 
+    // Remove contactId from contactData if present to ensure it matches document ID
+    const { contactId: _, ...contactDataWithoutId } = contactData;
+
     // Create contact
+    // IMPORTANT: contactId in data must match document ID for real-time listener to work correctly
     await adminDb
       .collection("users")
       .doc(userId)
       .collection("contacts")
       .doc(contactId)
       .set({
-        ...contactData,
-        contactId,
+        ...contactDataWithoutId,
+        contactId, // Ensure contactId matches document ID
         primaryEmail: email,
+        archived: false, // Explicitly set archived to false for new contacts
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });

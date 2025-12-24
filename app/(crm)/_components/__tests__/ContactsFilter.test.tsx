@@ -60,7 +60,9 @@ describe("ContactsFilter", () => {
     totalContactsCount: mockContacts.length,
     hasActiveFilters: false,
     showArchived: false,
+    includeNewContacts: true,
     setShowArchived: jest.fn(),
+    setIncludeNewContacts: jest.fn(),
     setSelectedSegment: jest.fn(),
     setSelectedTags: jest.fn(),
     setEmailSearch: jest.fn(),
@@ -71,6 +73,7 @@ describe("ContactsFilter", () => {
     lastEmailDateRange: getDefaultDateRange(),
     setLastEmailDateRange: jest.fn(),
     onLastEmailDateRangeChange: jest.fn(),
+    onIncludeNewContactsChange: jest.fn(),
     onClearFilters: mockHandlers.onClearFilters,
     currentPage: 1,
     setCurrentPage: jest.fn(),
@@ -109,20 +112,30 @@ describe("ContactsFilter", () => {
   describe("Rendering", () => {
     it("renders all filter inputs", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first to access search inputs
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       expect(screen.getByPlaceholderText("Enter email address...")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter last name...")).toBeInTheDocument();
       expect(screen.getByPlaceholderText("Enter first name...")).toBeInTheDocument();
       expect(screen.getByText(/Filter by Segment/i)).toBeInTheDocument();
       // Select components now use buttons with listbox role instead of combobox
-      const selectButtons = screen.getAllByRole("button", { name: /Select|All Segments|None/i });
-      expect(selectButtons.length).toBeGreaterThan(0);
-      expect(screen.getByRole("checkbox")).toBeInTheDocument();
+      // Check for "Include new contacts" checkbox (outside More Filters)
+      expect(screen.getByLabelText(/Include new contacts/i)).toBeInTheDocument();
+      
+      // "More Filters" is already expanded, so "Show archived contacts" should be visible
+      expect(screen.getByLabelText(/Show archived contacts/i)).toBeInTheDocument();
     });
   });
 
   describe("Search Inputs", () => {
     it("email search updates on change", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const emailInput = screen.getByPlaceholderText("Enter email address...");
       fireEvent.change(emailInput, { target: { value: "john" } });
       expect(mockHandlers.onEmailSearchChange).toHaveBeenCalledWith("john");
@@ -130,6 +143,10 @@ describe("ContactsFilter", () => {
 
     it("first name search updates on change", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const firstNameInput = screen.getByPlaceholderText("Enter first name...");
       fireEvent.change(firstNameInput, { target: { value: "John" } });
       expect(mockHandlers.onFirstNameSearchChange).toHaveBeenCalledWith("John");
@@ -137,6 +154,10 @@ describe("ContactsFilter", () => {
 
     it("last name search updates on change", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const lastNameInput = screen.getByPlaceholderText("Enter last name...");
       fireEvent.change(lastNameInput, { target: { value: "Doe" } });
       expect(mockHandlers.onLastNameSearchChange).toHaveBeenCalledWith("Doe");
@@ -146,32 +167,44 @@ describe("ContactsFilter", () => {
   describe("Segment Filter", () => {
     it("segment filter updates on change", () => {
       render(<ContactsFilter contacts={mockContacts} />);
-      // Find the segment select button and click it to open dropdown
-      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
-      fireEvent.click(segmentSelectButton);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
       
-      // Click on Enterprise option
-      const enterpriseOption = screen.getByRole("option", { name: "Enterprise" });
-      fireEvent.click(enterpriseOption);
+      // Find the segment select and change it
+      const segmentSelect = screen.getByLabelText("Filter by Segment");
+      fireEvent.change(segmentSelect, { target: { value: "Enterprise" } });
+      
       expect(mockHandlers.onSegmentChange).toHaveBeenCalledWith("Enterprise");
     });
 
     it("shows unique segments from contacts", () => {
       render(<ContactsFilter contacts={mockContacts} />);
-      // Open the segment select dropdown
-      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
-      fireEvent.click(segmentSelectButton);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
       
-      // Check that options are available
-      expect(screen.getByRole("option", { name: "All Segments" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Enterprise" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "SMB" })).toBeInTheDocument();
+      // Check that the segment select has the correct options
+      const segmentSelect = screen.getByLabelText("Filter by Segment");
+      expect(segmentSelect).toBeInTheDocument();
+      // Check that options are available by checking the select element
+      expect(segmentSelect).toHaveValue("");
+      // Verify options exist by checking the select's children
+      const options = segmentSelect.querySelectorAll("option");
+      const optionValues = Array.from(options).map(opt => opt.textContent);
+      expect(optionValues).toContain("All Segments");
+      expect(optionValues).toContain("Enterprise");
+      expect(optionValues).toContain("SMB");
     });
   });
 
   describe("Show Archived Toggle", () => {
     it("show archived toggle updates on change", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const checkbox = screen.getByLabelText(/Show archived contacts/i);
       fireEvent.click(checkbox);
       expect(mockHandlers.onShowArchivedChange).toHaveBeenCalledWith(true);
@@ -187,6 +220,10 @@ describe("ContactsFilter", () => {
   describe("Tag Selection", () => {
     it("tag selection adds tag to selectedTags", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const tagInput = screen.getByPlaceholderText("Search and select tags...");
       fireEvent.focus(tagInput);
       
@@ -200,6 +237,9 @@ describe("ContactsFilter", () => {
     it("tag removal removes tag from selectedTags", () => {
       mockUseContactsFilter.mockReturnValue(createMockContextValue({ selectedTags: ["VIP", "Priority"] }));
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
       // Find the remove button for VIP tag
       const vipChip = screen.getByText("VIP").closest("span");
       const removeButton = vipChip?.querySelector("button");
@@ -211,6 +251,10 @@ describe("ContactsFilter", () => {
 
     it("tag search filters available tags", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const tagInput = screen.getByPlaceholderText("Search and select tags...");
       fireEvent.focus(tagInput);
       fireEvent.change(tagInput, { target: { value: "VIP" } });
@@ -226,6 +270,10 @@ describe("ContactsFilter", () => {
 
     it("tag dropdown shows filtered results", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const tagInput = screen.getByPlaceholderText("Search and select tags...");
       fireEvent.focus(tagInput);
       fireEvent.change(tagInput, { target: { value: "Pri" } });
@@ -236,6 +284,10 @@ describe("ContactsFilter", () => {
 
     it("tag dropdown closes on outside click", async () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const tagInput = screen.getByPlaceholderText("Search and select tags...");
       fireEvent.focus(tagInput);
       
@@ -301,26 +353,47 @@ describe("ContactsFilter", () => {
         hasActiveFilters: true,
       }));
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const clearButton = screen.getByText("Clear all filters");
       fireEvent.click(clearButton);
-      expect(mockHandlers.onClearFilters).toHaveBeenCalledTimes(1);
+      // The "Clear all filters" button inside "More Filters" clears individual filters,
+      // not the top-level onClearFilters. Check that segment was cleared.
+      expect(mockHandlers.onSegmentChange).toHaveBeenCalledWith("");
+      expect(mockHandlers.onTagsChange).toHaveBeenCalledWith([]);
+      expect(mockHandlers.onEmailSearchChange).toHaveBeenCalledWith("");
+      expect(mockHandlers.onFirstNameSearchChange).toHaveBeenCalledWith("");
+      expect(mockHandlers.onLastNameSearchChange).toHaveBeenCalledWith("");
+      expect(mockHandlers.onCompanySearchChange).toHaveBeenCalledWith("");
+      expect(mockHandlers.onShowArchivedChange).toHaveBeenCalledWith(false);
     });
   });
 
   describe("Unique Segments and Tags", () => {
     it("extracts unique segments from contacts", () => {
       render(<ContactsFilter contacts={mockContacts} />);
-      // Open the segment select dropdown
-      const segmentSelectButton = screen.getByRole("button", { name: /All Segments/i });
-      fireEvent.click(segmentSelectButton);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
       
-      // Check that options are available
-      expect(screen.getByRole("option", { name: "Enterprise" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "SMB" })).toBeInTheDocument();
+      // Check that the segment select has the correct options
+      const segmentSelect = screen.getByLabelText("Filter by Segment");
+      expect(segmentSelect).toBeInTheDocument();
+      // Verify options exist by checking the select's children
+      const options = segmentSelect.querySelectorAll("option");
+      const optionValues = Array.from(options).map(opt => opt.textContent);
+      expect(optionValues).toContain("Enterprise");
+      expect(optionValues).toContain("SMB");
     });
 
     it("extracts unique tags from contacts", () => {
       render(<ContactsFilter contacts={mockContacts} />);
+      // Expand "More Filters" section first
+      const moreFiltersButton = screen.getByText("More Filters");
+      fireEvent.click(moreFiltersButton);
+      
       const tagInput = screen.getByPlaceholderText("Search and select tags...");
       fireEvent.focus(tagInput);
       

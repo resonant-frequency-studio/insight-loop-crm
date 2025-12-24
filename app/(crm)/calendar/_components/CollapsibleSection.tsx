@@ -29,7 +29,7 @@ export default function CollapsibleSection({
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-3 transition-colors focus:outline-none"
+        className="w-full flex items-center justify-between p-3 transition-colors focus:outline-none cursor-pointer"
         style={{
           backgroundColor: 'var(--surface-bar)',
         }}

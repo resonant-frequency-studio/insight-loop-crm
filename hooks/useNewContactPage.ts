@@ -158,6 +158,7 @@ export function useNewContactPage() {
 
     createContactMutation.mutate(contactData, {
       onSuccess: () => {
+        // Redirect to contacts page on successful creation
         router.push("/contacts");
       },
       onError: (err) => {
@@ -165,13 +166,31 @@ export function useNewContactPage() {
           context: "Creating new contact in useNewContactPage",
           tags: { component: "useNewContactPage", email: form.primaryEmail },
         });
-        const errorMessage = err instanceof Error ? err.message : "Failed to create contact. Please try again.";
-        // If the error is auth-related, show a clearer message
-        if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("must be logged in")) {
-          setError("You must be logged in to create a contact");
-        } else {
-          setError(errorMessage);
+        
+        // Extract human-readable error message
+        let errorMessage = "Failed to create contact. Please try again.";
+        
+        if (err instanceof Error) {
+          const message = err.message;
+          
+          // Handle specific error cases with user-friendly messages
+          if (message.includes("409") || message.includes("already exists")) {
+            errorMessage = "A contact with this email address already exists.";
+          } else if (message.includes("401") || message.includes("Unauthorized") || message.includes("must be logged in")) {
+            errorMessage = "You must be logged in to create a contact. Please refresh the page and try again.";
+          } else if (message.includes("400") || message.includes("Bad Request")) {
+            errorMessage = "Invalid contact information. Please check your input and try again.";
+          } else if (message.includes("500") || message.includes("Internal Server Error")) {
+            errorMessage = "A server error occurred. Please try again in a moment.";
+          } else if (message.includes("network") || message.includes("fetch")) {
+            errorMessage = "Network error. Please check your connection and try again.";
+          } else if (message.trim()) {
+            // Use the error message if it's meaningful
+            errorMessage = message;
+          }
         }
+        
+        setError(errorMessage);
       },
     });
   }, [form, validateForm, prepareContactData, router, createContactMutation]);

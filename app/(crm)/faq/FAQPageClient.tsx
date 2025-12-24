@@ -79,7 +79,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
               <Button
                 onClick={() => toggleFAQ(actualIndex)}
                 variant="outline"
-                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 group"
+                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 group cursor-pointer"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">

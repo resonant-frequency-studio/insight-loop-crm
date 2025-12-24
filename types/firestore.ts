@@ -3,6 +3,7 @@ export interface Contact {
   
     // Identity
     primaryEmail: string;
+    secondaryEmails?: string[]; // Additional email addresses for merged contacts
     firstName?: string | null;
     lastName?: string | null;
     company?: string | null;

@@ -56,10 +56,19 @@ export function useContactsRealtime(userId: string | null): UseContactsRealtimeR
 
           const contactsData = snapshot.docs.map((doc) => {
             const data = doc.data();
-            return {
+            // Ensure contactId matches document ID (real-time listener uses doc.id)
+            // If contactId field exists but doesn't match doc.id, use doc.id as source of truth
+            const contact = {
               ...data,
-              contactId: doc.id,
+              contactId: doc.id, // Always use document ID as contactId
             } as Contact;
+            
+            // Ensure archived field exists (default to false if missing)
+            if (contact.archived === undefined) {
+              contact.archived = false;
+            }
+            
+            return contact;
           });
 
           setContacts(contactsData);

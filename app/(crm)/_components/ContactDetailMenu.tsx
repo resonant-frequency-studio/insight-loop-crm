@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import { extractErrorMessage } from "@/components/ErrorMessage";
 import { reportException } from "@/lib/error-reporting";
 import { getDisplayName } from "@/util/contact-utils";
+import MergeContactsModal from "./MergeContactsModal";
 
 interface ContactDetailMenuProps {
   contactId: string;
@@ -21,6 +22,7 @@ export default function ContactDetailMenu({
   const [isOpen, setIsOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [archiveError, setArchiveError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -96,6 +98,24 @@ export default function ContactDetailMenu({
 
   return (
     <>
+      {/* Merge Contacts Modal */}
+      {contact && (
+        <MergeContactsModal
+          isOpen={showMergeModal}
+          onClose={() => setShowMergeModal(false)}
+          primaryContactId={contactId}
+          userId={userId}
+          primaryContact={{
+            contactId: contact.contactId,
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            primaryEmail: contact.primaryEmail,
+            secondaryEmails: contact.secondaryEmails,
+            photoUrl: contact.photoUrl,
+          }}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
@@ -207,6 +227,17 @@ export default function ContactDetailMenu({
               className="absolute right-0 top-full mt-1 z-20 w-48 bg-card-highlight-light border border-theme-lighter rounded-sm shadow-lg py-1"
               role="menu"
             >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  setShowMergeModal(true);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-selected-active transition-colors"
+                role="menuitem"
+              >
+                Merge Contacts
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();

@@ -21,17 +21,19 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
   const { schedule, flush } = useDebouncedAutosave();
   
   const prevContactIdRef = useRef<string | null>(null);
-  const lastSavedValuesRef = useRef<{ firstName: string; lastName: string; company: string } | null>(null);
+  const lastSavedValuesRef = useRef<{ firstName: string; lastName: string; company: string; secondaryEmails: string[] } | null>(null);
   
   // Initialize form state from contact using lazy initialization
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [company, setCompany] = useState("");
+  const [secondaryEmails, setSecondaryEmails] = useState<string[]>([]);
   
   // Use refs to store current values so save function always reads latest state
   const firstNameRef = useRef(firstName);
   const lastNameRef = useRef(lastName);
   const companyRef = useRef(company);
+  const secondaryEmailsRef = useRef(secondaryEmails);
   
   // Keep refs in sync with state
   useEffect(() => {
@@ -45,6 +47,10 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
   useEffect(() => {
     companyRef.current = company;
   }, [company]);
+
+  useEffect(() => {
+    secondaryEmailsRef.current = secondaryEmails;
+  }, [secondaryEmails]);
   
   // Reset form state only when contactId changes (switching to a different contact)
   // Don't reset when contact data updates from our own save
@@ -59,6 +65,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
       setFirstName(contact.firstName ?? "");
       setLastName(contact.lastName ?? "");
       setCompany(contact.company ?? "");
+      setSecondaryEmails(contact.secondaryEmails ? [...contact.secondaryEmails] : []);
       return;
     }
     
@@ -68,7 +75,8 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
       const contactMatchesSaved = 
         (contact.firstName ?? "") === saved.firstName &&
         (contact.lastName ?? "") === saved.lastName &&
-        (contact.company ?? "") === saved.company;
+        (contact.company ?? "") === saved.company &&
+        JSON.stringify(contact.secondaryEmails || []) === JSON.stringify(saved.secondaryEmails);
       
       if (contactMatchesSaved) {
         // This update came from our save, don't reset form
@@ -81,16 +89,18 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
     const formMatchesOldContact = 
       firstName === (contact.firstName ?? "") &&
       lastName === (contact.lastName ?? "") &&
-      company === (contact.company ?? "");
+      company === (contact.company ?? "") &&
+      JSON.stringify(secondaryEmails) === JSON.stringify(contact.secondaryEmails || []);
     
     if (formMatchesOldContact) {
       // Form hasn't been edited, safe to update from contact
       setFirstName(contact.firstName ?? "");
       setLastName(contact.lastName ?? "");
       setCompany(contact.company ?? "");
+      setSecondaryEmails(contact.secondaryEmails ? [...contact.secondaryEmails] : []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contact?.contactId, contact?.firstName, contact?.lastName, contact?.company]);
+  }, [contact?.contactId, contact?.firstName, contact?.lastName, contact?.company, contact?.secondaryEmails]);
 
   // Save function for autosave - reads from refs to always get latest values
   const saveBasicInfo = useMemo(() => {
@@ -101,6 +111,9 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
       const currentFirstName = firstNameRef.current || null;
       const currentLastName = lastNameRef.current || null;
       const currentCompany = companyRef.current || null;
+      const currentSecondaryEmails = secondaryEmailsRef.current
+        .map((email) => email.trim())
+        .filter((email) => email !== "");
       
       return new Promise<void>((resolve, reject) => {
         updateMutation.mutate(
@@ -110,6 +123,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
               firstName: currentFirstName,
               lastName: currentLastName,
               company: currentCompany,
+              secondaryEmails: currentSecondaryEmails.length > 0 ? currentSecondaryEmails : undefined,
             },
           },
           {
@@ -119,6 +133,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
                 firstName: currentFirstName ?? "",
                 lastName: currentLastName ?? "",
                 company: currentCompany ?? "",
+                secondaryEmails: currentSecondaryEmails,
               };
               resolve();
             },
@@ -149,6 +164,23 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
 
   const handleCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCompany(e.target.value);
+    schedule("basic", saveBasicInfo);
+  };
+
+  const handleSecondaryEmailChange = (index: number, value: string) => {
+    const newEmails = [...secondaryEmails];
+    newEmails[index] = value;
+    setSecondaryEmails(newEmails);
+    schedule("basic", saveBasicInfo);
+  };
+
+  const handleAddSecondaryEmail = () => {
+    setSecondaryEmails([...secondaryEmails, ""]);
+  };
+
+  const handleRemoveSecondaryEmail = (index: number) => {
+    const newEmails = secondaryEmails.filter((_, i) => i !== index);
+    setSecondaryEmails(newEmails);
     schedule("basic", saveBasicInfo);
   };
 
@@ -230,7 +262,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
         </div>
         <div>
           <label className="block text-sm font-medium text-theme-darker mb-2">
-            Email
+            Primary Email
           </label>
           <Input
             type="email"
@@ -240,6 +272,75 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
             className="bg-theme-lighter text-[#8d8a85] cursor-not-allowed"
             value={contact.primaryEmail}
           />
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-theme-darker">
+              Secondary Emails
+            </label>
+            <button
+              type="button"
+              onClick={handleAddSecondaryEmail}
+              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              aria-label="Add secondary email"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add Email
+            </button>
+          </div>
+          <div className="space-y-2">
+            {secondaryEmails.map((email, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  type="email"
+                  id={`secondary-email-${index}`}
+                  name={`secondary-email-${index}`}
+                  value={email}
+                  onChange={(e) => handleSecondaryEmailChange(index, e.target.value)}
+                  onBlur={handleBlurFlush}
+                  placeholder="secondary@example.com"
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSecondaryEmail(index)}
+                  className="p-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
+                  aria-label="Remove secondary email"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            {secondaryEmails.length === 0 && (
+              <p className="text-sm text-theme-dark italic">
+                No secondary emails. Click &quot;Add Email&quot; to add one.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </Card>

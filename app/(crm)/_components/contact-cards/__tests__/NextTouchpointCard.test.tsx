@@ -256,11 +256,16 @@ describe("NextTouchpointCard", () => {
 
   describe("TouchpointStatusActions", () => {
     it("renders TouchpointStatusActions with correct props", async () => {
+      // Create a future date (after today)
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7); // 7 days from now
+      
       const mockContact = createMockContact({
         contactId: mockContactId,
         firstName: "John",
         lastName: "Doe",
-        nextTouchpointDate: Timestamp.fromDate(new Date("2024-01-15")),
+        nextTouchpointDate: Timestamp.fromDate(futureDate),
+        nextTouchpointMessage: "Follow up message", // Required for active touchpoint
       });
 
       mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
