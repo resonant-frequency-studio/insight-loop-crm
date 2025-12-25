@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarEvent, Contact } from "@/types/firestore";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { 
   useLinkEventToContact, 
   useUnlinkEventFromContact, 
@@ -303,7 +303,59 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
     return links;
   }, [event.description]);
 
-  // Find contact suggestions based on attendees (excluding user's email)
+  // Find exact email match contact (for auto-linking)
+  const exactEmailMatchContact = useMemo(() => {
+    if (!contacts.length || event.matchedContactId) return null;
+    
+    const userEmail = user?.email?.toLowerCase().trim() || null;
+    const eventEmails = new Set<string>();
+    
+    // Collect emails from attendees (excluding user's email)
+    if (event.attendees) {
+      for (const attendee of event.attendees) {
+        const email = attendee.email?.toLowerCase().trim();
+        if (email && (!userEmail || email !== userEmail)) {
+          eventEmails.add(email);
+        }
+      }
+    }
+    
+    // Check for exact email match (primary or secondary)
+    for (const contact of contacts) {
+      // Skip if this contact's email matches the user's email
+      if (userEmail && contact.primaryEmail?.toLowerCase().trim() === userEmail) {
+        continue;
+      }
+      
+      // Check primary email
+      if (contact.primaryEmail && eventEmails.has(contact.primaryEmail.toLowerCase().trim())) {
+        return contact;
+      }
+      
+      // Check secondary emails
+      if (contact.secondaryEmails) {
+        for (const secondaryEmail of contact.secondaryEmails) {
+          if (eventEmails.has(secondaryEmail.toLowerCase().trim())) {
+            return contact;
+          }
+        }
+      }
+    }
+    
+    return null;
+  }, [contacts, event, user?.email]);
+
+  // Auto-link exact email matches
+  useEffect(() => {
+    if (exactEmailMatchContact && !event.matchedContactId && !linkMutation.isPending) {
+      linkMutation.mutate({ 
+        eventId: event.eventId, 
+        contactId: exactEmailMatchContact.contactId 
+      });
+    }
+  }, [exactEmailMatchContact, event.matchedContactId, event.eventId, linkMutation]);
+
+  // Find contact suggestions based on attendees (excluding user's email and exact matches)
   const contactSuggestions = useMemo(() => {
     if (!contacts.length || event.matchedContactId) return [];
     
@@ -368,24 +420,18 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
       }
     }
     
-    // First pass: Exact email matches (highest priority, excluding user's email)
-    for (const contact of contacts) {
-      // Skip if this contact's email matches the user's email
-      if (userEmail && contact.primaryEmail?.toLowerCase().trim() === userEmail) {
-        continue;
-      }
-      
-      if (contact.primaryEmail && eventEmails.has(contact.primaryEmail.toLowerCase())) {
-        suggestions.push({ contact, reason: "Email match" });
-      }
-    }
+    // Note: Exact email matches are handled separately and auto-linked, so we skip them here
+    // We only show name-based suggestions (last name, first name) - not email matches
     
-    // Second pass: Exact last name matches (only if not already suggested)
+    // Second pass: Exact last name matches (only if not already suggested and not exact email match)
     if (extractedLastName) {
       const lastNameLower = extractedLastName.toLowerCase().trim();
       for (const contact of contacts) {
         // Skip if already suggested
         if (suggestions.some((s) => s.contact.contactId === contact.contactId)) continue;
+        
+        // Skip if this is the exact email match contact (it will be auto-linked)
+        if (exactEmailMatchContact && contact.contactId === exactEmailMatchContact.contactId) continue;
         
         // Skip if this contact's email matches the user's email
         if (userEmail && contact.primaryEmail?.toLowerCase().trim() === userEmail) {
@@ -406,6 +452,9 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
         // Skip if already suggested
         if (suggestions.some((s) => s.contact.contactId === contact.contactId)) continue;
         
+        // Skip if this is the exact email match contact (it will be auto-linked)
+        if (exactEmailMatchContact && contact.contactId === exactEmailMatchContact.contactId) continue;
+        
         // Skip if this contact's email matches the user's email
         if (userEmail && contact.primaryEmail?.toLowerCase().trim() === userEmail) {
           continue;
@@ -419,7 +468,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
     }
     
     return suggestions.slice(0, 5); // Limit to 5 suggestions
-  }, [contacts, event, user?.email]);
+  }, [contacts, event, user?.email, exactEmailMatchContact]);
 
   // Get linked contact
   const linkedContact = useMemo(() => {
