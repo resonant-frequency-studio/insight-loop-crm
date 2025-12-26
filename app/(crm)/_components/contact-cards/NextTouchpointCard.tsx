@@ -59,7 +59,21 @@ export default function NextTouchpointCard({
   }, [nextTouchpointMessage]);
 
   // Track previous status to detect changes
+  // Initialize with contact's current status to avoid triggering timer on mount
   const prevStatusRef = useRef<Contact["touchpointStatus"] | null>(null);
+  const isInitialMountRef = useRef(true);
+  const prevContactIdForStatusRef = useRef<string | null>(null);
+  const hasInitializedStatusRef = useRef(false);
+  
+  // Reset initial mount flag when contactId changes
+  useEffect(() => {
+    if (prevContactIdForStatusRef.current !== contactId) {
+      prevContactIdForStatusRef.current = contactId;
+      isInitialMountRef.current = true;
+      prevStatusRef.current = null;
+      hasInitializedStatusRef.current = false;
+    }
+  }, [contactId]);
 
   // Helper function to check if a date is in the future (not today or past)
   const isDateInFuture = (dateString: string): boolean => {
@@ -88,11 +102,28 @@ export default function NextTouchpointCard({
 
     const hasStatus = contact.touchpointStatus === "completed" || contact.touchpointStatus === "cancelled";
     const prevStatus = prevStatusRef.current;
+    
+    // On initial mount for this contact, initialize the ref with current status to avoid false positives
+    if (!hasInitializedStatusRef.current) {
+      prevStatusRef.current = contact.touchpointStatus;
+      hasInitializedStatusRef.current = true;
+      isInitialMountRef.current = false;
+      return; // Don't trigger timer on initial mount
+    }
+    
+    // Check if status actually changed (only process if it changed)
+    if (prevStatus === contact.touchpointStatus) {
+      // Status hasn't changed, nothing to do
+      return;
+    }
+    
+    // Status changed - save old status before updating ref
+    const oldStatus = prevStatusRef.current;
     prevStatusRef.current = contact.touchpointStatus;
     
     // Detect when status changes from null/pending to completed/cancelled
     const statusJustChanged = 
-      (prevStatus === null || prevStatus === "pending") && 
+      (oldStatus === null || oldStatus === "pending") && 
       (hasStatus);
     
     if (statusJustChanged) {
