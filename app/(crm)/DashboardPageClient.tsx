@@ -5,8 +5,11 @@ import DashboardTouchpoints from "./_components/DashboardTouchpoints";
 import { Contact } from "@/types/firestore";
 import RightColumnMetrics from "@/components/dashboard/RightColumnMetrics";
 import PipelineSnapshot from "@/components/dashboard/PipelineSnapshot";
-import AiInsights from "@/components/dashboard/AiInsights";
 import SavedSegments from "@/components/dashboard/SavedSegments";
+import Accordion from "@/components/Accordion";
+import Card from "@/components/Card";
+import SuggestedFocusCard from "@/components/dashboard/SuggestedFocusCard";
+import FollowUpsToCompleteCard from "@/components/dashboard/FollowUpsToCompleteCard";
 
 interface DashboardPageClientProps {
   userId: string;
@@ -26,15 +29,25 @@ export default function DashboardPageClient({ userId, contacts }: DashboardPageC
     return null;
   }
 
+  const firstName = user?.displayName?.split(" ")[0] || "User";
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div>
         <h1 className="text-4xl font-bold text-theme-darkest mb-2">
-          Welcome back, {user?.displayName?.split(" ")[0] || "User"}!
+          Welcome back, {firstName}.
         </h1>
-        <p className="text-theme-dark text-lg">
-          Here&apos;s what&apos;s happening with your contacts today
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-theme-dark text-lg">
+            Here&apos;s a clear view of where your attention can have the most impact this week.
+          </p>
+          <span className="px-3 py-1 text-xs font-medium text-theme-darkest bg-card-highlight-light rounded-full border border-theme-lighter">
+            Last 30 days
+          </span>
+        </div>
+        <p className="text-sm text-theme-dark italic mt-2">
+          Focused on recent activity from the past 30 days.
         </p>
       </div>
 
@@ -46,12 +59,27 @@ export default function DashboardPageClient({ userId, contacts }: DashboardPageC
           <DashboardTouchpoints userId={userId} />
         </div>
 
-        {/* Right Column - Metrics & Insights */}
-        <div className="space-y-6">
+        {/* Right Column - Organized into 3 Zones */}
+        <div className="space-y-4">
+          {/* Zone A - Suggested Focus (highest priority) */}
+          <SuggestedFocusCard contacts={contacts} />
+          <FollowUpsToCompleteCard contacts={contacts} />
+
+          {/* Zone B - Snapshot (secondary, calm context) */}
           <RightColumnMetrics userId={userId} contacts={contacts} />
-          <AiInsights userId={userId} />
-          <PipelineSnapshot userId={userId} />
-          <SavedSegments userId={userId} />
+
+          {/* Zone C - Reference (lowest priority, collapsible) */}
+          <Card className="p-4">
+            <Accordion
+              title="Pipeline & Saved Views"
+              defaultOpen={false}
+            >
+              <div className="space-y-4 mt-4">
+                <PipelineSnapshot userId={userId} />
+                <SavedSegments userId={userId} />
+              </div>
+            </Accordion>
+          </Card>
         </div>
       </div>
     </div>

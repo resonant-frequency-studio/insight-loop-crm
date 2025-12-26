@@ -31,7 +31,7 @@ interface ContactsFilterContextValue {
   setFirstNameSearch: (firstName: string) => void;
   setLastNameSearch: (lastName: string) => void;
   setCompanySearch: (company: string) => void;
-  setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setCustomFilter: (filter: "at-risk" | "warm" | "needs-attention" | null) => void;
   setLastEmailDateRange: (range: DateRange) => void;
   onClearFilters: () => void;
   
@@ -57,7 +57,7 @@ interface ContactsFilterContextValue {
   firstNameSearch: string;
   lastNameSearch: string;
   companySearch: string;
-  customFilter?: "at-risk" | "warm" | null;
+  customFilter?: "at-risk" | "warm" | "needs-attention" | null;
   
   // Filter change handlers (for ContactsFilter component)
   onSegmentChange: (segment: string) => void;
