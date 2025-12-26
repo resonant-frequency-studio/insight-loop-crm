@@ -7,11 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import Modal from "@/components/Modal";
 import { Button } from "@/components/Button";
-import { extractErrorMessage, ErrorMessage } from "@/components/ErrorMessage";
+import { extractErrorMessage } from "@/components/ErrorMessage";
 import { reportException } from "@/lib/error-reporting";
 import { getDisplayName } from "@/util/contact-utils";
 import { isOwnerContact } from "@/lib/contacts/owner-utils";
 import MergeContactsModal from "./MergeContactsModal";
+import ProcessingDrawer from "@/components/ProcessingDrawer";
 
 interface ContactDetailMenuProps {
   contactId: string;
@@ -251,86 +252,44 @@ export default function ContactDetailMenu({
         </div>
       </Modal>
 
-      {/* Sync Gmail Loading State - Persistent while generating insights */}
-      {syncingGmail && (
-        <div className="fixed bottom-4 right-4 z-50 max-w-md">
-          <div className="bg-blue-50 border border-blue-200 rounded-sm p-4 flex items-start gap-3 shadow-lg">
-            <svg
-              className="w-5 h-5 text-blue-600 mt-0.5 shrink-0 animate-spin"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-blue-800">Generating Contact Insights</p>
-              <p className="text-sm text-blue-700 mt-1">
-                Syncing email threads and generating AI insights. You can continue using the app—the page will update automatically when complete.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sync Gmail Error Message */}
-      {syncGmailError && (
-        <div className="fixed bottom-4 right-4 z-50 max-w-md">
-          <ErrorMessage
-            message={syncGmailError}
-            dismissible
-            onDismiss={() => setSyncGmailError(null)}
-          />
-        </div>
-      )}
-
-      {/* Sync Gmail Success Message */}
-      {syncGmailSuccess && (
-        <div className="fixed bottom-4 right-4 z-50 max-w-md">
-          <div className="bg-green-50 border border-green-200 rounded-sm p-4 flex items-start gap-3 shadow-lg">
-            <svg
-              className="w-5 h-5 text-green-600 mt-0.5 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-green-800">Contact Insights Generated</p>
-              <p className="text-sm text-green-700 mt-1">
-                Email threads synced and contact insights generated. The contact page has been updated automatically.
-              </p>
-            </div>
-            <button
-              onClick={() => setSyncGmailSuccess(false)}
-              className="text-green-600 hover:text-green-800 shrink-0"
-              aria-label="Dismiss"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Sync Gmail Status Drawer */}
+      <ProcessingDrawer
+        isOpen={syncingGmail || syncGmailSuccess || !!syncGmailError}
+        onClose={() => {
+          if (syncGmailError) {
+            setSyncGmailError(null);
+          } else if (syncGmailSuccess) {
+            setSyncGmailSuccess(false);
+          }
+          // Don't allow closing while syncing
+        }}
+        status={
+          syncGmailError
+            ? "error"
+            : syncGmailSuccess
+            ? "complete"
+            : syncingGmail
+            ? "running"
+            : "pending"
+        }
+        title={
+          syncGmailError
+            ? "Sync Failed"
+            : syncGmailSuccess
+            ? "Contact Insights Generated"
+            : "Generating Contact Insights"
+        }
+        message={
+          syncGmailError
+            ? undefined
+            : syncGmailSuccess
+            ? "Email threads synced and contact insights generated. The contact page has been updated automatically."
+            : "Syncing email threads and generating AI insights. You can continue using the app—the page will update automatically when complete."
+        }
+        errorMessage={syncGmailError || undefined}
+        allowCloseWhileRunning={false}
+        showBackdrop={false}
+      />
 
       {/* Dropdown Menu */}
       <div className="relative" ref={dropdownRef}>

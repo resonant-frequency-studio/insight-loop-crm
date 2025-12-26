@@ -30,9 +30,11 @@ export function useContactRealtime(userId: string | null, contactId: string | nu
 
   useEffect(() => {
     // Reset state when userId or contactId changes
-    setLoading(true);
-    setContact(null);
-    setError(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setContact(null);
+      setError(null);
+    });
 
     if (!userId || !contactId) {
       queueMicrotask(() => {

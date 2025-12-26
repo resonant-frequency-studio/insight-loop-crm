@@ -6,9 +6,23 @@ import { reportException } from "@/lib/error-reporting";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
 
   if (!code) {
     return NextResponse.json({ error: "Missing code" });
+  }
+
+  // Parse redirect URL from state parameter
+  let redirectUrl = "/contacts";
+  if (state) {
+    try {
+      const stateData = JSON.parse(decodeURIComponent(state));
+      if (stateData.redirect) {
+        redirectUrl = stateData.redirect;
+      }
+    } catch {
+      // If state parsing fails, use default redirect
+    }
   }
 
   // Get userId from session cookie
@@ -35,22 +49,36 @@ export async function GET(req: Request) {
 
   const tokens = await tokenRes.json();
 
-  if (!tokens.refresh_token) {
-    reportException(new Error("Refresh token missing from OAuth response"), {
+  // Get existing account data to preserve refresh token if new one isn't provided
+  const existingAccountDoc = await adminDb
+    .collection("googleAccounts")
+    .doc(userId)
+    .get();
+
+  const existingData = existingAccountDoc.exists ? existingAccountDoc.data() : null;
+  const existingRefreshToken = existingData?.refreshToken;
+
+  // Google only returns refresh_token on first authorization or when forcing re-auth
+  // If no refresh_token in response, use existing one (if available)
+  if (!tokens.refresh_token && !existingRefreshToken) {
+    reportException(new Error("Refresh token missing from OAuth response and no existing token"), {
       context: "OAuth callback - no refresh token",
       tags: { component: "oauth-callback" },
-      extra: { tokenResponse: tokens },
+      extra: { tokenResponse: tokens, hasExistingToken: !!existingRefreshToken },
     });
-    return NextResponse.json({ error: "Refresh token missing" });
+    return NextResponse.json({ error: "Refresh token missing. Please reconnect your Google account." });
   }
 
   // Store tokens securely in Firestore
+  // Use new refresh_token if provided, otherwise keep existing one
+  const refreshTokenToStore = tokens.refresh_token || existingRefreshToken;
+
   await adminDb
     .collection("googleAccounts")
     .doc(userId)
     .set(
       {
-        refreshToken: tokens.refresh_token,
+        refreshToken: refreshTokenToStore,
         accessToken: tokens.access_token,
         scope: tokens.scope,
         expiresAt: Date.now() + tokens.expires_in * 1000,
@@ -59,5 +87,5 @@ export async function GET(req: Request) {
       { merge: true }
     );
 
-    return NextResponse.redirect(new URL("/contacts", req.url).toString());
+    return NextResponse.redirect(new URL(redirectUrl, req.url).toString());
 }

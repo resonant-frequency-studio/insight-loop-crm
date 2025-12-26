@@ -4,6 +4,10 @@ import { NextRequest } from "next/server";
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const forceReauth = searchParams.get("force") === "true";
+  const redirect = searchParams.get("redirect") || "/contacts";
+  
+  // Use state parameter to pass redirect URL through OAuth flow
+  const state = encodeURIComponent(JSON.stringify({ redirect }));
   
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
@@ -13,6 +17,7 @@ export async function GET(req: NextRequest) {
     // Use "consent" to force re-authorization with new scopes, "select_account" for normal flow
     prompt: forceReauth ? "consent select_account" : "select_account",
     scope: process.env.GOOGLE_OAUTH_SCOPES!,
+    state,
   });
 
   return NextResponse.redirect(

@@ -248,4 +248,20 @@ export interface Contact {
     status?: string; // For action items: "pending" | "completed"
     isFromUser?: boolean; // For emails
   }
+
+  export interface ExportJob {
+    jobId: string;
+    userId: string;
+    status: "pending" | "running" | "complete" | "error";
+    startedAt: unknown;
+    finishedAt?: unknown | null;
+    totalContacts: number;
+    processedContacts: number;
+    skippedContacts: number;
+    errors: number;
+    currentStep?: string;
+    errorMessage?: string | null;
+    groupId?: string | null;
+    groupName?: string | null;
+  }
   

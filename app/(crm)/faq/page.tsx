@@ -71,7 +71,7 @@ const faqData: FAQItem[] = [
   {
     category: "Contact Management",
     question: "How do I export my contacts?",
-    answer: "On the Contacts page, click the 'Export' button. You can export all contacts or only the filtered contacts that are currently displayed. The export will be a CSV file containing all contact information that you can use in other applications.",
+    answer: "On the Contacts page, you have two export options: (1) Click 'Download Contacts' to export filtered contacts as a CSV file that you can use in other applications, or (2) Click 'Export to Google' to export filtered contacts directly to your Google Contacts with the option to add them to an existing or new contact group.",
   },
   {
     category: "Import/Export",

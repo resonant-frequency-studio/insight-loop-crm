@@ -101,7 +101,7 @@ export default function AdminPage() {
               This will refresh your OAuth permissions and restore access to Google services.
             </p>
             <a
-              href="/api/oauth/gmail/start?redirect=/admin"
+              href="/api/oauth/gmail/start?force=true&redirect=/admin"
               className="inline-block"
             >
               <Button variant="primary" size="md">

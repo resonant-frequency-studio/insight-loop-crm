@@ -45,12 +45,11 @@ function ContactsPageHeader({ contacts }: { contacts: ContactWithId[] }) {
       {/* Buttons - Mobile: below header, Desktop: right side */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 xl:shrink-0 w-full sm:w-auto">
         <ExportContactsButton contacts={filteredContacts} />
-        <Link href="/contacts/new" className="w-full sm:w-auto">
+        <Link href="/contacts/new" className="w-full sm:w-auto flex items-center">
           <Button
             size="sm"
             fullWidth
-            className="whitespace-nowrap shadow-sm
-"
+            className="whitespace-nowrap shadow-sm"
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
