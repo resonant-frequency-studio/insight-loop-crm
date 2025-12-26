@@ -40,11 +40,16 @@ function extractContactDataFromPerson(person: PeopleApiPerson | undefined): {
 
   // Extract photo URL - prefer primary photo, fallback to first photo
   // BUT exclude default/generated avatars (default: true means it's a generated avatar)
+  // Also exclude URLs with /cm/ path which are Google-generated avatars
   let photoUrl: string | null = null;
   if (person.photos && person.photos.length > 0) {
     // Filter out default/generated avatars - these are just initials, not real photos
+    // Check both the default flag AND the /cm/ path pattern
     const realPhotos = person.photos.filter(
-      (photo) => photo.default !== true && photo.url
+      (photo) => 
+        photo.default !== true && 
+        photo.url && 
+        !photo.url.includes('/cm/') // Filter out /cm/ URLs directly in the filter
     );
     
     if (realPhotos.length > 0) {
@@ -57,6 +62,7 @@ function extractContactDataFromPerson(person: PeopleApiPerson | undefined): {
       
       // Additional safety check: filter out URLs that are clearly generated avatars
       // Google uses /cm/ path for generated avatars with initials
+      // (This is redundant now but kept as a safety net)
       if (photoUrl && photoUrl.includes('/cm/')) {
         photoUrl = null;
       }

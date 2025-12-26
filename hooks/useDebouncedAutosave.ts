@@ -8,7 +8,7 @@ interface UseDebouncedAutosaveOptions {
 }
 
 export function useDebouncedAutosave(options: UseDebouncedAutosaveOptions = {}) {
-  const { delayMs = 700 } = options;
+  const { delayMs = 5000 } = options; // Default to 5 seconds (5000ms) - save on blur or after 5s inactivity
   const { markDirty, markClean, registerPending, setError, registerFlushCallback } = useContactAutosave();
   const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const saveFunctionsRef = useRef<Map<string, () => Promise<void>>>(new Map());

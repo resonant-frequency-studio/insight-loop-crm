@@ -3,6 +3,7 @@ import SyncPageClient from "../SyncPageClient";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
+import { useContactsSyncJob } from "@/hooks/useContactsSyncJob";
 import { reportException } from "@/lib/error-reporting";
 import { SyncJob, Contact } from "@/types/firestore";
 import { createMockUseQueryResult, createMockContact } from "@/components/__tests__/test-utils";
@@ -10,6 +11,7 @@ import { createMockUseQueryResult, createMockContact } from "@/components/__test
 jest.mock("@/hooks/useSyncStatus");
 jest.mock("@/hooks/useContacts");
 jest.mock("@/hooks/useAuth");
+jest.mock("@/hooks/useContactsSyncJob");
 jest.mock("@/lib/error-reporting", () => ({
   reportException: jest.fn(),
 }));
@@ -20,6 +22,7 @@ global.fetch = jest.fn();
 const mockUseSyncStatus = useSyncStatus as jest.MockedFunction<typeof useSyncStatus>;
 const mockUseContacts = useContacts as jest.MockedFunction<typeof useContacts>;
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
+const mockUseContactsSyncJob = useContactsSyncJob as jest.MockedFunction<typeof useContactsSyncJob>;
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 const mockReportException = reportException as jest.MockedFunction<typeof reportException>;
 
@@ -30,6 +33,7 @@ describe("SyncPageClient - Clear History", () => {
   const createMockSyncJob = (overrides?: Partial<SyncJob>): SyncJob => ({
     syncJobId: overrides?.syncJobId || `sync-${Date.now()}`,
     userId: mockUserId,
+    service: overrides?.service || "gmail",
     type: overrides?.type || "incremental",
     status: overrides?.status || "complete",
     startedAt: overrides?.startedAt || new Date().toISOString(),
@@ -56,6 +60,11 @@ describe("SyncPageClient - Clear History", () => {
     mockUseSyncStatus.mockReturnValue({
       lastSync: null,
       syncHistory: [],
+      loading: false,
+      error: null,
+    });
+    mockUseContactsSyncJob.mockReturnValue({
+      syncJob: null,
       loading: false,
       error: null,
     });
@@ -676,9 +685,213 @@ describe("SyncPageClient - Clear History", () => {
       fireEvent.click(confirmButton);
 
       await waitFor(() => {
-        expect(mockReportException).toHaveBeenCalled();
-      });
+      expect(mockReportException).toHaveBeenCalled();
     });
   });
+
+  describe("Sync Contacts Button", () => {
+    it("should start contacts sync and track progress", async () => {
+      const mockSyncJobId = "contacts_sync_1234567890_abc123";
+      
+      mockFetch.mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          ok: true,
+          syncJobId: mockSyncJobId,
+          message: "Contacts sync job started",
+        }),
+      } as Response);
+
+      // Initially no sync job
+      mockUseContactsSyncJob.mockReturnValue({
+        syncJob: null,
+        loading: false,
+        error: null,
+      });
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      // Find the button by role to avoid multiple matches
+      const syncButton = screen.getByRole("button", { name: /Sync Contacts/i });
+      fireEvent.click(syncButton);
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith("/api/contacts/sync");
+      });
+
+      // After API call, should start tracking the job
+      await waitFor(() => {
+        expect(mockUseContactsSyncJob).toHaveBeenCalledWith(
+          mockUserId,
+          expect.any(String)
+        );
+      });
+    });
+
+    it("should show progress bar when sync job is running", async () => {
+      const mockSyncJob: SyncJob = {
+        syncJobId: "sync-123",
+        userId: mockUserId,
+        service: "contacts",
+        type: "initial",
+        status: "running",
+        startedAt: new Date().toISOString(),
+        processedContacts: 5,
+        skippedContacts: 2,
+        totalContacts: 10,
+        currentStep: "importing",
+      };
+
+      mockUseContactsSyncJob.mockReturnValue({
+        syncJob: mockSyncJob,
+        loading: false,
+        error: null,
+      });
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      expect(screen.getByText("Importing contacts from Google...")).toBeInTheDocument();
+      expect(screen.getByText("7 / 10")).toBeInTheDocument();
+      expect(screen.getByText(/5 imported, 2 skipped/)).toBeInTheDocument();
+    });
+
+    it("should show completion message when sync job completes", async () => {
+      const mockSyncJob: SyncJob = {
+        syncJobId: "sync-123",
+        userId: mockUserId,
+        service: "contacts",
+        type: "initial",
+        status: "complete",
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        processedContacts: 10,
+        skippedContacts: 2,
+        totalContacts: 12,
+      };
+
+      mockUseContactsSyncJob.mockReturnValue({
+        syncJob: mockSyncJob,
+        loading: false,
+        error: null,
+      });
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      expect(screen.getByText("Sync completed successfully")).toBeInTheDocument();
+      expect(screen.getByText(/10 contacts imported, 2 skipped/)).toBeInTheDocument();
+    });
+
+    it("should show error message when sync job fails", async () => {
+      const mockSyncJob: SyncJob = {
+        syncJobId: "sync-123",
+        userId: mockUserId,
+        service: "contacts",
+        type: "initial",
+        status: "error",
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        errorMessage: "Failed to import contacts",
+      };
+
+      mockUseContactsSyncJob.mockReturnValue({
+        syncJob: mockSyncJob,
+        loading: false,
+        error: null,
+      });
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      expect(screen.getByText("Failed to import contacts")).toBeInTheDocument();
+    });
+
+    it("should disable button when sync is running", () => {
+      const mockSyncJob: SyncJob = {
+        syncJobId: "sync-123",
+        userId: mockUserId,
+        service: "contacts",
+        type: "initial",
+        status: "running",
+        startedAt: new Date().toISOString(),
+      };
+
+      mockUseContactsSyncJob.mockReturnValue({
+        syncJob: mockSyncJob,
+        loading: false,
+        error: null,
+      });
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      // Use getByRole to find the button specifically, not the heading
+      const syncButton = screen.getByRole("button", { name: /Sync Contacts/i });
+      expect(syncButton).toBeDisabled();
+    });
+
+    it("should handle API errors when starting sync", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        text: async () => JSON.stringify({
+          ok: false,
+          error: "Failed to start sync",
+        }),
+        json: async () => ({
+          ok: false,
+          error: "Failed to start sync",
+        }),
+        statusText: "Internal Server Error",
+        status: 500,
+      } as Response);
+
+      render(
+        <SyncPageClient
+          userId={mockUserId}
+          initialLastSync={null}
+          initialSyncHistory={[]}
+        />
+      );
+
+      // Find the button by role to avoid multiple matches
+      const syncButton = screen.getByRole("button", { name: /Sync Contacts/i });
+      fireEvent.click(syncButton);
+
+      await waitFor(() => {
+        // The error should be displayed - check for any error message
+        // The error could be in an alert or as plain text
+        const errorElement = screen.queryByRole("alert") || screen.queryByText(/Failed|Import failed|error/i);
+        expect(errorElement).toBeInTheDocument();
+      }, { timeout: 5000 });
+    });
+  });
+});
 });
 

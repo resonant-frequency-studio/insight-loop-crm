@@ -6,7 +6,7 @@ import { Contact } from "@/types/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { reportException } from "@/lib/error-reporting";
 import { enrichContactFromEmail } from "@/lib/google-people/enrich-contact-from-email";
-import { isWellFormedName } from "@/util/email-name-extraction";
+import { isWellFormedName, extractNamesFromEmail } from "@/util/email-name-extraction";
 
 /**
  * Check if we should update the contact
@@ -128,7 +128,76 @@ export async function POST(request: NextRequest | Request) {
                              contact.photoUrl.trim() !== "" && 
                              !contact.photoUrl.includes('/cm/');
 
-        if (!shouldUpdateContact(contact, enriched)) {
+        // If People API returned data, we should always try to update (it's the source of truth)
+        if (enriched.source === "people_api") {
+          // People API is source of truth - always try to update
+          // Even if existing data is well-formed, People API takes priority
+          const hasPeopleApiNameData = 
+            (enriched.firstName !== null && enriched.firstName !== undefined) ||
+            (enriched.lastName !== null && enriched.lastName !== undefined);
+          
+          if (!hasPeopleApiNameData && !enriched.company && !enriched.photoUrl) {
+            // People API returned null for everything - skip update
+            results.skipped++;
+            results.details.push({
+              contactId: contact.id,
+              email: contact.primaryEmail,
+              action: "skipped",
+              enriched: {
+                ...enriched,
+                source: enriched.source || undefined,
+              },
+              current: {
+                firstName: contact.firstName || null,
+                lastName: contact.lastName || null,
+                company: contact.company || null,
+                photoUrl: contact.photoUrl || null,
+              },
+              error: "People API returned no data for this contact",
+            });
+            continue;
+          }
+          
+          // Check if contact already has all well-formed fields and People API returns the same data
+          // If so, skip update (nothing to change)
+          if (firstNameWellFormed && lastNameWellFormed && hasCompany && hasRealPhoto) {
+            const enrichedFirstName = enriched.firstName || null;
+            const enrichedLastName = enriched.lastName || null;
+            const enrichedCompany = enriched.company || null;
+            
+            const contactFirstName = contact.firstName || null;
+            const contactLastName = contact.lastName || null;
+            const contactCompany = contact.company || null;
+            
+            // If People API returns the same data as what's already in the contact, skip
+            if (
+              enrichedFirstName === contactFirstName &&
+              enrichedLastName === contactLastName &&
+              enrichedCompany === contactCompany &&
+              !enriched.photoUrl // No new photo to add
+            ) {
+              results.skipped++;
+              results.details.push({
+                contactId: contact.id,
+                email: contact.primaryEmail,
+                action: "skipped",
+                enriched: {
+                  ...enriched,
+                  source: enriched.source || undefined,
+                },
+                current: {
+                  firstName: contact.firstName || null,
+                  lastName: contact.lastName || null,
+                  company: contact.company || null,
+                  photoUrl: contact.photoUrl || null,
+                },
+                error: "All fields are well-formed/present and match People API data",
+              });
+              continue;
+            }
+          }
+        } else if (!shouldUpdateContact(contact, enriched)) {
+          // For email extraction fallback, use existing logic
           results.skipped++;
           results.details.push({
             contactId: contact.id,
@@ -152,34 +221,97 @@ export async function POST(request: NextRequest | Request) {
         }
 
         // Determine what to update
-        // Only update fields that are missing or not well-formed
+        // Priority: People API > Existing Firestore > Email Extraction
         const updates: Partial<Contact> = {
           updatedAt: FieldValue.serverTimestamp(),
         };
 
-        const needsFirstName = !contact.firstName || contact.firstName.trim() === "" || !firstNameWellFormed;
-        const needsLastName = !contact.lastName || contact.lastName.trim() === "" || !lastNameWellFormed;
-        const needsCompany = !hasCompany;
-        const needsPhoto = !hasRealPhoto; // Treat default avatars as "no photo"
+        // Check if People API returned data
+        if (enriched.source === "people_api") {
+          // People API is source of truth - prioritize its data
+          
+          // First name logic
+          if (enriched.firstName !== null && enriched.firstName !== undefined) {
+            // People API has firstName - use it (add or update)
+            updates.firstName = enriched.firstName;
+          } else {
+            // People API says no firstName - check Firestore, then email extraction
+            if (contact.firstName && isWellFormedName(contact.firstName)) {
+              // Firestore has well-formed firstName - keep it (don't update)
+              // No update needed
+            } else {
+              // Firestore doesn't have firstName or it's not well-formed - try email extraction
+              const extracted = extractNamesFromEmail(contact.primaryEmail);
+              if (extracted.firstName) {
+                updates.firstName = extracted.firstName;
+              }
+            }
+          }
 
-        if (needsFirstName && enriched.firstName) {
-          updates.firstName = enriched.firstName;
-        }
+          // Last name logic
+          if (enriched.lastName !== null && enriched.lastName !== undefined) {
+            // People API has lastName - use it (add or update)
+            updates.lastName = enriched.lastName;
+          } else {
+            // People API says no lastName - check Firestore, then email extraction
+            if (contact.lastName && isWellFormedName(contact.lastName)) {
+              // Firestore has well-formed lastName - keep it (don't update)
+              // No update needed
+            } else {
+              // Firestore doesn't have lastName or it's not well-formed - try email extraction
+              const extracted = extractNamesFromEmail(contact.primaryEmail);
+              if (extracted.lastName) {
+                updates.lastName = extracted.lastName;
+              }
+            }
+          }
 
-        if (needsLastName && enriched.lastName) {
-          updates.lastName = enriched.lastName;
-        }
+          // Company and photo logic (keep existing behavior)
+          if (enriched.company !== null && enriched.company !== undefined) {
+            updates.company = enriched.company;
+          }
 
-        if (needsCompany && enriched.company) {
-          updates.company = enriched.company;
-        }
+          const needsPhoto = !hasRealPhoto; // Treat default avatars as "no photo"
+          if (needsPhoto && enriched.photoUrl) {
+            updates.photoUrl = enriched.photoUrl;
+          } else if (needsPhoto && !enriched.photoUrl && contact.photoUrl?.includes('/cm/')) {
+            // Clear default avatar URLs if no real photo found
+            updates.photoUrl = null;
+          } else if (contact.photoUrl?.includes('/cm/') && !enriched.photoUrl) {
+            // If contact has a /cm/ URL but People API didn't return a photo, clear it
+            // This handles the case where we're re-enriching and want to remove old default avatars
+            updates.photoUrl = null;
+          }
+        } else {
+          // People API didn't return data (email_extraction fallback)
+          // Only update if fields are missing or not well-formed (existing behavior)
+          const needsFirstName = !contact.firstName || contact.firstName.trim() === "" || !firstNameWellFormed;
+          const needsLastName = !contact.lastName || contact.lastName.trim() === "" || !lastNameWellFormed;
+          const needsCompany = !hasCompany;
+          const needsPhoto = !hasRealPhoto;
 
-        if (needsPhoto && enriched.photoUrl) {
-          // Update with real photo
-          updates.photoUrl = enriched.photoUrl;
-        } else if (needsPhoto && !enriched.photoUrl && contact.photoUrl?.includes('/cm/')) {
-          // Clear default avatar URLs if no real photo found
-          updates.photoUrl = null;
+          if (needsFirstName && enriched.firstName) {
+            updates.firstName = enriched.firstName;
+          }
+
+          if (needsLastName && enriched.lastName) {
+            updates.lastName = enriched.lastName;
+          }
+
+          if (needsCompany && enriched.company) {
+            updates.company = enriched.company;
+          }
+
+          if (needsPhoto && enriched.photoUrl) {
+            updates.photoUrl = enriched.photoUrl;
+          } else if (needsPhoto && !enriched.photoUrl && contact.photoUrl?.includes('/cm/')) {
+            // Clear default avatar URLs if no real photo found
+            updates.photoUrl = null;
+          } else if (contact.photoUrl?.includes('/cm/') && !enriched.photoUrl) {
+            // If contact has a /cm/ URL but no photo was found, clear it
+            // This handles the case where we're re-enriching and want to remove old default avatars
+            updates.photoUrl = null;
+          }
         }
 
         if (!dryRun) {

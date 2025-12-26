@@ -22,8 +22,10 @@ interface UseContactsPageFiltersReturn {
   filteredContacts: ContactWithId[];
   hasActiveFilters: boolean;
   lastEmailDateRange: DateRange;
+  includeNewContacts: boolean;
   showArchived: boolean;
   setShowArchived: (value: boolean) => void;
+  setIncludeNewContacts: (value: boolean) => void;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
@@ -42,6 +44,7 @@ interface UseContactsPageFiltersReturn {
   onLastNameSearchChange: (lastName: string) => void;
   onCompanySearchChange: (company: string) => void;
   onShowArchivedChange: (show: boolean) => void;
+  onIncludeNewContactsChange: (include: boolean) => void;
   onCustomFilterChange: (filter: "at-risk" | "warm" | null) => void;
   onLastEmailDateRangeChange: (range: DateRange) => void;
   
@@ -90,7 +93,9 @@ export function useContactsPageFilters({
     hasActiveFilters,
     onClearFilters,
     showArchived,
+    includeNewContacts,
     setShowArchived,
+    setIncludeNewContacts,
     setSelectedSegment,
     setSelectedTags,
     setCustomFilter,
@@ -134,10 +139,10 @@ export function useContactsPageFilters({
 
   // Reset to page 1 when filters change
   useEffect(() => {
-    // Use setTimeout to defer the state update and avoid synchronous setState in effect
-    setTimeout(() => {
+    // Defer state update to avoid synchronous setState in effect
+    queueMicrotask(() => {
       setCurrentPage(1);
-    }, 0);
+    });
   }, [
     selectedSegment,
     selectedTags,
@@ -147,6 +152,7 @@ export function useContactsPageFilters({
     companySearch,
     customFilter,
     showArchived,
+    includeNewContacts,
     lastEmailDateRange,
   ]);
 
@@ -192,10 +198,10 @@ export function useContactsPageFilters({
 
     if (filtersChanged) {
       prevFiltersRef.current = currentFilters;
-      // Use setTimeout to defer the state update and avoid synchronous setState in effect
-      setTimeout(() => {
+      // Defer state update to avoid synchronous setState in effect
+      queueMicrotask(() => {
         setSelectedContactIds(new Set());
-      }, 0);
+      });
     }
   }, [
     selectedSegment,
@@ -231,7 +237,9 @@ export function useContactsPageFilters({
     filteredContacts,
     hasActiveFilters,
     showArchived,
+    includeNewContacts,
     setShowArchived,
+    setIncludeNewContacts,
     setSelectedSegment,
     setSelectedTags,
     setEmailSearch: filterContacts.setEmailSearch,
@@ -249,6 +257,7 @@ export function useContactsPageFilters({
     onLastNameSearchChange: filterContacts.setLastNameSearch,
     onCompanySearchChange: filterContacts.setCompanySearch,
     onShowArchivedChange: setShowArchived,
+    onIncludeNewContactsChange: setIncludeNewContacts,
     onCustomFilterChange: setCustomFilter,
     lastEmailDateRange,
     setLastEmailDateRange,

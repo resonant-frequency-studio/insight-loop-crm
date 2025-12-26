@@ -7,7 +7,7 @@
   --card-light: #fafaf9;
   --card-dark: #292927;
   --card-tag: rgba(59, 130, 246, 1);
-  --card-tag-text: #eeeeec;
+  --card-tag-text: #191919;
   --card-upcoming: rgba(253, 153, 0, 0.03);
   --card-upcoming-dark: rgba(253, 153, 0, 0.15);
   --card-overdue: rgba(250, 43, 54, 0.03);
@@ -126,6 +126,67 @@
   --calendar-event-hover-bg: rgba(59, 130, 246, 0.16);
   --calendar-event-selected-bg: rgba(59, 130, 246, 0.22);
   --calendar-event-selected-border: rgba(59, 130, 246, 0.50);
+
+  /* Sync/Import Card Colors - Blue */
+  --sync-blue-bg: #eff6ff;
+  --sync-blue-border: #bfdbfe;
+  --sync-blue-text-primary: #1e3a8a;
+  --sync-blue-text-secondary: #1e40af;
+  --sync-blue-text-accent: #2563eb;
+  --sync-blue-text-muted: #93c5fd;
+  --sync-blue-icon: #3b82f6;
+
+  /* Sync Card Colors - Purple */
+  --sync-purple-bg: #faf5ff;
+  --sync-purple-border: #e9d5ff;
+  --sync-purple-text-primary: #581c87;
+  --sync-purple-text-secondary: #6b21a8;
+
+  /* Sync Card Colors - Green */
+  --sync-green-bg: #f0fdf4;
+  --sync-green-border: #bbf7d0;
+  --sync-green-text-primary: #14532d;
+  --sync-green-text-secondary: #166534;
+
+  /* Link/Interactive Colors - Blue */
+  --link-blue: #2563eb;
+  --link-blue-hover: #1d4ed8;
+
+  /* Error/Danger Colors - Red */
+  --error-red-text: #dc2626;
+  --error-red-text-hover: #b91c1c;
+  --error-red-bg-hover: rgba(127, 29, 29, 0.2);
+
+  /* Warning Colors - Yellow */
+  --warning-yellow-bg: #fef9c3;
+  --warning-yellow-border: #fde047;
+  --warning-yellow-text-primary: #854d0e;
+  --warning-yellow-text-secondary: #a16207;
+  --warning-yellow-text-accent: #ca8a04;
+
+  /* Surface Colors - Gray */
+  --surface-white: #ffffff;
+  --surface-gray: #1f2937;
+  --border-gray-light: #e5e7eb;
+  --border-gray-dark: #374151;
+
+  /* Gradient Colors - Indigo */
+  --gradient-indigo-from: #eef2ff;
+  --gradient-indigo-to: #e0e7ff;
+
+  /* Status Chip Colors */
+  --chip-blue-bg: #dbeafe;
+  --chip-blue-text: #1e40af;
+  --chip-green-bg: #d1fae5;
+  --chip-green-text: #065f46;
+  --chip-yellow-bg: #fef3c7;
+  --chip-yellow-text: #92400e;
+  --chip-red-bg: #fee2e2;
+  --chip-red-text: #991b1b;
+  --chip-purple-bg: #e9d5ff;
+  --chip-purple-text: #6b21a8;
+  --chip-gray-bg: #f3f4f6;
+  --chip-gray-text: #374151;
 }
 
 /* Dark theme via data attribute (manual override) */
@@ -236,10 +297,31 @@
   --calendar-event-overdue-bg: rgba(250, 43, 54, 0.18);
   --calendar-event-overdue-border: rgba(250, 43, 54, 0.45);
 
-  /* Interaction states */
-  --calendar-event-hover-bg: rgba(59, 130, 246, 0.16);
-  --calendar-event-selected-bg: rgba(59, 130, 246, 0.22);
-  --calendar-event-selected-border: rgba(59, 130, 246, 0.50);
+    /* Interaction states */
+    --calendar-event-hover-bg: rgba(59, 130, 246, 0.16);
+    --calendar-event-selected-bg: rgba(59, 130, 246, 0.22);
+    --calendar-event-selected-border: rgba(59, 130, 246, 0.50);
+
+    /* Sync/Import Card Colors - Blue */
+    --sync-blue-bg: rgba(30, 58, 138, 0.12);
+    --sync-blue-border: rgba(30, 58, 138, 0.25);
+    --sync-blue-text-primary: #bfdbfe;
+    --sync-blue-text-secondary: #93c5fd;
+    --sync-blue-text-accent: #60a5fa;
+    --sync-blue-text-muted: #3b82f6;
+    --sync-blue-icon: #3b82f6;
+
+    /* Sync Card Colors - Purple */
+    --sync-purple-bg: rgba(88, 28, 135, 0.12);
+    --sync-purple-border: rgba(88, 28, 135, 0.25);
+    --sync-purple-text-primary: #e9d5ff;
+    --sync-purple-text-secondary: #d8b4fe;
+
+    /* Sync Card Colors - Green */
+    --sync-green-bg: rgba(20, 83, 45, 0.12);
+    --sync-green-border: rgba(20, 83, 45, 0.25);
+    --sync-green-text-primary: #bbf7d0;
+    --sync-green-text-secondary: #86efac;
 }
 
 /* Dark theme via browser preference (when no manual override) */
@@ -354,6 +436,67 @@
     --calendar-event-hover-bg: rgba(59, 130, 246, 0.16);
     --calendar-event-selected-bg: rgba(59, 130, 246, 0.22);
     --calendar-event-selected-border: rgba(59, 130, 246, 0.50);
+
+    /* Sync/Import Card Colors - Blue */
+    --sync-blue-bg: rgba(30, 58, 138, 0.12);
+    --sync-blue-border: rgba(30, 58, 138, 0.25);
+    --sync-blue-text-primary: #bfdbfe;
+    --sync-blue-text-secondary: #93c5fd;
+    --sync-blue-text-accent: #60a5fa;
+    --sync-blue-text-muted: #3b82f6;
+    --sync-blue-icon: #3b82f6;
+
+    /* Sync Card Colors - Purple */
+    --sync-purple-bg: rgba(88, 28, 135, 0.12);
+    --sync-purple-border: rgba(88, 28, 135, 0.25);
+    --sync-purple-text-primary: #e9d5ff;
+    --sync-purple-text-secondary: #d8b4fe;
+
+    /* Sync Card Colors - Green */
+    --sync-green-bg: rgba(20, 83, 45, 0.12);
+    --sync-green-border: rgba(20, 83, 45, 0.25);
+    --sync-green-text-primary: #bbf7d0;
+    --sync-green-text-secondary: #86efac;
+
+  /* Link/Interactive Colors - Blue */
+  --link-blue: #60a5fa;
+  --link-blue-hover: #3b82f6;
+
+  /* Error/Danger Colors - Red */
+  --error-red-text: #f87171;
+  --error-red-text-hover: #ef4444;
+  --error-red-bg-hover: rgba(127, 29, 29, 0.2);
+
+  /* Warning Colors - Yellow */
+  --warning-yellow-bg: rgba(133, 77, 14, 0.2);
+  --warning-yellow-border: #a16207;
+  --warning-yellow-text-primary: #fde047;
+  --warning-yellow-text-secondary: #facc15;
+  --warning-yellow-text-accent: #eab308;
+
+  /* Surface Colors - Gray */
+  --surface-white: #1f2937;
+  --surface-gray: #1f2937;
+  --border-gray-light: #374151;
+  --border-gray-dark: #374151;
+
+  /* Gradient Colors - Indigo */
+  --gradient-indigo-from: rgba(30, 58, 138, 0.05);
+  --gradient-indigo-to: rgba(30, 58, 138, 0.05);
+
+  /* Status Chip Colors */
+  --chip-blue-bg: rgba(30, 64, 175, 0.2);
+  --chip-blue-text: #93c5fd;
+  --chip-green-bg: rgba(6, 95, 70, 0.2);
+  --chip-green-text: #6ee7b7;
+  --chip-yellow-bg: rgba(146, 64, 14, 0.2);
+  --chip-yellow-text: #fde047;
+  --chip-red-bg: rgba(153, 27, 27, 0.2);
+  --chip-red-text: #fca5a5;
+  --chip-purple-bg: rgba(107, 33, 168, 0.2);
+  --chip-purple-text: #c4b5fd;
+  --chip-gray-bg: rgba(55, 65, 81, 0.2);
+  --chip-gray-text: #9ca3af;
   }
 }
 
@@ -404,6 +547,51 @@
   --color-btn-secondary-bg-disabled: var(--btn-secondary-bg-disabled);
   --color-btn-secondary-fg-disabled: var(--btn-secondary-fg-disabled);
   --color-btn-secondary-border-disabled: var(--btn-secondary-border-disabled);
+
+  /* Sync/Import Card Colors */
+  --color-sync-blue-bg: var(--sync-blue-bg);
+  --color-sync-blue-border: var(--sync-blue-border);
+  --color-sync-blue-text-primary: var(--sync-blue-text-primary);
+  --color-sync-blue-text-secondary: var(--sync-blue-text-secondary);
+  --color-sync-blue-text-accent: var(--sync-blue-text-accent);
+  --color-sync-blue-text-muted: var(--sync-blue-text-muted);
+  --color-sync-blue-icon: var(--sync-blue-icon);
+  --color-sync-purple-bg: var(--sync-purple-bg);
+  --color-sync-purple-border: var(--sync-purple-border);
+  --color-sync-purple-text-primary: var(--sync-purple-text-primary);
+  --color-sync-purple-text-secondary: var(--sync-purple-text-secondary);
+  --color-sync-green-bg: var(--sync-green-bg);
+  --color-sync-green-border: var(--sync-green-border);
+  --color-sync-green-text-primary: var(--sync-green-text-primary);
+  --color-sync-green-text-secondary: var(--sync-green-text-secondary);
+  --color-link-blue: var(--link-blue);
+  --color-link-blue-hover: var(--link-blue-hover);
+  --color-error-red-text: var(--error-red-text);
+  --color-error-red-text-hover: var(--error-red-text-hover);
+  --color-error-red-bg-hover: var(--error-red-bg-hover);
+  --color-warning-yellow-bg: var(--warning-yellow-bg);
+  --color-warning-yellow-border: var(--warning-yellow-border);
+  --color-warning-yellow-text-primary: var(--warning-yellow-text-primary);
+  --color-warning-yellow-text-secondary: var(--warning-yellow-text-secondary);
+  --color-warning-yellow-text-accent: var(--warning-yellow-text-accent);
+  --color-surface-white: var(--surface-white);
+  --color-surface-gray: var(--surface-gray);
+  --color-border-gray-light: var(--border-gray-light);
+  --color-border-gray-dark: var(--border-gray-dark);
+  --color-gradient-indigo-from: var(--gradient-indigo-from);
+  --color-gradient-indigo-to: var(--gradient-indigo-to);
+  --color-chip-blue-bg: var(--chip-blue-bg);
+  --color-chip-blue-text: var(--chip-blue-text);
+  --color-chip-green-bg: var(--chip-green-bg);
+  --color-chip-green-text: var(--chip-green-text);
+  --color-chip-yellow-bg: var(--chip-yellow-bg);
+  --color-chip-yellow-text: var(--chip-yellow-text);
+  --color-chip-red-bg: var(--chip-red-bg);
+  --color-chip-red-text: var(--chip-red-text);
+  --color-chip-purple-bg: var(--chip-purple-bg);
+  --color-chip-purple-text: var(--chip-purple-text);
+  --color-chip-gray-bg: var(--chip-gray-bg);
+  --color-chip-gray-text: var(--chip-gray-text);
 }
 
 html {

@@ -156,7 +156,7 @@ export default function CalendarFilterBar({
               disabled={disabled || events.length === 0}
             />
             {showTagDropdown && filteredTags.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-surface-white border border-border-gray-light rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {filteredTags.map((tag) => (
                   <div
                     key={tag}

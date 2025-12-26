@@ -21,8 +21,10 @@ interface ContactsFilterContextValue {
   hasConfirmedNoContacts?: boolean;
   hasActiveFilters: boolean;
   lastEmailDateRange: DateRange;
+  includeNewContacts: boolean;
   showArchived: boolean;
   setShowArchived: (value: boolean) => void;
+  setIncludeNewContacts: (value: boolean) => void;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
@@ -65,6 +67,7 @@ interface ContactsFilterContextValue {
   onLastNameSearchChange: (lastName: string) => void;
   onCompanySearchChange: (company: string) => void;
   onShowArchivedChange: (show: boolean) => void;
+  onIncludeNewContactsChange: (include: boolean) => void;
   onCustomFilterChange: (filter: "at-risk" | "warm" | null) => void;
   onLastEmailDateRangeChange: (range: DateRange) => void;
 }

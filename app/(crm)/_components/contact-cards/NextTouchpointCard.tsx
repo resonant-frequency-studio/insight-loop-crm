@@ -3,7 +3,7 @@
 import { Timestamp } from "firebase/firestore";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useContact } from "@/hooks/useContact";
-import { useUpdateContact } from "@/hooks/useContactMutations";
+import { useUpdateContact, useUpdateTouchpointStatus } from "@/hooks/useContactMutations";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
 import TouchpointStatusActions from "../TouchpointStatusActions";
@@ -16,6 +16,7 @@ import { Button } from "@/components/Button";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import ContactGuardedLink from "@/components/contacts/ContactGuardedLink";
+import { Contact } from "@/types/firestore";
 
 interface NextTouchpointCardProps {
   contactId: string;
@@ -28,6 +29,7 @@ export default function NextTouchpointCard({
 }: NextTouchpointCardProps) {
   const { data: contact } = useContact(userId, contactId);
   const updateMutation = useUpdateContact(userId);
+  const updateTouchpointStatusMutation = useUpdateTouchpointStatus(userId);
   const { schedule, flush } = useDebouncedAutosave();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -39,6 +41,9 @@ export default function NextTouchpointCard({
   const [nextTouchpointDate, setNextTouchpointDate] = useState<string>("");
   const [nextTouchpointMessage, setNextTouchpointMessage] = useState<string>("");
   const [isConvertingToEvent, setIsConvertingToEvent] = useState(false);
+  const [showRestoreButton, setShowRestoreButton] = useState(false);
+  const [showStatusSection, setShowStatusSection] = useState(false); // Control visibility of entire status section
+  const restoreTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use refs to store current values so save function always reads latest state
   const nextTouchpointDateRef = useRef(nextTouchpointDate);
@@ -52,11 +57,100 @@ export default function NextTouchpointCard({
   useEffect(() => {
     nextTouchpointMessageRef.current = nextTouchpointMessage;
   }, [nextTouchpointMessage]);
+
+  // Track previous status to detect changes
+  const prevStatusRef = useRef<Contact["touchpointStatus"] | null>(null);
+
+  // Helper function to check if a date is in the future (not today or past)
+  const isDateInFuture = (dateString: string): boolean => {
+    if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return false;
+    }
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date > today;
+  };
+
+  // Check if touchpoint is active (future date + non-empty message)
+  const isActiveTouchpoint = useMemo(() => {
+    return (
+      nextTouchpointDate.trim() !== "" &&
+      isDateInFuture(nextTouchpointDate) &&
+      nextTouchpointMessage.trim() !== ""
+    );
+  }, [nextTouchpointDate, nextTouchpointMessage]);
+
+  // Handle status changes - show restore button for 60 seconds, then clear inputs
+  useEffect(() => {
+    if (!contact) return;
+
+    const hasStatus = contact.touchpointStatus === "completed" || contact.touchpointStatus === "cancelled";
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = contact.touchpointStatus;
+    
+    // Detect when status changes from null/pending to completed/cancelled
+    const statusJustChanged = 
+      (prevStatus === null || prevStatus === "pending") && 
+      (hasStatus);
+    
+    if (statusJustChanged) {
+      // Status was just set - show restore button and status section, start timer
+      setShowRestoreButton(true);
+      setShowStatusSection(true);
+      
+      // Clear any existing timer
+      if (restoreTimerRef.current) {
+        clearTimeout(restoreTimerRef.current);
+      }
+      
+      // Set timer to hide status section and clear inputs after 60 seconds
+      // NOTE: Only clear local state (UI), NOT database - keep date/message/status in DB for timeline
+      restoreTimerRef.current = setTimeout(() => {
+        setShowRestoreButton(false);
+        setShowStatusSection(false); // Hide entire status section
+        setNextTouchpointDate("");
+        setNextTouchpointMessage("");
+        // Clear the saved values ref so form doesn't repopulate
+        lastSavedValuesRef.current = null;
+      }, 60000); // 60 seconds
+    } else if (!hasStatus && showRestoreButton) {
+      // Status was cleared (restored to pending) - hide restore button and status section immediately
+      setShowRestoreButton(false);
+      setShowStatusSection(false);
+      if (restoreTimerRef.current) {
+        clearTimeout(restoreTimerRef.current);
+        restoreTimerRef.current = null;
+      }
+    }
+
+    // Cleanup timer on unmount
+    return () => {
+      if (restoreTimerRef.current) {
+        clearTimeout(restoreTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contact?.touchpointStatus, showRestoreButton]);
   
   // Reset form state only when contactId changes (switching to a different contact)
   // Don't reset when contact data updates from our own save
+  // KEY: Don't populate form if touchpointStatus is completed/cancelled
   useEffect(() => {
     if (!contact) return;
+    
+    // KEY CHANGE: If touchpointStatus is completed or cancelled, don't populate form fields
+    // This keeps fields clear even after refresh/navigation for completed/skipped touchpoints
+    const isCompletedOrCancelled = 
+      contact.touchpointStatus === "completed" || 
+      contact.touchpointStatus === "cancelled";
+    
+    if (isCompletedOrCancelled) {
+      // Don't populate form - keep fields empty for completed/skipped touchpoints
+      // User must manually type to create a new active touchpoint
+      return;
+    }
     
     // Only reset if we're switching to a different contact
     if (prevContactIdRef.current !== contact.contactId) {
@@ -106,7 +200,7 @@ export default function NextTouchpointCard({
       setNextTouchpointMessage(contactMessage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contact?.contactId, contact?.nextTouchpointDate, contact?.nextTouchpointMessage]);
+  }, [contact?.contactId, contact?.nextTouchpointDate, contact?.nextTouchpointMessage, contact?.touchpointStatus]);
 
   // Save function for autosave - reads from refs to always get latest values
   const saveTouchpoint = useMemo(() => {
@@ -253,6 +347,21 @@ export default function NextTouchpointCard({
             value={nextTouchpointDate}
             onChange={(e) => {
               const dateValue = e.target.value;
+              // Cancel restore timer if user is typing
+              if (restoreTimerRef.current) {
+                clearTimeout(restoreTimerRef.current);
+                restoreTimerRef.current = null;
+              }
+              
+              // Clear status if user edits date and there's a status (creating new active touchpoint)
+              if (contact?.touchpointStatus === "completed" || contact?.touchpointStatus === "cancelled") {
+                updateTouchpointStatusMutation.mutate({
+                  contactId,
+                  status: null,
+                });
+                setShowRestoreButton(false);
+              }
+              
               if (dateValue && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 setNextTouchpointDate(dateValue);
                 schedule("touchpoint", saveTouchpoint, 0); // Save immediately on date change
@@ -274,6 +383,21 @@ export default function NextTouchpointCard({
             rows={3}
             value={nextTouchpointMessage}
             onChange={(e) => {
+              // Cancel restore timer if user is typing
+              if (restoreTimerRef.current) {
+                clearTimeout(restoreTimerRef.current);
+                restoreTimerRef.current = null;
+              }
+              
+              // Clear status if user edits message and there's a status (creating new active touchpoint)
+              if (contact?.touchpointStatus === "completed" || contact?.touchpointStatus === "cancelled") {
+                updateTouchpointStatusMutation.mutate({
+                  contactId,
+                  status: null,
+                });
+                setShowRestoreButton(false);
+              }
+              
               setNextTouchpointMessage(e.target.value);
               schedule("touchpoint", saveTouchpoint);
             }}
@@ -322,17 +446,26 @@ export default function NextTouchpointCard({
       )}
 
       {/* Touchpoint Status Management */}
-      {(nextTouchpointDate || contact.touchpointStatus) && (
+      {/* Show status section only if: active touchpoint (future date + message) OR status section should be shown */}
+      {/* After 60 seconds, showStatusSection becomes false, hiding everything and returning to empty state */}
+      {(isActiveTouchpoint || showStatusSection) && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <TouchpointStatusActions
             contactId={contactId}
             contactName={getDisplayName(contact)}
             userId={userId}
+            showRestoreButton={showRestoreButton}
             onStatusUpdate={() => {
-              // No-op: React Query will automatically update the contact data
+              // When status is restored, cancel timer and hide status section
+              if (restoreTimerRef.current) {
+                clearTimeout(restoreTimerRef.current);
+                restoreTimerRef.current = null;
+              }
+              setShowRestoreButton(false);
+              setShowStatusSection(false);
             }}
           />
-          {contact.touchpointStatusUpdatedAt != null && (
+          {showStatusSection && contact.touchpointStatusUpdatedAt != null && (
             <p className="text-xs text-gray-500 mt-2">
               Status updated:{" "}
               {formatContactDate(contact.touchpointStatusUpdatedAt, {
@@ -340,7 +473,7 @@ export default function NextTouchpointCard({
               })}
             </p>
           )}
-          {contact.touchpointStatusReason && (
+          {showStatusSection && contact.touchpointStatusReason && (
             <div className="mt-3 p-3 bg-theme-lighter border border-gray-200 rounded-sm">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
                 {contact.touchpointStatus === "completed" ? "Note" : "Reason"}

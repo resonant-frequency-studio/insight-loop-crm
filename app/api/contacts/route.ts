@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth-utils";
+import { getUserId, getUserEmail } from "@/lib/auth-utils";
 import { getAllContactsForUserUncached } from "@/lib/contacts-server";
 import { reportException } from "@/lib/error-reporting";
 import { adminDb } from "@/lib/firebase-admin";
@@ -7,6 +7,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { normalizeContactId } from "@/util/csv-utils";
 import { Contact } from "@/types/firestore";
 import { revalidateTag } from "next/cache";
+import { ensureOwnerTag } from "@/lib/contacts/owner-utils";
 
 // Force dynamic rendering - never cache this route
 export const dynamic = "force-dynamic";
@@ -75,16 +76,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Remove contactId from contactData if present to ensure it matches document ID
+    const { contactId: _, ...contactDataWithoutId } = contactData;
+
+    // Ensure Owner tag is added if this is the user's own contact
+    const userEmail = await getUserEmail();
+    const contactWithOwnerTag = ensureOwnerTag(
+      {
+        ...contactDataWithoutId,
+        primaryEmail: email,
+      },
+      userEmail
+    );
+
     // Create contact
+    // IMPORTANT: contactId in data must match document ID for real-time listener to work correctly
     await adminDb
       .collection("users")
       .doc(userId)
       .collection("contacts")
       .doc(contactId)
       .set({
-        ...contactData,
-        contactId,
+        ...contactWithOwnerTag,
+        contactId, // Ensure contactId matches document ID
         primaryEmail: email,
+        archived: false, // Explicitly set archived to false for new contacts
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });

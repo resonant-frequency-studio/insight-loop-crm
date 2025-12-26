@@ -58,6 +58,7 @@ describe("DashboardTouchpoints", () => {
         contacts: [],
         loading: true,
         error: null,
+        hasConfirmedNoContacts: false,
       });
       
       const { container } = render(<DashboardTouchpoints userId={mockUserId} />);
@@ -90,6 +91,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
@@ -135,6 +137,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
@@ -161,6 +164,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
@@ -189,6 +193,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
@@ -229,6 +234,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       mockMutateAsync.mockResolvedValue({});
@@ -287,6 +293,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       mockMutateAsync.mockResolvedValue({});
@@ -344,6 +351,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);
@@ -379,6 +387,7 @@ describe("DashboardTouchpoints", () => {
         contacts: mockContacts,
         loading: false,
         error: null,
+        hasConfirmedNoContacts: false,
       });
 
       render(<DashboardTouchpoints userId={mockUserId} />);

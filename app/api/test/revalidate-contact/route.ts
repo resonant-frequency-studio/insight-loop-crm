@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { isTestMode } from "@/util/test-utils";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * POST /api/test/revalidate-contact
@@ -71,8 +72,11 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    reportException(error, {
+      context: "Test cache invalidation error",
+      tags: { component: "test-revalidate-contact-api" },
+    });
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`[TEST] Cache invalidation error:`, error);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

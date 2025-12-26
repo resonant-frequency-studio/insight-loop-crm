@@ -13,8 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
-    "migrate:action-items-userid": "tsx admin/migrate-action-items-userid.ts"
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.29.0",

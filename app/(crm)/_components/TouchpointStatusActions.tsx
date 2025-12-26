@@ -19,6 +19,8 @@ interface TouchpointStatusActionsProps {
   compact?: boolean; // For dashboard cards
   // Optional: for cases where contact data isn't in React Query (e.g., ContactCard in lists)
   currentStatus?: Contact["touchpointStatus"];
+  // Optional: control whether to show Restore button (for 60-second timer logic)
+  showRestoreButton?: boolean;
 }
 
 export default function TouchpointStatusActions({
@@ -28,6 +30,7 @@ export default function TouchpointStatusActions({
   onStatusUpdate,
   compact = false,
   currentStatus: fallbackStatus,
+  showRestoreButton: showRestoreButtonProp,
 }: TouchpointStatusActionsProps) {
   const { user } = useAuth();
   
@@ -338,7 +341,8 @@ export default function TouchpointStatusActions({
         </div>
       )}
 
-      {(currentStatus === "completed" || currentStatus === "cancelled") && (
+      {(currentStatus === "completed" || currentStatus === "cancelled") && 
+       (showRestoreButtonProp !== false) && (
         <Button
           onClick={() => handleUpdateStatus(null)}
           disabled={mutation.isPending}

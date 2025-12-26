@@ -51,11 +51,11 @@ function getDaysAgo(date: Date | null): number | null {
 // Get segment color class
 function getSegmentColor(segment: string): string {
   const colors: Record<string, string> = {
-    "High Potential Prospect": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-    "Active Client": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    "Past Client": "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+    "High Potential Prospect": "bg-chip-purple-bg text-chip-purple-text",
+    "Active Client": "bg-chip-green-bg text-chip-green-text",
+    "Past Client": "bg-chip-gray-bg text-chip-gray-text",
   };
-  return colors[segment] || "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+  return colors[segment] || "bg-chip-blue-bg text-chip-blue-text";
 }
 
 export default function LinkedContactCard({

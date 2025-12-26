@@ -40,27 +40,6 @@ export default function NewContactPage() {
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-sm p-4">
-          <div className="flex items-center gap-3">
-            <svg
-              className="w-5 h-5 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-red-800 font-medium">{error}</p>
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Sidebar - Right Column (1/3) - Top on mobile, Right on desktop */}
@@ -307,34 +286,57 @@ export default function NewContactPage() {
           </Card>
 
           {/* Save Button - Below editable fields */}
-          <div className="flex justify-start">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              loading={saving}
-              variant="secondary"
-              size="md"
-              className="shadow-sm
-"
-              icon={
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              }
-              error={error}
-            >
-              Save Contact
-            </Button>
+          <div className="space-y-3">
+            <div className="flex justify-start">
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                loading={saving}
+                variant="secondary"
+                size="md"
+                className="shadow-sm"
+                icon={
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                }
+              >
+                Save Contact
+              </Button>
+            </div>
+            
+            {/* Error Message - Display below save button */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-sm p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <p className="text-sm text-red-800 font-medium">{error}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

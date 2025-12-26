@@ -114,7 +114,7 @@ function matchByEmail(
     return null;
   }
 
-  // Check each attendee email against contact primaryEmail
+  // Check each attendee email against contact primaryEmail and secondaryEmails
   // Exclude the user's own email
   for (const attendee of event.attendees) {
     const email = attendee.email.toLowerCase().trim();
@@ -124,9 +124,21 @@ function matchByEmail(
       continue;
     }
     
-    const contact = contacts.find(
+    // Check primaryEmail first
+    let contact = contacts.find(
       (c) => c.primaryEmail.toLowerCase().trim() === email
     );
+
+    // If not found, check secondaryEmails
+    if (!contact) {
+      contact = contacts.find((c) => {
+        const primaryMatches = c.primaryEmail.toLowerCase().trim() === email;
+        const secondaryMatches = c.secondaryEmails?.some(
+          (secondaryEmail) => secondaryEmail.toLowerCase().trim() === email
+        );
+        return primaryMatches || secondaryMatches;
+      });
+    }
 
     if (contact) {
       return {

@@ -39,14 +39,6 @@ async function getContactForUserUncached(
       .get();
 
     if (!doc.exists) {
-      // In test mode, add debug logging
-      if (process.env.NODE_ENV === "test" && process.env.DEBUG_TEST_CACHE) {
-        console.log(`[TEST] Contact not found: userId=${userId}, contactId=${contactId}`);
-        // List available contacts for debugging
-        const snapshot = await adminDb.collection(contactsPath(userId)).get();
-        const availableIds = snapshot.docs.map(d => d.id).slice(0, 5);
-        console.log(`[TEST] Available contact IDs (first 5):`, availableIds);
-      }
       return null;
     }
 

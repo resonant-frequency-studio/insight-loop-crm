@@ -1,12 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import ContactInsightsCard from "../ContactInsightsCard";
 import { useContact } from "@/hooks/useContact";
+import { useAuth } from "@/hooks/useAuth";
 import { formatContactDate } from "@/util/contact-utils";
-import { createMockContact, createMockUseQueryResult } from "@/components/__tests__/test-utils";
+import { createMockContact, createMockUseQueryResult, renderWithProviders } from "@/components/__tests__/test-utils";
 import { Timestamp } from "firebase/firestore";
+import { User } from "firebase/auth";
 import type { Contact } from "@/types/firestore";
 
 jest.mock("@/hooks/useContact");
+jest.mock("@/hooks/useAuth");
 jest.mock("@/util/contact-utils", () => ({
   formatContactDate: jest.fn((date, options) => {
     if (options?.includeTime) {
@@ -28,8 +31,12 @@ jest.mock("@/components/InfoPopover", () => ({
   __esModule: true,
   default: ({ content }: { content: string }) => <div data-testid="info-popover">{content}</div>,
 }));
+jest.mock("@/lib/contacts/owner-utils", () => ({
+  isOwnerContact: jest.fn(() => false),
+}));
 
 const mockUseContact = useContact as jest.MockedFunction<typeof useContact>;
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockFormatContactDate = formatContactDate as jest.MockedFunction<typeof formatContactDate>;
 
 describe("ContactInsightsCard", () => {
@@ -38,6 +45,10 @@ describe("ContactInsightsCard", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: { uid: mockUserId, email: "user@example.com" } as User,
+      loading: false,
+    });
   });
 
   describe("Loading State", () => {
@@ -46,7 +57,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(undefined, true, null)
       );
 
-      const { container } = render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      const { container } = renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
     });
   });
@@ -62,7 +73,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("AI Summary")).toBeInTheDocument();
       expect(screen.getByText("This is an AI-generated summary of the contact.")).toBeInTheDocument();
@@ -78,7 +89,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.queryByText("AI Summary")).not.toBeInTheDocument();
     });
@@ -95,26 +106,32 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("Engagement Score")).toBeInTheDocument();
       expect(screen.getByText("75")).toBeInTheDocument();
     });
 
-    it("displays Engagement Score section even when engagement score is null (renders as 0)", () => {
+    it("shows empty state when engagement score is null and no other insights exist", () => {
       const mockContact = createMockContact({
         contactId: mockContactId,
         engagementScore: null,
+        summary: null,
+        sentiment: null,
+        painPoints: null,
+        threadCount: undefined,
       });
 
       mockUseContact.mockReturnValue(
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
-      // Component converts null to 0 via Number(null), so section is displayed
-      expect(screen.getByText("Engagement Score")).toBeInTheDocument();
+      // Component shows empty state when no insights exist
+      expect(screen.getByText("No Contact Insights Yet")).toBeInTheDocument();
+      expect(screen.getByText("Sync Gmail")).toBeInTheDocument();
+      expect(screen.queryByText("Engagement Score")).not.toBeInTheDocument();
     });
   });
 
@@ -129,7 +146,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("Email Threads")).toBeInTheDocument();
       expect(screen.getByText("5")).toBeInTheDocument();
@@ -145,7 +162,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.queryByText("Email Threads")).not.toBeInTheDocument();
     });
@@ -162,7 +179,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("Pain Points")).toBeInTheDocument();
       expect(screen.getByText("Budget constraints, Time limitations")).toBeInTheDocument();
@@ -178,7 +195,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.queryByText("Pain Points")).not.toBeInTheDocument();
     });
@@ -196,7 +213,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("Last Email Date")).toBeInTheDocument();
       expect(mockFormatContactDate).toHaveBeenCalledWith(mockDate, { includeTime: true });
@@ -212,7 +229,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.queryByText("Last Email Date")).not.toBeInTheDocument();
     });
@@ -233,7 +250,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("AI Summary")).toBeInTheDocument();
       expect(screen.getByText("Engagement Score")).toBeInTheDocument();
@@ -257,7 +274,7 @@ describe("ContactInsightsCard", () => {
         createMockUseQueryResult<Contact | null, Error>(mockContact, false, null)
       );
 
-      render(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
+      renderWithProviders(<ContactInsightsCard contactId={mockContactId} userId={mockUserId} />);
       
       expect(screen.getByText("AI Summary")).toBeInTheDocument();
       expect(screen.getByText("Engagement Score")).toBeInTheDocument();

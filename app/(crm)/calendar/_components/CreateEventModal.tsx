@@ -307,29 +307,6 @@ export default function CreateEventModal({
               <p className="text-sm text-amber-800 mb-3">
                 Calendar write access is not granted. Please reconnect your Google account with Calendar write permissions.
               </p>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    // Disconnect existing tokens
-                    await fetch("/api/oauth/gmail/disconnect", {
-                      method: "POST",
-                      credentials: "include",
-                    });
-                    // Redirect to OAuth flow with force re-auth
-                    window.location.href = "/api/oauth/gmail/start?force=true";
-                  } catch (error) {
-                    reportException(error, {
-                      context: "Disconnecting Google account for re-authentication",
-                      tags: { component: "CreateEventModal" },
-                    });
-                  }
-                }}
-              >
-                Reconnect Google Account
-              </Button>
             </div>
           )}
 

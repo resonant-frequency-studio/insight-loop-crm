@@ -37,23 +37,31 @@ export async function enrichContactFromEmail(
     const peopleApiData = await getContactFromEmail(email, accessToken);
 
     if (peopleApiData) {
-      // If we got data from People API, merge with email extraction if needed
-      // Use email extraction to fill in missing name parts
-      const extractedNames = extractNamesFromEmail(email);
+      // Check if People API provided any name data
+      const hasPeopleApiNames = 
+        (peopleApiData.firstName !== null && peopleApiData.firstName !== undefined) ||
+        (peopleApiData.lastName !== null && peopleApiData.lastName !== undefined);
       
-      // Determine the best source for each field
-      const firstName = peopleApiData.firstName || extractedNames.firstName;
-      const lastName = peopleApiData.lastName || extractedNames.lastName;
+      // If People API returned no names at all, fall back to email extraction entirely
+      if (!hasPeopleApiNames) {
+        const extracted = extractNamesFromEmail(email);
+        return {
+          firstName: extracted.firstName,
+          lastName: extracted.lastName,
+          company: peopleApiData.company, // Keep company from People API if available
+          photoUrl: peopleApiData.photoUrl, // Keep photo from People API if available
+          source: "email_extraction", // No names from People API, so use email extraction
+        };
+      }
       
-      // If we got any name data from People API, prefer it, otherwise use email extraction
-      const source = (peopleApiData.firstName || peopleApiData.lastName) ? "people_api" : "email_extraction";
-      
+      // People API provided at least one name - merge with email extraction for missing names
+      const extracted = extractNamesFromEmail(email);
       return {
-        firstName,
-        lastName,
+        firstName: peopleApiData.firstName ?? extracted.firstName, // Use People API firstName or fall back to email extraction
+        lastName: peopleApiData.lastName ?? extracted.lastName,     // Use People API lastName or fall back to email extraction
         company: peopleApiData.company,
         photoUrl: peopleApiData.photoUrl,
-        source,
+        source: "people_api", // People API provided at least one name, so mark as people_api
       };
     }
 

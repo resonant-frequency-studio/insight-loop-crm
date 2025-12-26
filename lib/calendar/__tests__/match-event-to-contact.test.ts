@@ -112,10 +112,45 @@ describe("matchEventToContact", () => {
       expect(result.confidence).toBe("low");
     });
 
-    it("should return null contactId if no email match", () => {
+    it("should match event by secondary email address", () => {
+      const contactsWithSecondary: Contact[] = [
+        {
+          contactId: "contact1",
+          primaryEmail: "john.doe@example.com",
+          secondaryEmails: ["john.doe.work@example.com"],
+          firstName: "John",
+          lastName: "Doe",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
       const event: CalendarEvent = {
         eventId: "event4",
         googleEventId: "google4",
+        userId: "user1",
+        title: "Meeting with John",
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        attendees: [
+          { email: "john.doe.work@example.com", displayName: "John Doe" },
+        ],
+        lastSyncedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const result = matchEventToContact(event, contactsWithSecondary);
+
+      expect(result.contactId).toBe("contact1");
+      expect(result.confidence).toBe("high");
+      expect(result.method).toBe("email");
+    });
+
+    it("should return null contactId if no email match", () => {
+      const event: CalendarEvent = {
+        eventId: "event5",
+        googleEventId: "google5",
         userId: "user1",
         title: "Meeting",
         startTime: new Date().toISOString(),

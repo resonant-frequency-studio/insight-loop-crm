@@ -143,7 +143,7 @@ export default function EventMeetingInsights({
         )}
         {error && (
           <div className="space-y-2">
-            <p className="text-red-600 dark:text-red-400 text-sm">
+            <p className="text-error-red-text text-sm">
               {error.message || "Failed to generate insights"}
             </p>
             <Button

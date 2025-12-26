@@ -89,7 +89,7 @@ export default function EventModalHeader({
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="text-theme-dark text-sm">with {contactName}</span>
             {segment && (
-              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-chip-blue-bg text-chip-blue-text">
                 {segment}
               </span>
             )}
@@ -115,19 +115,19 @@ export default function EventModalHeader({
         <div className="flex items-center gap-3 flex-wrap">
           {/* Follow-up status chip */}
           {followUpStatus === "scheduled" && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-chip-green-bg text-chip-green-text">
               <span className="w-2 h-2 rounded-full bg-green-600"></span>
               Follow-up scheduled
             </span>
           )}
           {followUpStatus === "none" && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-chip-yellow-bg text-chip-yellow-text">
               <span className="w-2 h-2 rounded-full bg-yellow-600"></span>
               No follow-up yet
             </span>
           )}
           {followUpStatus === "overdue" && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-chip-red-bg text-chip-red-text">
               <span className="w-2 h-2 rounded-full bg-red-600"></span>
               Follow-up overdue
             </span>

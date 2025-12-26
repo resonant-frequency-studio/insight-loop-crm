@@ -339,13 +339,6 @@ export default function CalendarPageClientWrapper() {
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <Button
-                    onClick={() => {
-                      window.location.href = "/api/oauth/gmail/start?redirect=/calendar";
-                    }}
-                  >
-                    Reconnect Google Account
-                  </Button>
                   <Button variant="outline" onClick={() => window.location.reload()}>
                     Retry
                   </Button>

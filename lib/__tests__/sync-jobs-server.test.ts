@@ -32,6 +32,7 @@ describe("sync-jobs-server", () => {
       const mockSyncJob: SyncJob = {
         syncJobId: "sync1",
         userId: mockUserId,
+        service: "gmail",
         type: "incremental",
         status: "complete",
         startedAt: { toDate: () => new Date("2024-01-01") },
@@ -119,6 +120,7 @@ describe("sync-jobs-server", () => {
       const mockSyncJob1: SyncJob = {
         syncJobId: "sync1",
         userId: mockUserId,
+        service: "gmail",
         type: "incremental",
         status: "complete",
         startedAt: { toDate: () => new Date("2024-01-02") },
@@ -129,6 +131,7 @@ describe("sync-jobs-server", () => {
       const mockSyncJob2: SyncJob = {
         syncJobId: "sync2",
         userId: mockUserId,
+        service: "gmail",
         type: "initial",
         status: "complete",
         startedAt: { toDate: () => new Date("2024-01-01") },
@@ -183,6 +186,7 @@ describe("sync-jobs-server", () => {
       const mockSyncJob: SyncJob = {
         syncJobId: "sync1",
         userId: mockUserId,
+        service: "gmail",
         type: "incremental",
         status: "complete",
         startedAt: { toDate: () => new Date("2024-01-01") },

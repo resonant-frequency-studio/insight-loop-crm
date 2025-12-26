@@ -27,11 +27,15 @@ jest.mock("@/hooks/useFilterContacts", () => ({
     onClearFilters: jest.fn(),
     showArchived: false,
     setShowArchived: jest.fn(),
+    includeNewContacts: true,
+    setIncludeNewContacts: jest.fn(),
     setSelectedSegment: jest.fn(),
     setSelectedTags: jest.fn(),
     setCustomFilter: jest.fn(),
     setLastEmailDateRange: jest.fn(),
     lastEmailDateRange: getDefaultDateRange(),
+    onLastEmailDateRangeChange: jest.fn(),
+    onIncludeNewContactsChange: jest.fn(),
     selectedSegment: "",
     selectedTags: [],
     emailSearch: "",
@@ -107,11 +111,12 @@ describe("ContactsPageClient - Bulk Company Update", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock Firebase real-time hook - returns { contacts, loading, error }
+    // Mock Firebase real-time hook - returns { contacts, loading, error, hasConfirmedNoContacts }
     mockUseContactsRealtime.mockReturnValue({
       contacts: mockContacts,
       loading: false,
       error: null,
+      hasConfirmedNoContacts: false,
     });
     mockUseBulkArchiveContacts.mockReturnValue(archiveMutationMock);
     mockUseBulkUpdateSegments.mockReturnValue(segmentMutationMock);

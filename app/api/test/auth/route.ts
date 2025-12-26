@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase-admin";
 import { isJestTest } from "@/util/test-utils";
+import { reportException } from "@/lib/error-reporting";
 
 /**
  * Test-only endpoint for E2E test authentication
@@ -73,7 +74,10 @@ export async function POST(req: Request) {
 
     return response;
   } catch (error) {
-    console.error("Test auth error:", error);
+    reportException(error, {
+      context: "Test auth error",
+      tags: { component: "test-auth-api" },
+    });
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

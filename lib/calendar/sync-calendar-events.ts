@@ -2,7 +2,7 @@ import { Firestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { GoogleCalendarEvent } from "./get-calendar-events";
 import { CalendarEvent, Contact } from "@/types/firestore";
 import { reportException } from "@/lib/error-reporting";
-import { matchEventToContact } from "./match-event-to-contact";
+import { matchEventToContact, EventContactMatch } from "./match-event-to-contact";
 import { findRecurringEventIds } from "./recurring-events";
 
 /**
@@ -228,6 +228,8 @@ export async function syncCalendarEventsToFirestore(
         : null;
 
       // Match event to contact if contacts are provided
+      let match: EventContactMatch | null = null;
+      
       if (contacts && contacts.length > 0) {
         // Create a CalendarEvent-like object for matching (with eventId from googleEvent.id)
         const eventForMatching: CalendarEvent = {
@@ -238,19 +240,20 @@ export async function syncCalendarEventsToFirestore(
         // Use userEmail parameter (passed from caller)
         const eventUserEmail = userEmail || null;
 
-        const match = matchEventToContact(eventForMatching, contacts, eventUserEmail);
+        match = matchEventToContact(eventForMatching, contacts, eventUserEmail);
 
-        // Only auto-link if:
-        // 1. High confidence match (exact email match)
-        // 2. No existing manual override (matchOverriddenByUser !== true)
+        // Always auto-link exact email matches (high confidence)
+        // Only skip if user has manually overridden the match
         if (
+          match &&
           match.confidence === "high" &&
           match.contactId &&
           existingEvent?.matchOverriddenByUser !== true
         ) {
           // Find the matched contact
+          const contactId = match.contactId;
           const matchedContact = contacts.find(
-            (c) => c.contactId === match.contactId
+            (c) => c.contactId === contactId
           );
 
           if (matchedContact) {
@@ -320,11 +323,13 @@ export async function syncCalendarEventsToFirestore(
       }
 
       // Preserve existing manual overrides and denied contact IDs
+      // BUT: Don't overwrite exact email matches (high confidence) that were just set above
       if (existingEvent) {
         if (existingEvent.matchOverriddenByUser) {
           eventData.matchOverriddenByUser = true;
-          // Preserve existing matchedContactId if user manually set it
-          if (existingEvent.matchedContactId) {
+          // Only preserve existing matchedContactId if we didn't just set a new exact email match
+          // Exact email matches (high confidence) always take precedence
+          if (existingEvent.matchedContactId && match && match.confidence !== "high") {
             eventData.matchedContactId = existingEvent.matchedContactId;
             eventData.matchMethod = existingEvent.matchMethod || "manual";
           }

@@ -21,6 +21,7 @@ interface FilterState {
   showArchived: boolean;
   customFilter?: "at-risk" | "warm" | null;
   lastEmailDateRange: DateRange;
+  includeNewContacts: boolean;
 }
 
 interface UseFilterContactsReturn {
@@ -36,6 +37,7 @@ interface UseFilterContactsReturn {
   showArchived: boolean;
   customFilter?: "at-risk" | "warm" | null;
   lastEmailDateRange: DateRange;
+  includeNewContacts: boolean;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
@@ -46,6 +48,7 @@ interface UseFilterContactsReturn {
   setShowArchived: (value: boolean) => void;
   setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
   setLastEmailDateRange: (range: DateRange) => void;
+  setIncludeNewContacts: (value: boolean) => void;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
@@ -79,6 +82,7 @@ export function useFilterContacts(
     return { start, end };
   };
   const [lastEmailDateRange, setLastEmailDateRange] = useState<DateRange>(getDefaultDateRange());
+  const [includeNewContacts, setIncludeNewContacts] = useState<boolean>(true); // Default to true to show new contacts
 
   // Debounced search values (for filtering performance)
   const [debouncedEmailSearch, setDebouncedEmailSearch] = useState<string>("");
@@ -126,14 +130,16 @@ export function useFilterContacts(
     showArchived,
     customFilter,
     lastEmailDateRange,
+    includeNewContacts,
   };
 
   const filteredContacts = useMemo(() => {
     let filtered = [...contacts];
 
     // Filter by archived status (default: hide archived, unless showArchived is true)
+    // Note: undefined archived field is treated as not archived (should pass filter)
     if (!filters.showArchived) {
-      filtered = filtered.filter(c => !c.archived);
+      filtered = filtered.filter(c => c.archived !== true); // Show if archived is false, null, or undefined
     } else {
       // If showing archived, only show archived contacts
       filtered = filtered.filter(c => c.archived === true);
@@ -141,7 +147,12 @@ export function useFilterContacts(
 
     // Filter by segment
     if (filters.selectedSegment) {
-      filtered = filtered.filter(c => c.segment === filters.selectedSegment);
+      if (filters.selectedSegment === "__NO_SEGMENT__") {
+        // Filter for contacts with no segment assignment
+        filtered = filtered.filter(c => !c.segment || c.segment.trim() === "");
+      } else {
+        filtered = filtered.filter(c => c.segment === filters.selectedSegment);
+      }
     }
 
     // Filter by tags
@@ -151,12 +162,16 @@ export function useFilterContacts(
       );
     }
 
-    // Search by email
+    // Search by email (primary and secondary)
     if (filters.emailSearch.trim()) {
       const searchLower = filters.emailSearch.toLowerCase().trim();
-      filtered = filtered.filter(c => 
-        c.primaryEmail?.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(c => {
+        const primaryMatch = c.primaryEmail?.toLowerCase().includes(searchLower);
+        const secondaryMatch = c.secondaryEmails?.some(email => 
+          email.toLowerCase().includes(searchLower)
+        );
+        return primaryMatch || secondaryMatch;
+      });
     }
 
     // Search by first name
@@ -229,7 +244,10 @@ export function useFilterContacts(
     // Filter by last email date range
     if (filters.lastEmailDateRange.start && filters.lastEmailDateRange.end) {
       filtered = filtered.filter((contact) => {
-        if (!contact.lastEmailDate) return false; // Exclude contacts with no email date
+        // If contact has no lastEmailDate, include it only if includeNewContacts is true
+        if (!contact.lastEmailDate) {
+          return filters.includeNewContacts;
+        }
         
         // Handle Firestore Timestamp or Date string
         const lastEmailDate =
@@ -241,7 +259,10 @@ export function useFilterContacts(
             ? (contact.lastEmailDate as { toDate: () => Date }).toDate()
             : null;
         
-        if (!lastEmailDate) return false;
+        if (!lastEmailDate) {
+          // If date parsing failed, include only if includeNewContacts is true
+          return filters.includeNewContacts;
+        }
         
         // Set time to start/end of day for proper range checking
         const dateStartOfDay = new Date(lastEmailDate);
@@ -259,7 +280,7 @@ export function useFilterContacts(
     }
 
     return filtered;
-  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter, filters.lastEmailDateRange]);
+  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter, filters.lastEmailDateRange, filters.includeNewContacts]);
 
   const clearFilters = () => {
     setSelectedSegment("");
@@ -272,6 +293,7 @@ export function useFilterContacts(
     setShowArchived(false);
     setCustomFilter(null);
     setLastEmailDateRange(getDefaultDateRange());
+    setIncludeNewContacts(true);
   };
 
   // Check if date range is different from default (12 months)
@@ -317,6 +339,8 @@ export function useFilterContacts(
     upcomingTouchpoints,
     showArchived,
     customFilter,
+    lastEmailDateRange,
+    includeNewContacts,
     setSelectedSegment,
     setSelectedTags,
     setEmailSearch,
@@ -326,8 +350,8 @@ export function useFilterContacts(
     setUpcomingTouchpoints,
     setShowArchived,
     setCustomFilter,
-    lastEmailDateRange,
     setLastEmailDateRange,
+    setIncludeNewContacts,
     onSegmentChange: setSelectedSegment,
     onTagsChange: setSelectedTags,
     onEmailSearchChange: setEmailSearch,
