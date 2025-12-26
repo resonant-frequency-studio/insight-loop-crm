@@ -17,9 +17,10 @@ Summarize this email thread and return a JSON object with EXACTLY these fields:
 
 Guidelines:
 - Use concise, professional language.
+- Keep the summary to 1-2 paragraphs maximum (approximately 100-200 words).
 - Extract *specific* action items.
 - Identify emotional tone without exaggeration.
-- Extract client challenges as "painPoints".
+- Extract client challenges as "painPoints" - each pain point should be a brief phrase (e.g., "Time management challenges" or "Need for improved productivity"), not full sentences.
 - Identify high-level coaching themes.
 - Suggest a next touchpoint (date and short message).
 - Provide a ready-to-send outreach draft.

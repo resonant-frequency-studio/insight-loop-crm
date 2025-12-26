@@ -139,10 +139,10 @@ export function useContactsPageFilters({
 
   // Reset to page 1 when filters change
   useEffect(() => {
-    // Use setTimeout to defer the state update and avoid synchronous setState in effect
-    setTimeout(() => {
+    // Defer state update to avoid synchronous setState in effect
+    queueMicrotask(() => {
       setCurrentPage(1);
-    }, 0);
+    });
   }, [
     selectedSegment,
     selectedTags,
@@ -198,10 +198,10 @@ export function useContactsPageFilters({
 
     if (filtersChanged) {
       prevFiltersRef.current = currentFilters;
-      // Use setTimeout to defer the state update and avoid synchronous setState in effect
-      setTimeout(() => {
+      // Defer state update to avoid synchronous setState in effect
+      queueMicrotask(() => {
         setSelectedContactIds(new Set());
-      }, 0);
+      });
     }
   }, [
     selectedSegment,

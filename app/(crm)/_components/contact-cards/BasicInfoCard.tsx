@@ -69,7 +69,21 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
       return;
     }
     
-    // If contact data updated but it matches what we just saved, don't reset
+    // Check if secondaryEmails changed (e.g., after a merge)
+    // This is important because merges can add secondary emails without changing other fields
+    const currentSecondaryEmailsStr = JSON.stringify([...secondaryEmails].sort());
+    const contactSecondaryEmailsStr = JSON.stringify([...(contact.secondaryEmails || [])].sort());
+    const secondaryEmailsChanged = currentSecondaryEmailsStr !== contactSecondaryEmailsStr;
+    
+    // Always update secondary emails if they changed (e.g., from a merge)
+    // This ensures merged contacts show their secondary emails immediately, even if other fields match saved values
+    if (secondaryEmailsChanged) {
+      setSecondaryEmails(contact.secondaryEmails ? [...contact.secondaryEmails] : []);
+      // Clear saved values so we don't prevent future updates
+      lastSavedValuesRef.current = null;
+    }
+    
+    // If contact data updated but it matches what we just saved, don't reset other fields
     if (lastSavedValuesRef.current) {
       const saved = lastSavedValuesRef.current;
       const contactMatchesSaved = 
@@ -89,15 +103,13 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
     const formMatchesOldContact = 
       firstName === (contact.firstName ?? "") &&
       lastName === (contact.lastName ?? "") &&
-      company === (contact.company ?? "") &&
-      JSON.stringify(secondaryEmails) === JSON.stringify(contact.secondaryEmails || []);
+      company === (contact.company ?? "");
     
     if (formMatchesOldContact) {
       // Form hasn't been edited, safe to update from contact
       setFirstName(contact.firstName ?? "");
       setLastName(contact.lastName ?? "");
       setCompany(contact.company ?? "");
-      setSecondaryEmails(contact.secondaryEmails ? [...contact.secondaryEmails] : []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contact?.contactId, contact?.firstName, contact?.lastName, contact?.company, contact?.secondaryEmails]);
@@ -281,7 +293,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
             <button
               type="button"
               onClick={handleAddSecondaryEmail}
-              className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              className="flex items-center gap-1 text-sm text-link-blue hover:text-link-blue-hover transition-colors"
               aria-label="Add secondary email"
             >
               <svg
@@ -316,7 +328,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
                 <button
                   type="button"
                   onClick={() => handleRemoveSecondaryEmail(index)}
-                  className="p-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-sm transition-colors"
+                  className="p-2 text-error-red-text hover:text-error-red-text-hover hover:bg-error-red-bg-hover rounded-sm transition-colors"
                   aria-label="Remove secondary email"
                 >
                   <svg

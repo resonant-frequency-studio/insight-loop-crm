@@ -7,6 +7,8 @@ import TouchpointStatusActions from "./TouchpointStatusActions";
 import QuickTag from "./QuickTag";
 import ContactMenuDropdown from "./ContactMenuDropdown";
 import Avatar from "@/components/Avatar";
+import { isOwnerContact } from "@/lib/contacts/owner-utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ContactWithId extends Contact {
   id: string;
@@ -43,6 +45,8 @@ export default function ContactCard({
   userId,
 }: ContactCardProps) {
   const isTouchpointVariant = variant === "touchpoint-upcoming" || variant === "touchpoint-overdue";
+  const { user } = useAuth();
+  const isCurrentUserOwner = isOwnerContact(user?.email || null, contact.primaryEmail);
   
   const getVariantStyles = () => {
     if (isSelected) return "ring-2 ring-blue-500 bg-card-active";
@@ -104,10 +108,15 @@ export default function ContactCard({
             {/* Contact Info */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-col xxl:flex-row items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
                   <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors text-theme-darkest wrap-break-word`}>
                     {getDisplayName(contact)}
                   </h3>
+                  {isCurrentUserOwner && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-sm whitespace-nowrap border-2 text-card-tag-text border-card-tag">
+                      Owner
+                    </span>
+                  )}
                   {contact.company && (
                     <p className="text-xs text-theme-dark mt-0.5 wrap-break-word">
                       {contact.company}
@@ -198,15 +207,22 @@ export default function ContactCard({
                   {/* Only show tags for non-touchpoint variants */}
                   {contact.tags && contact.tags.length > 0 && (
                     <>
-                      {contact.tags.slice(0, 3).map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 text-xs font-medium border border-card-tag rounded-sm"
-                          style={{ color: 'var(--foreground)' }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {contact.tags.slice(0, 3).map((tag, idx) => {
+                        const isOwnerTag = tag === "Owner";
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 text-xs font-medium border rounded-sm ${
+                              isOwnerTag
+                                ? "bg-chip-blue-bg border-sync-blue-border text-chip-blue-text font-semibold"
+                                : "border-card-tag"
+                            }`}
+                            style={!isOwnerTag ? { color: 'var(--foreground)' } : undefined}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
                       {contact.tags.length > 3 && (
                         <span className="px-2 py-1 text-xs font-medium text-theme-dark">
                           +{contact.tags.length - 3}
@@ -273,15 +289,22 @@ export default function ContactCard({
                   {/* Existing tags */}
                   {contact.tags && contact.tags.length > 0 && (
                     <>
-                      {contact.tags.slice(0, 2).map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 text-xs font-medium border border-card-tag rounded-sm"
-                          style={{ color: 'var(--foreground)' }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {contact.tags.slice(0, 2).map((tag, idx) => {
+                        const isOwnerTag = tag === "Owner";
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 text-xs font-medium border rounded-sm ${
+                              isOwnerTag
+                                ? "bg-chip-blue-bg border-sync-blue-border text-chip-blue-text font-semibold"
+                                : "border-card-tag"
+                            }`}
+                            style={!isOwnerTag ? { color: 'var(--foreground)' } : undefined}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
                       {contact.tags.length > 2 && (
                         <span className="px-2 py-1 text-xs font-medium text-theme-dark">
                           +{contact.tags.length - 2}

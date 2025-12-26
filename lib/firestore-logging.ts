@@ -23,8 +23,9 @@ const ENABLE_LOGGING = process.env.ENABLE_FIRESTORE_LOGGING === "true";
 function logRead(operation: string, path: string, count?: number) {
   if (!ENABLE_LOGGING) return;
   
-  const countStr = count !== undefined ? ` (${count} docs)` : "";
-  console.log(`[FIRESTORE READ ${operation}]: ${path}${countStr}`);
+  // Logging disabled - use error reporting system if needed
+  // const countStr = count !== undefined ? ` (${count} docs)` : "";
+  // console.log(`[FIRESTORE READ ${operation}]: ${path}${countStr}`);
 }
 
 /**
@@ -64,9 +65,10 @@ export function createLoggedFirestore(db: Firestore) {
     ...db,
     collection: (path: string) => {
       const coll = db.collection(path);
-      if (ENABLE_LOGGING) {
-        console.log(`[FIRESTORE COLLECTION]: ${path}`);
-      }
+      // Logging disabled - use error reporting system if needed
+      // if (ENABLE_LOGGING) {
+      //   console.log(`[FIRESTORE COLLECTION]: ${path}`);
+      // }
       return coll;
     },
   };

@@ -8,6 +8,8 @@ import { getDisplayName } from "@/util/contact-utils";
 import { ActionItem, Contact } from "@/types/firestore";
 import Skeleton from "@/components/Skeleton";
 import Avatar from "@/components/Avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { isOwnerContact } from "@/lib/contacts/owner-utils";
 
 interface ContactDetailPageClientProps {
   contactDocumentId: string;
@@ -30,6 +32,13 @@ function ContactDetailContent({
   actionItems: ActionItem[];
   uniqueSegments?: string[];
 }) {
+  const { user } = useAuth();
+  
+  // Check if this is the owner contact
+  const isOwner = contact?.primaryEmail && user?.email
+    ? isOwnerContact(user.email, contact.primaryEmail)
+    : false;
+
   if (!contact) {
     return (
       <div className="space-y-6">
@@ -47,9 +56,16 @@ function ContactDetailContent({
           <div className="flex items-center gap-4 min-w-0 flex-1">
             <Avatar contact={contact} size="xl" />
             <div className="min-w-0 flex-1">
-              <h1 className="text-3xl font-bold text-theme-darkest mb-1 truncate">
-                {getDisplayName(contact)}
-              </h1>
+              <div className="flex items-center gap-3 mb-1 flex-wrap">
+                <h1 className="text-3xl font-bold text-theme-darkest truncate">
+                  {getDisplayName(contact)}
+                </h1>
+                {isOwner && (
+                  <span className="px-3 py-1.5 text-sm font-semibold rounded-sm whitespace-nowrap border-2 text-card-tag-text border-card-tag">
+                    Owner
+                  </span>
+                )}
+              </div>
               <p className="text-gray-500 flex items-center gap-2 min-w-0">
                 <svg
                   className="w-4 h-4 shrink-0"

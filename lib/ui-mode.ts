@@ -1,3 +1,5 @@
+import { reportMessage, ErrorLevel } from "@/lib/error-reporting";
+
 /**
  * UI Mode Configuration
  * 
@@ -36,9 +38,13 @@ export function getUIMode(): UIMode {
   
   // Invalid value - warn and default to "normal"
   if (typeof window !== "undefined") {
-    console.warn(
-      `Invalid NEXT_PUBLIC_UI_MODE value: "${envValue}". ` +
-      `Valid values are: "suspense", "empty", "normal". Defaulting to "normal".`
+    reportMessage(
+      `Invalid NEXT_PUBLIC_UI_MODE value: "${envValue}". Valid values are: "suspense", "empty", "normal". Defaulting to "normal".`,
+      ErrorLevel.WARNING,
+      {
+        context: "UI Mode Configuration",
+        tags: { component: "ui-mode" },
+      }
     );
   }
   

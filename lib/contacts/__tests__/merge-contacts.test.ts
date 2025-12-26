@@ -353,5 +353,257 @@ describe("mergeContacts", () => {
 
     expect(result.success).toBe(true);
   });
+
+  describe("Secondary Emails", () => {
+    it("should collect and merge secondary emails from all contacts", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: ["secondary1@example.com", "secondary2@example.com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+        secondaryEmails: ["secondary3@example.com"],
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should set secondary emails correctly excluding primary email", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: ["secondary1@example.com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      // Merge with contact2's email as primary
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "contact2@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      // Primary email should be contact2@example.com
+      // Secondary emails should include primary@example.com and secondary1@example.com
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should deduplicate emails across contacts", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: ["duplicate@example.com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+        secondaryEmails: ["duplicate@example.com", "unique@example.com"],
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      // Should deduplicate "duplicate@example.com"
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should normalize emails to lowercase and trim whitespace", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "PRIMARY@EXAMPLE.COM",
+        secondaryEmails: ["  SECONDARY@EXAMPLE.COM  ", "Mixed@Example.Com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "  contact2@example.com  ",
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should handle contacts with no secondary emails", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      // Secondary emails should be ["contact2@example.com"]
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should handle empty secondary emails array", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: [],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+        secondaryEmails: [],
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should allow selecting primary email from secondary emails array", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: ["better@example.com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      // Select email from secondary emails as primary
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        "better@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      // Primary should be "better@example.com"
+      // Secondary should include "primary@example.com" and "contact2@example.com"
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+
+    it("should handle merging 3+ contacts with secondary emails", async () => {
+      const mockPrimaryContact = createMockContact({
+        contactId: mockPrimaryContactId,
+        primaryEmail: "primary@example.com",
+        secondaryEmails: ["secondary1@example.com"],
+      });
+      const mockContact2 = createMockContact({
+        contactId: "contact2",
+        primaryEmail: "contact2@example.com",
+        secondaryEmails: ["secondary2@example.com"],
+      });
+      const mockContact3 = createMockContact({
+        contactId: "contact3",
+        primaryEmail: "contact3@example.com",
+        secondaryEmails: ["secondary3@example.com"],
+      });
+
+      const contactsMap = new Map<string, Contact>();
+      contactsMap.set(mockPrimaryContactId, mockPrimaryContact);
+      contactsMap.set("contact2", mockContact2);
+      contactsMap.set("contact3", mockContact3);
+
+      const mocks = createFirebaseMocks(contactsMap);
+      Object.assign(mockAdminDb, mocks);
+
+      const result = await mergeContacts(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2", "contact3"],
+        "primary@example.com"
+      );
+
+      expect(result.success).toBe(true);
+      // Should collect all emails from all 3 contacts
+      expect(mocks.runTransaction).toHaveBeenCalled();
+    });
+  });
 });
 

@@ -92,7 +92,7 @@ export interface Contact {
   export interface SyncJob {
     syncJobId: string;
     userId: string;
-    service: "gmail" | "calendar"; // Which service this sync job is for
+    service: "gmail" | "calendar" | "contacts"; // Which service this sync job is for
   
     type: "initial" | "incremental";
     status: "pending" | "running" | "complete" | "error";
@@ -109,6 +109,50 @@ export interface Contact {
     processedEvents?: number;
     rangeDays?: number; // Number of days synced (30, 60, 90, or 180)
   
+    // Contacts-specific fields
+    processedContacts?: number;
+    skippedContacts?: number;
+    totalContacts?: number; // Total contacts expected to be processed
+    currentStep?: string; // Current step: "importing", "syncing_gmail", "generating_insights"
+  
+    errorMessage?: string | null;
+  }
+
+  export interface AdminJob {
+    jobId: string;
+    userId: string;
+    jobType: "process-unknown-segment" | string; // Type of admin job
+    
+    status: "pending" | "running" | "complete" | "error";
+    
+    startedAt: unknown;
+    finishedAt?: unknown | null;
+    
+    // Progress tracking
+    processed?: number;
+    skipped?: number;
+    errors?: number;
+    total?: number; // Total items expected to be processed
+    currentStep?: string; // Current step description
+    
+    // Configuration
+    dryRun?: boolean;
+    limit?: number;
+    segment?: string; // Segment being processed
+    
+    // Results
+    details?: Array<{
+      contactId: string;
+      contactEmail: string;
+      contactName: string;
+      action: "processed" | "skipped" | "error";
+      threadsSynced?: number;
+      threadsSummarized?: number;
+      insightsGenerated?: boolean;
+      tagsGenerated?: string[];
+      error?: string;
+    }>;
+    
     errorMessage?: string | null;
   }
 

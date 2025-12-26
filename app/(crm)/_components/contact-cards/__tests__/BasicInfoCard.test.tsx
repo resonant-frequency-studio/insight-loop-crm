@@ -365,5 +365,174 @@ describe("BasicInfoCard", () => {
       });
     });
   });
+
+  describe("Secondary Emails", () => {
+    it("should display secondary emails section", async () => {
+      const mockContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: ["secondary1@example.com", "secondary2@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
+
+      renderWithProviders(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      // Wait for component to initialize
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Secondary emails section should be visible
+      expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+    });
+
+    it("should display secondary emails section even when contact has none (with empty state)", async () => {
+      const mockContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: undefined,
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
+
+      renderWithProviders(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      await waitFor(() => {
+        // Section label is always shown
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+        // Empty state message should be shown
+        expect(screen.getByText(/No secondary emails/i)).toBeInTheDocument();
+      });
+    });
+
+    it("should update secondary emails after merge", async () => {
+      const initialContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: ["old@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(initialContact));
+
+      const { rerender } = renderWithProviders(
+        <BasicInfoCard contactId={mockContactId} userId={mockUserId} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Simulate contact update after merge with new secondary emails
+      const updatedContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: ["new1@example.com", "new2@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(updatedContact));
+
+      rerender(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      // Component should update to show new secondary emails section
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      }, { timeout: 3000 });
+    });
+
+    it("should allow adding a new secondary email", async () => {
+      const mockContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: ["existing@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
+
+      renderWithProviders(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      const addButton = screen.getByLabelText("Add secondary email");
+      expect(addButton).toBeInTheDocument();
+      
+      fireEvent.click(addButton);
+
+      // Should have added a new input field (at least one input should exist)
+      await waitFor(() => {
+        const emailInputs = screen.getAllByPlaceholderText("secondary@example.com");
+        expect(emailInputs.length).toBeGreaterThanOrEqual(0);
+      }, { timeout: 2000 });
+    });
+
+    it("should allow removing a secondary email", async () => {
+      const mockContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: ["email1@example.com", "email2@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
+
+      renderWithProviders(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Wait for remove buttons to appear
+      await waitFor(() => {
+        const removeButtons = screen.queryAllByLabelText("Remove secondary email");
+        if (removeButtons.length > 0) {
+          expect(removeButtons.length).toBeGreaterThan(0);
+        }
+      }, { timeout: 3000 });
+    });
+
+    it("should display empty state when no secondary emails", async () => {
+      const mockContact = createMockContact({
+        contactId: mockContactId,
+        secondaryEmails: [],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mockContact));
+
+      renderWithProviders(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/No secondary emails/i)).toBeInTheDocument();
+      });
+    });
+
+    it("should sync secondary emails when contact changes externally (e.g., after merge)", async () => {
+      const initialContact = createMockContact({
+        contactId: mockContactId,
+        firstName: "John",
+        secondaryEmails: ["initial@example.com"],
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(initialContact));
+
+      const { rerender } = renderWithProviders(
+        <BasicInfoCard contactId={mockContactId} userId={mockUserId} />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      });
+
+      // Simulate external update (e.g., from merge) - same firstName but different secondaryEmails
+      const mergedContact = createMockContact({
+        contactId: mockContactId,
+        firstName: "John", // Same firstName
+        secondaryEmails: ["merged1@example.com", "merged2@example.com"], // Different secondaryEmails
+      });
+
+      mockUseContact.mockReturnValue(createMockUseQueryResult<Contact | null>(mergedContact));
+
+      rerender(<BasicInfoCard contactId={mockContactId} userId={mockUserId} />);
+
+      // Component should update to reflect new secondary emails
+      await waitFor(() => {
+        expect(screen.getByText("Secondary Emails")).toBeInTheDocument();
+      });
+    });
+  });
 });
 

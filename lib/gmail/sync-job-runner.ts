@@ -10,7 +10,11 @@ import {
 } from "./incremental-sync";
 import { SyncJob } from "@/types/firestore";
 import { FieldValue } from "firebase-admin/firestore";
-import { reportException } from "@/lib/error-reporting";
+import { reportException, ErrorLevel } from "@/lib/error-reporting";
+import { getUserEmail } from "@/lib/auth-utils";
+import { ensureOwnerTag } from "@/lib/contacts/owner-utils";
+import { normalizeContactId } from "@/util/csv-utils";
+import { Contact } from "@/types/firestore";
 
 export interface SyncJobOptions {
   userId: string;
@@ -101,6 +105,69 @@ async function isSyncRunning(userId: string): Promise<boolean> {
 }
 
 /**
+ * Ensure owner contact exists - create if it doesn't, update Owner tag if it does
+ */
+async function ensureOwnerContactExists(userId: string): Promise<void> {
+  try {
+    const userEmail = await getUserEmail();
+    if (!userEmail) return;
+
+    const ownerContactId = normalizeContactId(userEmail);
+    const ownerContactDoc = await adminDb
+      .collection("users")
+      .doc(userId)
+      .collection("contacts")
+      .doc(ownerContactId)
+      .get();
+
+    if (!ownerContactDoc.exists) {
+      // Create owner contact
+      const ownerContactData = ensureOwnerTag(
+        {
+          contactId: ownerContactId,
+          primaryEmail: userEmail.toLowerCase(),
+          tags: [],
+        },
+        userEmail
+      );
+
+      await adminDb
+        .collection("users")
+        .doc(userId)
+        .collection("contacts")
+        .doc(ownerContactId)
+        .set({
+          ...ownerContactData,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+    } else {
+      // Ensure Owner tag is present on existing contact
+      const existingData = ownerContactDoc.data() as Contact;
+      const updatedContact = ensureOwnerTag(existingData, userEmail);
+      if (updatedContact.tags && JSON.stringify(updatedContact.tags) !== JSON.stringify(existingData.tags)) {
+        await adminDb
+          .collection("users")
+          .doc(userId)
+          .collection("contacts")
+          .doc(ownerContactId)
+          .update({
+            tags: updatedContact.tags,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+      }
+    }
+  } catch (error) {
+    // Log but don't fail the sync if owner contact creation fails
+    reportException(error, {
+      context: "Error ensuring owner contact exists during Gmail sync",
+      tags: { component: "gmail-sync-job-runner", userId },
+      level: ErrorLevel.WARNING,
+    });
+  }
+}
+
+/**
  * Main sync job runner - handles both incremental and full syncs
  */
 export async function runSyncJob(
@@ -142,6 +209,9 @@ export async function runSyncJob(
     // Create sync job document after validation passes
     await createSyncJob(userId, syncType, jobId);
     syncJobCreated = true;
+
+    // Ensure owner contact exists before syncing
+    await ensureOwnerContactExists(userId);
 
     // Get sync settings for incremental sync
     const settings = await getUserSyncSettings(adminDb, userId);

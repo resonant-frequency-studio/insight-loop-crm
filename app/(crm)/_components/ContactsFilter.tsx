@@ -226,7 +226,7 @@ export default function ContactsFilter({ contacts, disabled = false }: ContactsF
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              label="Include new contacts (no email history)"
+              label="Include contacts with no email history"
               disabled={disabled || contacts.length === 0}
               labelClassName="cursor-pointer"
             />
@@ -359,6 +359,7 @@ export default function ContactsFilter({ contacts, disabled = false }: ContactsF
                   disabled={disabled || contacts.length === 0}
                 >
                   <option value="">All Segments</option>
+                  <option value="__NO_SEGMENT__">No Segment (Unassigned)</option>
                   {uniqueSegments.map(segment => (
                     <option key={segment} value={segment}>{segment}</option>
                   ))}

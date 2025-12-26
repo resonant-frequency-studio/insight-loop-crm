@@ -123,13 +123,25 @@ export function useNewContactPage() {
   const prepareContactData = useCallback(
     (): Partial<Contact> => {
       const email = form.primaryEmail.trim().toLowerCase();
+      let tags = form.tags || [];
+      
+      // Add Owner tag if email matches user email
+      if (user?.email && email === user.email.toLowerCase()) {
+        if (!tags.includes("Owner")) {
+          tags = [...tags, "Owner"];
+        }
+      } else {
+        // Remove Owner tag if email doesn't match
+        tags = tags.filter((tag) => tag !== "Owner");
+      }
+      
       return {
         primaryEmail: email,
         firstName: form.firstName?.trim() || null,
         lastName: form.lastName?.trim() || null,
         company: form.company?.trim() || null,
         notes: form.notes?.trim() || null,
-        tags: form.tags || [],
+        tags,
         segment: form.segment?.trim() || null,
         leadSource: form.leadSource?.trim() || null,
         engagementScore: form.engagementScore || null,
@@ -141,7 +153,7 @@ export function useNewContactPage() {
         nextTouchpointMessage: form.nextTouchpointMessage?.trim() || null,
       };
     },
-    [form]
+    [form, user]
   );
 
   const handleSave = useCallback(() => {

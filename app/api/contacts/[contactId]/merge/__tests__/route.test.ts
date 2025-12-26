@@ -273,5 +273,92 @@ describe("POST /api/contacts/[contactId]/merge", () => {
 
     expect(mockGetContactForUser).toHaveBeenCalledWith(mockUserId, "contact@example.com");
   });
+
+  describe("Secondary Emails", () => {
+    it("should handle merge with secondary emails in contact data", async () => {
+      const mockPrimaryContactWithSecondary = {
+        ...mockPrimaryContact,
+        secondaryEmails: ["john.doe@example.com"],
+      };
+      const mockContact2WithSecondary = {
+        ...mockContact2,
+        secondaryEmails: ["jane.smith@example.com"],
+      };
+
+      mockGetContactForUser
+        .mockResolvedValueOnce(mockPrimaryContactWithSecondary)
+        .mockResolvedValueOnce(mockContact2WithSecondary);
+
+      mockMergeContacts.mockResolvedValue({
+        success: true,
+        primaryContactId: mockPrimaryContactId,
+        mergedContactIds: ["contact2"],
+        statistics: {
+          actionItemsUpdated: 0,
+          threadsUpdated: 0,
+          calendarEventsUpdated: 0,
+          actionItemsMoved: 0,
+        },
+      });
+
+      const params = Promise.resolve({ contactId: mockPrimaryContactId });
+      const request = new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          contactIdsToMerge: ["contact2"],
+          primaryEmail: mockPrimaryEmail,
+        }),
+      });
+
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockMergeContacts).toHaveBeenCalledWith(
+        mockUserId,
+        mockPrimaryContactId,
+        ["contact2"],
+        mockPrimaryEmail
+      );
+    });
+
+    it("should validate primary email against all emails including secondary", async () => {
+      const mockPrimaryContactWithSecondary = {
+        ...mockPrimaryContact,
+        secondaryEmails: ["better@example.com"],
+      };
+
+      mockGetContactForUser.mockResolvedValueOnce(mockPrimaryContactWithSecondary);
+
+      const params = Promise.resolve({ contactId: mockPrimaryContactId });
+      const request = new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          contactIdsToMerge: ["contact2"],
+          primaryEmail: "better@example.com", // From secondary emails
+        }),
+      });
+
+      // Should allow selecting email from secondary emails as primary
+      mockMergeContacts.mockResolvedValue({
+        success: true,
+        primaryContactId: mockPrimaryContactId,
+        mergedContactIds: ["contact2"],
+        statistics: {
+          actionItemsUpdated: 0,
+          threadsUpdated: 0,
+          calendarEventsUpdated: 0,
+          actionItemsMoved: 0,
+        },
+      });
+
+      const response = await POST(request, { params });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+  });
 });
 

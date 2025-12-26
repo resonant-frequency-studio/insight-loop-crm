@@ -6,7 +6,7 @@ import SyncData from "./_components/SyncData";
 
 export const metadata: Metadata = {
   title: "Google Sync Status | Insight Loop CRM",
-  description: "Monitor your Gmail and Calendar synchronization status and history",
+  description: "Monitor your Gmail, Calendar, and Contacts synchronization status and history",
 };
 
 export default async function SyncStatusPage() {
@@ -26,7 +26,7 @@ export default async function SyncStatusPage() {
         <div>
           <h1 className="text-4xl font-bold text-theme-darkest mb-2">Google Sync Status</h1>
           <p className="text-theme-dark text-lg">
-            Monitor your Gmail and Calendar synchronization status and history
+            Monitor your Gmail, Calendar, and Contacts synchronization status and history
           </p>
         </div>
       </div>

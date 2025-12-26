@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useContact } from "@/hooks/useContact";
+import { useAuth } from "@/hooks/useAuth";
 import Card from "@/components/Card";
 import Skeleton from "@/components/Skeleton";
 import InfoPopover from "@/components/InfoPopover";
+import { Button } from "@/components/Button";
 import { formatContactDate } from "@/util/contact-utils";
+import { extractErrorMessage, ErrorMessage } from "@/components/ErrorMessage";
+import { reportException } from "@/lib/error-reporting";
+import { isOwnerContact } from "@/lib/contacts/owner-utils";
 import type { Contact } from "@/types/firestore";
 
 interface ContactInsightsCardProps {
@@ -20,6 +27,130 @@ export default function ContactInsightsCard({
 }: ContactInsightsCardProps) {
   const { data: contact } = useContact(userId, contactId);
   const displayContact = contact || initialContact;
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [syncingGmail, setSyncingGmail] = useState(false);
+  const [syncGmailError, setSyncGmailError] = useState<string | null>(null);
+  const [syncGmailSuccess, setSyncGmailSuccess] = useState(false);
+
+  // Check if this is the owner contact
+  const isOwner = displayContact?.primaryEmail && user?.email
+    ? isOwnerContact(user.email, displayContact.primaryEmail)
+    : false;
+
+  const handleRegenerateSummary = async () => {
+    setRegenerating(true);
+    setRegenerateError(null);
+
+    try {
+      const response = await fetch(
+        `/api/contacts/${encodeURIComponent(contactId)}/regenerate-summary`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        let errorMessage = `Regeneration failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        const errorMsg = data.error || "Failed to regenerate summary. Please try again.";
+        throw new Error(errorMsg);
+      }
+
+      // Invalidate React Query cache to trigger a refetch of contact data
+      queryClient.invalidateQueries({ queryKey: ["contact", userId, contactId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      setRegenerateError(errorMessage);
+      reportException(error, {
+        context: "Regenerating contact summary in ContactInsightsCard",
+        tags: { component: "ContactInsightsCard", contactId },
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  const handleSyncGmail = async () => {
+    if (!displayContact?.primaryEmail) {
+      setSyncGmailError("Contact does not have an email address");
+      return;
+    }
+
+    setSyncingGmail(true);
+    setSyncGmailError(null);
+    setSyncGmailSuccess(false);
+
+    try {
+      const response = await fetch(`/api/contacts/${encodeURIComponent(contactId)}/sync-gmail`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        let errorMessage = `Sync failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+
+      if (!data.ok) {
+        const errorMsg = data.error || "Gmail sync failed. Please try again.";
+        throw new Error(errorMsg);
+      }
+
+      // Invalidate React Query cache to trigger a refetch of contact data
+      queryClient.invalidateQueries({ queryKey: ["contact", userId, contactId] });
+      queryClient.invalidateQueries({ queryKey: ["contacts", userId] });
+
+      // Show success message
+      setSyncGmailSuccess(true);
+      // Clear success message after 5 seconds to allow reading
+      setTimeout(() => setSyncGmailSuccess(false), 5000);
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      setSyncGmailError(errorMessage);
+      reportException(error, {
+        context: "Syncing Gmail for contact in ContactInsightsCard",
+        tags: { component: "ContactInsightsCard", contactId },
+      });
+    } finally {
+      setSyncingGmail(false);
+    }
+  };
+
+  // Check if there are any insights to display
+  const hasInsights = !!(
+    displayContact?.summary ||
+    displayContact?.sentiment ||
+    displayContact?.painPoints ||
+    displayContact?.coachingThemes ||
+    displayContact?.relationshipInsights ||
+    (displayContact?.engagementScore !== null && displayContact?.engagementScore !== undefined) ||
+    displayContact?.threadCount ||
+    displayContact?.lastEmailDate
+  );
 
   if (!displayContact) {
     return (
@@ -29,31 +160,180 @@ export default function ContactInsightsCard({
     );
   }
 
+  // Show owner message instead of insights
+  if (isOwner) {
+    return (
+      <Card padding="md">
+        <h2 className="text-xl font-semibold text-theme-darkest mb-6">Contact Insights</h2>
+        <div className="text-center py-8 px-4">
+          <svg
+            className="w-12 h-12 text-theme-medium mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+          <h3 className="text-lg font-medium text-theme-darkest mb-2">
+            Owner Contact
+          </h3>
+          <p className="text-sm text-theme-medium max-w-sm mx-auto">
+            Contact insights are not available for the owner contact.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card padding="md">
       <h2 className="text-xl font-semibold text-theme-darkest mb-6">Contact Insights</h2>
-      <div className="space-y-6">
+      
+      {/* Empty State - Show when no insights exist */}
+      {!hasInsights && (
+        <div className="text-center py-8 px-4">
+          <svg
+            className="w-12 h-12 text-theme-medium mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <h3 className="text-lg font-medium text-theme-darkest mb-2">
+            No Contact Insights Yet
+          </h3>
+          <p className="text-sm text-theme-medium mb-4 max-w-sm mx-auto">
+            Sync Gmail for this contact to generate AI-powered insights including summary, sentiment, engagement score, and more.
+          </p>
+          {displayContact?.primaryEmail ? (
+            <>
+              <Button
+                onClick={handleSyncGmail}
+                disabled={syncingGmail}
+                loading={syncingGmail}
+                variant="primary"
+                size="sm"
+                icon={
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                }
+              >
+                {syncingGmail ? "Syncing Gmail..." : "Sync Gmail"}
+              </Button>
+            </>
+          ) : (
+            <p className="text-xs text-theme-medium">
+              This contact needs an email address to sync Gmail.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Insights Content */}
+      {hasInsights && (
+        <div className="space-y-6">
         {/* AI Summary Section */}
         {displayContact.summary && (
           <div className="border-l-4 border-indigo-500 pl-4">
-            <div className="flex items-center gap-2 mb-2">
-              <svg
-                className="w-4 h-4 text-indigo-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  AI Summary
+                </h3>
+              </div>
+              <button
+                onClick={handleRegenerateSummary}
+                disabled={regenerating}
+                className="text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                title="Regenerate AI summary"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                AI Summary
-              </h3>
+                {regenerating ? (
+                  <>
+                    <svg
+                      className="w-3 h-3 animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Regenerating...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Regenerate
+                  </>
+                )}
+              </button>
             </div>
+            {regenerateError && (
+              <ErrorMessage
+                message={regenerateError}
+                dismissible
+                onDismiss={() => setRegenerateError(null)}
+                className="mb-2"
+              />
+            )}
             <p className="text-sm text-theme-darkest whitespace-pre-wrap leading-relaxed">
               {displayContact.summary}
             </p>
@@ -220,7 +500,89 @@ export default function ContactInsightsCard({
             </span>
           </div>
         )}
-      </div>
+        </div>
+      )}
+
+      {/* Sync Gmail Loading State - Persistent while generating insights */}
+      {syncingGmail && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md">
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-4 flex items-start gap-3 shadow-lg">
+            <svg
+              className="w-5 h-5 text-blue-600 mt-0.5 shrink-0 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-blue-800">Generating Contact Insights</p>
+              <p className="text-sm text-blue-700 mt-1">
+                Syncing email threads and generating AI insights. You can continue using the app—the page will update automatically when complete.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sync Gmail Error Message */}
+      {syncGmailError && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md">
+          <ErrorMessage
+            message={syncGmailError}
+            dismissible
+            onDismiss={() => setSyncGmailError(null)}
+          />
+        </div>
+      )}
+
+      {/* Sync Gmail Success Message */}
+      {syncGmailSuccess && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md">
+          <div className="bg-green-50 border border-green-200 rounded-sm p-4 flex items-start gap-3 shadow-lg">
+            <svg
+              className="w-5 h-5 text-green-600 mt-0.5 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-green-800">Contact Insights Generated</p>
+              <p className="text-sm text-green-700 mt-1">
+                Email threads synced and contact insights generated. The contact page has been updated automatically.
+              </p>
+            </div>
+            <button
+              onClick={() => setSyncGmailSuccess(false)}
+              className="text-green-600 hover:text-green-800 shrink-0"
+              aria-label="Dismiss"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

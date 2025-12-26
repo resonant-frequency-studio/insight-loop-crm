@@ -47,9 +47,23 @@ export async function aggregateContactSummaries(
 
   if (summaries.length === 0) return null;
 
+  // Combine summaries from all threads
+  // Since each thread summary is already limited to 1-2 paragraphs by the prompt,
+  // we combine them but cap the total length to ~400 characters (1-2 paragraphs)
+  const combinedSummary = summaries
+    .map((s) => s.summary || "")
+    .filter(Boolean)
+    .join("\n\n");
+  
+  // Limit combined summary to approximately 400 characters (1-2 paragraphs)
+  // Cut at word boundary if truncating to avoid cutting words in half
+  const limitedSummary = combinedSummary.length > 400
+    ? combinedSummary.substring(0, 400).replace(/\s+\S*$/, '') + '...'
+    : combinedSummary;
+
   // Combine fields
   return {
-    summary: summaries.map((s) => s.summary || "").join("\n\n"),
+    summary: limitedSummary,
     actionItems: summaries.flatMap((s) => s.actionItems || []),
     sentiment: "mixed", // optional to compute later
     relationshipInsights: summaries

@@ -245,13 +245,15 @@ export async function syncCalendarEventsToFirestore(
         // Always auto-link exact email matches (high confidence)
         // Only skip if user has manually overridden the match
         if (
+          match &&
           match.confidence === "high" &&
           match.contactId &&
           existingEvent?.matchOverriddenByUser !== true
         ) {
           // Find the matched contact
+          const contactId = match.contactId;
           const matchedContact = contacts.find(
-            (c) => c.contactId === match.contactId
+            (c) => c.contactId === contactId
           );
 
           if (matchedContact) {

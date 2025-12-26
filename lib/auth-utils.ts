@@ -47,3 +47,18 @@ export async function getUserIdOptional(): Promise<string | null> {
   return await getUserId();
 }
 
+/**
+ * Get the authenticated user's email from the session cookie.
+ * Returns null if email is unavailable or session is invalid.
+ */
+export async function getUserEmail(): Promise<string | null> {
+  try {
+    const userId = await getUserId();
+    const userRecord = await adminAuth.getUser(userId);
+    return userRecord.email || null;
+  } catch (error) {
+    // If we can't get the email, return null (graceful degradation)
+    return null;
+  }
+}
+

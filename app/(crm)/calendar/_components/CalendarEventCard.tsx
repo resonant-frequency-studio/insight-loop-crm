@@ -146,7 +146,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
 
           // Add styling class if not present
           if (!/class\s*=/i.test(newAttributes)) {
-            newAttributes += ' class="text-blue-600 dark:text-blue-400 underline break-all"';
+            newAttributes += ' class="text-link-blue underline break-all"';
           } else {
             // Add break-all class to existing class
             newAttributes = newAttributes.replace(
@@ -222,7 +222,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
             // Add text before URL
             processedText += text.substring(currentIndex, urlMatch.index);
             // Add link for URL
-            processedText += `<a href="${urlMatch.url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 underline break-all" style="word-break: break-all;">${urlMatch.url}</a>`;
+            processedText += `<a href="${urlMatch.url}" target="_blank" rel="noopener noreferrer" class="text-link-blue underline break-all" style="word-break: break-all;">${urlMatch.url}</a>`;
             currentIndex = urlMatch.index + urlMatch.url.length;
           });
 
@@ -255,7 +255,7 @@ export default function CalendarEventCard({ event: eventProp, onClose, contacts:
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 underline break-all"
+            className="text-link-blue underline break-all"
             style={{ wordBreak: 'break-all' }}
           >
             {url}

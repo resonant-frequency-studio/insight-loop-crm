@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserId } from "@/lib/auth-utils";
+import { getUserId, getUserEmail } from "@/lib/auth-utils";
 import { getContactForUser } from "@/lib/contacts-server";
 import { reportException } from "@/lib/error-reporting";
 import { adminDb } from "@/lib/firebase-admin";
@@ -10,6 +10,7 @@ import { convertTimestamp } from "@/util/timestamp-utils-server";
 import { syncTouchpointToCalendar } from "@/lib/calendar/sync-touchpoints";
 import { updateGoogleEvent } from "@/lib/calendar/write-calendar-event";
 import { Timestamp } from "firebase-admin/firestore";
+import { ensureOwnerTag } from "@/lib/contacts/owner-utils";
 
 /**
  * GET /api/contacts/[contactId]
@@ -72,6 +73,16 @@ export async function PATCH(
       );
     }
 
+    // Ensure Owner tag is maintained if email matches user email
+    const userEmail = await getUserEmail();
+    const contactWithOwnerTag = ensureOwnerTag(
+      {
+        ...existingContact,
+        ...updates,
+      },
+      userEmail
+    );
+
     // Update contact using server-side Firestore
     await adminDb
       .collection("users")
@@ -80,6 +91,7 @@ export async function PATCH(
       .doc(contactId)
       .update({
         ...updates,
+        ...(contactWithOwnerTag.tags ? { tags: contactWithOwnerTag.tags } : {}),
         updatedAt: FieldValue.serverTimestamp(),
       });
 

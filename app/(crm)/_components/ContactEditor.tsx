@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useContact } from "@/hooks/useContact";
+import { useAuth } from "@/hooks/useAuth";
 import Skeleton from "@/components/Skeleton";
 import BasicInfoCard from "./contact-cards/BasicInfoCard";
 import TagsClassificationCard from "./contact-cards/TagsClassificationCard";
@@ -14,6 +15,7 @@ import ActivityCard from "./contact-cards/ActivityCard";
 import ContactTimelineCard from "./contact-cards/ContactTimelineCard";
 import { useContactAutosave } from "@/components/contacts/ContactAutosaveProvider";
 import { useDebouncedAutosave } from "@/hooks/useDebouncedAutosave";
+import { isOwnerContact } from "@/lib/contacts/owner-utils";
 
 interface ContactEditorProps {
   contactDocumentId: string;
@@ -33,6 +35,12 @@ function ContactEditorContent({
 }: ContactEditorProps) {
   // Read contact directly from React Query cache for optimistic updates
   const { data: contact } = useContact(userId, contactDocumentId);
+  const { user } = useAuth();
+  
+  // Check if this is the owner contact
+  const isOwner = contact?.primaryEmail && user?.email
+    ? isOwnerContact(user.email, contact.primaryEmail)
+    : false;
   
   // Initialize autosave hook (must be inside provider)
   useDebouncedAutosave();
@@ -70,21 +78,27 @@ function ContactEditorContent({
         {/* Main Content - Left Column (2/3) */}
         <div className="xl:col-span-2 space-y-6">
           <BasicInfoCard contactId={contactDocumentId} userId={userId} />
-          <TagsClassificationCard
-            contactId={contactDocumentId}
-            userId={userId}
-            uniqueSegments={uniqueSegments}
-          />
-          <ActionItemsCard
-            contactId={contactDocumentId}
-            userId={userId}
-            initialActionItems={initialActionItems}
-            initialContact={contact || undefined}
-          />
-          <NextTouchpointCard contactId={contactDocumentId} userId={userId} />
-          <OutreachDraftCard contactId={contactDocumentId} userId={userId} />
+          {!isOwner && (
+            <>
+              <TagsClassificationCard
+                contactId={contactDocumentId}
+                userId={userId}
+                uniqueSegments={uniqueSegments}
+              />
+              <ActionItemsCard
+                contactId={contactDocumentId}
+                userId={userId}
+                initialActionItems={initialActionItems}
+                initialContact={contact || undefined}
+              />
+              <NextTouchpointCard contactId={contactDocumentId} userId={userId} />
+              <OutreachDraftCard contactId={contactDocumentId} userId={userId} />
+            </>
+          )}
           <NotesCard contactId={contactDocumentId} userId={userId} />
-          <ContactTimelineCard contactId={contactDocumentId} userId={userId} />
+          {!isOwner && (
+            <ContactTimelineCard contactId={contactDocumentId} userId={userId} />
+          )}
         </div>
 
         {/* Sidebar - Right Column (1/3) */}

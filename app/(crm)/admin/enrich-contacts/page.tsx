@@ -322,22 +322,6 @@ export default function EnrichContactsPage() {
               <li>Have granted the contacts.readonly scope (may require re-authentication)</li>
               <li>Have contacts in your Google Contacts that match the email addresses in the CRM</li>
             </ul>
-            <div className="mt-4">
-              <Button
-                onClick={() => {
-                  window.location.href = "/api/oauth/gmail/start?force=true";
-                }}
-                variant="secondary"
-                size="sm"
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                }
-              >
-                Reconnect Google Account
-              </Button>
-            </div>
           </div>
         </div>
       </Card>

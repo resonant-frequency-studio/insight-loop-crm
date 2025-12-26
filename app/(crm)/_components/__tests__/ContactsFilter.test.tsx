@@ -122,7 +122,7 @@ describe("ContactsFilter", () => {
       expect(screen.getByText(/Filter by Segment/i)).toBeInTheDocument();
       // Select components now use buttons with listbox role instead of combobox
       // Check for "Include new contacts" checkbox (outside More Filters)
-      expect(screen.getByLabelText(/Include new contacts/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Include contacts with no email history/i)).toBeInTheDocument();
       
       // "More Filters" is already expanded, so "Show archived contacts" should be visible
       expect(screen.getByLabelText(/Show archived contacts/i)).toBeInTheDocument();

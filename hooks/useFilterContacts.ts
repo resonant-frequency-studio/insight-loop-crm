@@ -147,7 +147,12 @@ export function useFilterContacts(
 
     // Filter by segment
     if (filters.selectedSegment) {
-      filtered = filtered.filter(c => c.segment === filters.selectedSegment);
+      if (filters.selectedSegment === "__NO_SEGMENT__") {
+        // Filter for contacts with no segment assignment
+        filtered = filtered.filter(c => !c.segment || c.segment.trim() === "");
+      } else {
+        filtered = filtered.filter(c => c.segment === filters.selectedSegment);
+      }
     }
 
     // Filter by tags
