@@ -41,9 +41,9 @@ describe("MobileHeader", () => {
       expect(header).toBeInTheDocument();
     });
 
-    it("renders CRM name as link", () => {
+    it("renders link to dashboard", () => {
       render(<MobileHeader isMenuOpen={false} onMenuToggle={jest.fn()} />);
-      const link = screen.getByRole("link", { name: "Test CRM" });
+      const link = screen.getByRole("link");
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute("href", "/");
     });

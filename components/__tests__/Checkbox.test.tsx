@@ -73,7 +73,7 @@ describe("Checkbox", () => {
     it("applies base checkbox styles", () => {
       render(<Checkbox />);
       const checkbox = screen.getByRole("checkbox");
-      expect(checkbox).toHaveClass("w-5", "h-5", "text-blue-600", "border-gray-300", "rounded");
+      expect(checkbox).toHaveClass("w-4", "h-4", "sm:w-5", "sm:h-5", "text-blue-600", "border-gray-300", "rounded");
     });
 
     it("merges custom className correctly", () => {
@@ -91,7 +91,7 @@ describe("Checkbox", () => {
     it("label has correct base classes", () => {
       render(<Checkbox label="Test" />);
       const label = screen.getByText("Test").closest("label");
-      expect(label).toHaveClass("flex", "items-center", "gap-3", "cursor-pointer");
+      expect(label).toHaveClass("flex", "items-start", "gap-2", "sm:gap-3", "cursor-pointer");
     });
   });
 

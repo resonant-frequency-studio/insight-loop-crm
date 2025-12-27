@@ -23,31 +23,31 @@ describe("Card", () => {
     it("applies sm padding", () => {
       const { container } = render(<Card padding="sm">Content</Card>);
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("p-3");
+      expect(card).toHaveClass("p-4", "sm:p-3");
     });
 
     it("applies md padding by default", () => {
       const { container } = render(<Card>Content</Card>);
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("p-6");
+      expect(card).toHaveClass("p-4", "sm:p-6");
     });
 
     it("applies lg padding", () => {
       const { container } = render(<Card padding="lg">Content</Card>);
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("p-8");
+      expect(card).toHaveClass("p-6", "sm:p-8");
     });
 
     it("applies xl padding", () => {
       const { container } = render(<Card padding="xl">Content</Card>);
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("p-12");
+      expect(card).toHaveClass("p-8", "sm:p-12");
     });
 
     it("applies responsive padding", () => {
       const { container } = render(<Card padding="responsive">Content</Card>);
       const card = container.firstChild as HTMLElement;
-      expect(card).toHaveClass("p-3", "xl:p-6");
+      expect(card).toHaveClass("p-4", "sm:p-3", "xl:p-6");
     });
   });
 
