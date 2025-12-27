@@ -7,6 +7,7 @@ import type { User } from "firebase/auth";
 import { useOwnerContact } from "@/hooks/useOwnerContact";
 import { useTheme } from "@/components/ThemeProvider";
 import { getInitials, getDisplayName } from "@/util/contact-utils";
+import { useGuidance } from "@/app/providers/GuidanceProvider";
 
 interface UserProfilePopoverProps {
   user: User | null;
@@ -27,6 +28,7 @@ export function UserProfilePopover({
   const menuRef = useRef<HTMLDivElement>(null);
   const { ownerContact } = useOwnerContact();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { startTour } = useGuidance();
   const [imageError, setImageError] = useState(false);
 
   // Close menu when clicking outside
@@ -229,6 +231,33 @@ export function UserProfilePopover({
                     <span>Dark Mode</span>
                   </>
                 )}
+              </button>
+
+              {/* Start Tour */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(false);
+                  startTour("fromHere");
+                }}
+                disabled={isSaving}
+                className="w-full text-left px-4 py-2 flex items-center gap-3 text-sm text-foreground hover:bg-selected-active transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                role="menuitem"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+                <span>Start tour</span>
               </button>
 
               {/* Admin */}

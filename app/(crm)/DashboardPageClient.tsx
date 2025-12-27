@@ -32,7 +32,7 @@ export default function DashboardPageClient({ userId, contacts }: DashboardPageC
   const firstName = user?.displayName?.split(" ")[0] || "User";
 
   return (
-    <div className="space-y-6">
+    <div id="dashboard-root" className="space-y-6">
       {/* Header Section */}
       <div>
         <h1 className="text-4xl font-bold text-theme-darkest mb-2">

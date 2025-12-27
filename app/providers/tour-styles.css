@@ -1,0 +1,20 @@
+/* Tour styles for light/dark theme compatibility */
+.guidance-tour {
+  --tour-overlay: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .guidance-tour {
+  --tour-overlay: rgba(0, 0, 0, 0.6);
+}
+
+/* Ensure tour popover respects theme */
+.guidance-tour [data-tour-elem="controls"] {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.guidance-tour [data-tour-elem="badge"] {
+  display: none; /* Hide badge for cleaner look */
+}
+
