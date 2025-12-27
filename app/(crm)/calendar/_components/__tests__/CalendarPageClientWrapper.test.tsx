@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import CalendarPageClientWrapper from "../CalendarPageClientWrapper";
@@ -65,26 +65,6 @@ jest.mock("@/hooks/useCalendarEvents", () => ({
   }),
 }));
 
-// Mock Select component to render options
-jest.mock("@/components/Select", () => {
-  return function MockSelect({
-    children,
-    value,
-    onChange,
-    id,
-  }: {
-    children: React.ReactNode;
-    value: string;
-    onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    id?: string;
-  }) {
-    return (
-      <select id={id} value={value} onChange={onChange} aria-label="Sync range">
-        {children}
-      </select>
-    );
-  };
-});
 
 // Mock useCalendarSyncStatusRealtime
 let mockLastSync: SyncJob | null = null;
@@ -183,76 +163,12 @@ describe("CalendarPageClientWrapper", () => {
     expect(screen.getByText(/Last synced: 2 hours ago/i)).toBeInTheDocument();
   });
 
-  it("should display range selector with default value of 60 days", () => {
+  it("should display link to sync page", () => {
     renderWithProviders(<CalendarPageClientWrapper />);
     
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    expect(rangeSelect).toBeInTheDocument();
-    expect(rangeSelect).toHaveValue("60");
-  });
-
-  it("should persist range selection to localStorage", () => {
-    renderWithProviders(<CalendarPageClientWrapper />);
-    
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    fireEvent.change(rangeSelect, { target: { value: "90" } });
-    
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      "calendar-sync-range-days",
-      "90"
-    );
-  });
-
-  it("should restore range from localStorage on mount", () => {
-    localStorageMock.setItem("calendar-sync-range-days", "180");
-    
-    renderWithProviders(<CalendarPageClientWrapper />);
-    
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    expect(rangeSelect).toHaveValue("180");
-  });
-
-  it("should use default range if localStorage value is invalid", () => {
-    localStorageMock.setItem("calendar-sync-range-days", "999"); // Invalid value
-    
-    renderWithProviders(<CalendarPageClientWrapper />);
-    
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    expect(rangeSelect).toHaveValue("60"); // Should default to 60
-  });
-
-  it("should pass range parameter to sync API when sync button is clicked", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ ok: true, synced: 5 }),
-    });
-    global.fetch = mockFetch;
-
-    renderWithProviders(<CalendarPageClientWrapper />);
-    
-    // Change range to 90 days
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    fireEvent.change(rangeSelect, { target: { value: "90" } });
-    
-    // Click sync button (get first one if multiple)
-    const syncButtons = screen.getAllByText(/Sync Calendar/i);
-    const syncButton = syncButtons[0];
-    fireEvent.click(syncButton);
-    
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/calendar/sync?range=90"),
-        expect.objectContaining({
-          method: "POST",
-          credentials: "include",
-        })
-      );
-    });
+    const syncLink = screen.getByRole("link", { name: /Manage sync settings/i });
+    expect(syncLink).toBeInTheDocument();
+    expect(syncLink).toHaveAttribute("href", "/sync");
   });
 
   it("should show loading state when sync status is loading", () => {
@@ -268,19 +184,5 @@ describe("CalendarPageClientWrapper", () => {
     expect(screen.queryByText(/Last synced:/i)).not.toBeInTheDocument();
   });
 
-  it("should display range selector with all options", () => {
-    renderWithProviders(<CalendarPageClientWrapper />);
-    
-    const rangeSelects = screen.getAllByRole("combobox", { name: /sync range/i });
-    const rangeSelect = rangeSelects[0]; // Get first one
-    expect(rangeSelect).toBeInTheDocument();
-    // Check that select has the expected options by checking value can be changed
-    fireEvent.change(rangeSelect, { target: { value: "30" } });
-    expect(rangeSelect).toHaveValue("30");
-    fireEvent.change(rangeSelect, { target: { value: "90" } });
-    expect(rangeSelect).toHaveValue("90");
-    fireEvent.change(rangeSelect, { target: { value: "180" } });
-    expect(rangeSelect).toHaveValue("180");
-  });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { View } from "react-big-calendar";
 import { startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,16 +15,12 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import EmptyState from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/Button";
 import Card from "@/components/Card";
-import Select from "@/components/Select";
 import { CalendarEvent } from "@/types/firestore";
-import { reportException } from "@/lib/error-reporting";
 
-const SYNC_RANGE_STORAGE_KEY = "calendar-sync-range-days";
 const CALENDAR_VIEW_STORAGE_KEY = "insight-loop-calendar-view";
 
 export default function CalendarPageClientWrapper() {
   const { user, loading: authLoading } = useAuth();
-  const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalPrefill, setCreateModalPrefill] = useState<{ startTime?: Date; endTime?: Date; contactId?: string } | null>(null);
   
@@ -42,29 +38,8 @@ export default function CalendarPageClientWrapper() {
     return "month" as View;
   });
 
-  // Sync range state with localStorage persistence
-  const [syncRangeDays, setSyncRangeDays] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(SYNC_RANGE_STORAGE_KEY);
-      if (stored) {
-        const parsed = parseInt(stored, 10);
-        if ([30, 60, 90, 180].includes(parsed)) {
-          return parsed;
-        }
-      }
-    }
-    return 60; // Default: 60 days
-  });
-
   // Calendar sync status
   const { lastSync, loading: syncStatusLoading } = useCalendarSyncStatusRealtime(effectiveUserId);
-
-  // Persist range to localStorage when it changes
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(SYNC_RANGE_STORAGE_KEY, syncRangeDays.toString());
-    }
-  }, [syncRangeDays]);
 
   // Calculate date range based on current view
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -163,30 +138,6 @@ export default function CalendarPageClientWrapper() {
     });
   }, [events, filters]);
 
-  // Sync Calendar button handler - shared between loading and loaded states
-  // After sync, events will update automatically via Firebase listener
-  const handleSyncCalendar = async () => {
-    setSyncingCalendar(true);
-    try {
-      const response = await fetch(`/api/calendar/sync?range=${syncRangeDays}`, { 
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (!data.ok) {
-        throw new Error(data.error || "Failed to sync calendar");
-      }
-      // Events will update automatically via Firebase listener when sync completes
-    } catch (err) {
-      reportException(err, {
-        context: "Syncing calendar events",
-        tags: { component: "CalendarPageClientWrapper" },
-      });
-    } finally {
-      setSyncingCalendar(false);
-    }
-  };
-
   // Prepare error message and helpers if there is an error (but still render static content below)
   const errorMessage = isError && error instanceof Error ? error.message : (isError ? "Failed to load calendar events" : null);
   const needsReconnect = errorMessage ? (
@@ -204,36 +155,6 @@ export default function CalendarPageClientWrapper() {
   // Show empty state only after loading completes AND there's no data
   // Don't show empty state while loading - let the calendar view handle loading state
 
-  // Sync Calendar button component - just the button
-  const syncButton = (
-    <Button
-      onClick={handleSyncCalendar}
-      disabled={syncingCalendar}
-      loading={syncingCalendar}
-      size="sm"
-      variant="secondary"
-      fullWidth
-      className="whitespace-nowrap shadow-sm"
-      icon={
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      }
-    >
-      Sync Calendar
-    </Button>
-  );
-
   return (
     <div className="space-y-6">
       {/* Header - Mobile: stacked, Desktop: row with buttons on right */}
@@ -242,7 +163,7 @@ export default function CalendarPageClientWrapper() {
           <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
           <p className="text-theme-dark text-lg">View and manage your calendar events</p>
         </div>
-        {/* Buttons - Mobile: below header, Desktop: right side, stacked vertically */}
+        {/* Buttons - Mobile: below header, Desktop: right side */}
         <div className="flex flex-col items-stretch sm:items-end gap-3 xl:shrink-0 w-full sm:w-auto">
           <Button
             onClick={() => {
@@ -255,52 +176,37 @@ export default function CalendarPageClientWrapper() {
           >
             New Event
           </Button>
-          {syncButton}
         </div>
       </div>
 
-      {/* Last Synced Display and Range Selector - separate row */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        {/* Last Synced Display */}
-        {!syncStatusLoading && (
-          <div className="flex items-center gap-2 text-theme-dark text-sm">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span>
-              Last synced: {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "Never synced"}
-            </span>
-          </div>
-        )}
-
-        {/* Range Selector */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="sync-range" className="text-theme-dark text-sm whitespace-nowrap">
-            Sync range:
-          </label>
-          <Select
-            id="sync-range"
-            value={syncRangeDays.toString()}
-            onChange={(e) => setSyncRangeDays(parseInt(e.target.value, 10))}
-            className="w-32"
+      {/* Last Synced Display with link to sync page */}
+      {!syncStatusLoading && (
+        <div className="flex items-center gap-2 text-theme-dark text-sm">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <option value="30">30 days</option>
-            <option value="60">60 days</option>
-            <option value="90">90 days</option>
-            <option value="180">180 days</option>
-          </Select>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          <span>
+            Last synced: {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "Never synced"}
+          </span>
+          <span className="text-theme-medium">•</span>
+          <a
+            href="/sync"
+            className="text-blue-600 hover:text-blue-800 underline text-sm"
+          >
+            Manage sync settings
+          </a>
         </div>
-      </div>
+      )}
 
       {/* Error Message - show if there's an error */}
       {isError && errorMessage && (

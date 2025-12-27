@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { getCalendarAccessToken } from "@/lib/calendar/get-access-token";
 import { getCalendarEventsFromGoogle } from "@/lib/calendar/get-calendar-events";
 import { syncCalendarEventsToFirestore } from "@/lib/calendar/sync-calendar-events";
+import { subscribeToCalendar, hasActiveSubscription } from "@/lib/calendar/webhook-manager";
 import { reportException } from "@/lib/error-reporting";
 import { adminDb } from "@/lib/firebase-admin";
 import { toUserFriendlyError } from "@/lib/error-utils";
@@ -120,6 +121,22 @@ export async function POST(req: Request) {
         errorMessage: syncResult.errors.length > 0 ? syncResult.errors.join("; ") : null,
       }, { merge: true });
 
+    // Automatically subscribe to webhook notifications if not already subscribed
+    let webhookSubscribed = false;
+    try {
+      const hasActive = await hasActiveSubscription(adminDb, userId);
+      if (!hasActive) {
+        await subscribeToCalendar(adminDb, userId, "primary");
+        webhookSubscribed = true;
+      }
+    } catch (webhookError) {
+      // Log but don't fail sync if webhook subscription fails
+      reportException(webhookError, {
+        context: "Subscribing to calendar webhook during sync",
+        tags: { component: "calendar-sync-api", userId },
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       synced: syncResult.synced,
@@ -127,6 +144,7 @@ export async function POST(req: Request) {
       errors: syncResult.errors,
       totalEvents: googleEvents.items.length,
       syncJobId: jobId,
+      webhookSubscribed,
     });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
