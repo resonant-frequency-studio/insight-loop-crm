@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SyncPageClient from "../SyncPageClient";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { useContacts } from "@/hooks/useContacts";
@@ -29,6 +30,19 @@ const mockReportException = reportException as jest.MockedFunction<typeof report
 describe("SyncPageClient - Clear History", () => {
   const mockUserId = "user123";
   const mockUser = { uid: mockUserId, email: "test@example.com" };
+
+  // Helper to render with QueryClientProvider
+  const renderWithProviders = (ui: React.ReactElement) => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    return render(
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    );
+  };
 
   const createMockSyncJob = (overrides?: Partial<SyncJob>): SyncJob => ({
     syncJobId: overrides?.syncJobId || `sync-${Date.now()}`,
@@ -84,7 +98,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={singleJob}
@@ -107,7 +121,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -126,7 +140,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -151,7 +165,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -180,7 +194,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -216,7 +230,7 @@ describe("SyncPageClient - Clear History", () => {
       });
       mockFetch.mockReturnValue(fetchPromise);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -286,7 +300,7 @@ describe("SyncPageClient - Clear History", () => {
         }),
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -331,7 +345,7 @@ describe("SyncPageClient - Clear History", () => {
         }),
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -372,7 +386,7 @@ describe("SyncPageClient - Clear History", () => {
       });
       mockFetch.mockReturnValue(fetchPromise);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -443,7 +457,7 @@ describe("SyncPageClient - Clear History", () => {
         }),
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -488,7 +502,7 @@ describe("SyncPageClient - Clear History", () => {
         }),
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -525,7 +539,7 @@ describe("SyncPageClient - Clear History", () => {
 
       mockFetch.mockRejectedValue(new Error("Network error"));
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -569,7 +583,7 @@ describe("SyncPageClient - Clear History", () => {
         }),
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -624,7 +638,7 @@ describe("SyncPageClient - Clear History", () => {
         json: async () => ({}), // Empty response
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -666,7 +680,7 @@ describe("SyncPageClient - Clear History", () => {
         },
       } as unknown as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={jobs[0]}
@@ -709,7 +723,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -754,7 +768,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -787,7 +801,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -817,7 +831,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -844,7 +858,7 @@ describe("SyncPageClient - Clear History", () => {
         error: null,
       });
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}
@@ -872,7 +886,7 @@ describe("SyncPageClient - Clear History", () => {
         status: 500,
       } as Response);
 
-      render(
+      renderWithProviders(
         <SyncPageClient
           userId={mockUserId}
           initialLastSync={null}

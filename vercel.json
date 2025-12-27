@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/calendar/sync-dirty-cron",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/calendar/renew-subscriptions-cron",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import ThemedSuspense from "@/components/ThemedSuspense";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { useContacts } from "@/hooks/useContacts";
 import { useAuth } from "@/hooks/useAuth";
 import { useContactsSyncJob } from "@/hooks/useContactsSyncJob";
+import { useCalendarSubscriptionStatus } from "@/hooks/useCalendarSubscriptionStatus";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
 import { ErrorMessage, extractErrorMessage } from "@/components/ErrorMessage";
@@ -27,13 +29,16 @@ export default function SyncPageClient({
 }: SyncPageClientProps) {
   const { user } = useAuth();
   const effectiveUserId = userId || user?.uid || "";
+  const queryClient = useQueryClient();
   // Use real-time hook for updates
   const { lastSync: realtimeLastSync, syncHistory: realtimeSyncHistory, error, loading: syncLoading } = useSyncStatus(userId);
   const { data: contacts = [], isLoading: contactsLoading } = useContacts(effectiveUserId);
+  const { data: subscriptionStatus } = useCalendarSubscriptionStatus(effectiveUserId);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [calendarSyncError, setCalendarSyncError] = useState<string | null>(null);
+  const [calendarSyncSuccess, setCalendarSyncSuccess] = useState<string | null>(null);
   const [syncingContacts, setSyncingContacts] = useState(false);
   const [contactsSyncError, setContactsSyncError] = useState<string | null>(null);
   const [currentContactsSyncJobId, setCurrentContactsSyncJobId] = useState<string | null>(null);
@@ -275,15 +280,51 @@ export default function SyncPageClient({
       <Card padding="md" className="bg-sync-purple-bg border-sync-purple-border">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-sync-purple-text-primary mb-1">Sync Calendar</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-sync-purple-text-primary">Sync Calendar</h3>
+              {subscriptionStatus?.hasActiveSubscription && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Real-time sync active
+                </span>
+              )}
+            </div>
             <div className="text-xs text-sync-purple-text-secondary mb-3">
-              <p className="mb-1">Imports calendar events from your Google Calendar and links them to your contacts. This will:</p>
-              <ul className="list-disc list-inside mt-1 space-y-0.5">
-                <li>Fetch calendar events from the past 30-180 days (depending on sync type)</li>
-                <li>Match events to contacts by email addresses in attendee lists</li>
-                <li>Create calendar event records linked to your contacts</li>
-                <li>Extract meeting insights and action items from event descriptions</li>
-              </ul>
+              {subscriptionStatus?.hasActiveSubscription ? (
+                <>
+                  <p className="mb-1 font-medium text-sync-purple-text-primary">
+                    Automatic sync is enabled. Calendar changes sync in real-time between Google Calendar and your CRM.
+                  </p>
+                  <p className="mb-1 mt-2">Click below to manually sync calendar events now. This will:</p>
+                  <ul className="list-disc list-inside mt-1 space-y-0.5">
+                    <li>Fetch calendar events from the past 30-180 days (depending on sync type)</li>
+                    <li>Match events to contacts by email addresses in attendee lists</li>
+                    <li>Create calendar event records linked to your contacts</li>
+                    <li>Extract meeting insights and action items from event descriptions</li>
+                  </ul>
+                  {subscriptionStatus.expiresAt && (
+                    <p className="mt-2 text-sync-purple-text-secondary italic">
+                      Automatic sync expires: {new Date(subscriptionStatus.expiresAt).toLocaleDateString()} (auto-renewed daily)
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="mb-1 font-medium text-sync-purple-text-primary">
+                    Set up automatic calendar sync to keep your CRM calendar in sync with Google Calendar in real-time.
+                  </p>
+                  <p className="mb-1 mt-2">Click below to sync calendar events and enable automatic sync. This will:</p>
+                  <ul className="list-disc list-inside mt-1 space-y-0.5">
+                    <li>Fetch calendar events from the past 30-180 days (depending on sync type)</li>
+                    <li>Match events to contacts by email addresses in attendee lists</li>
+                    <li>Create calendar event records linked to your contacts</li>
+                    <li>Extract meeting insights and action items from event descriptions</li>
+                    <li>Enable automatic real-time sync between Google Calendar and your CRM</li>
+                  </ul>
+                </>
+              )}
             </div>
           </div>
           <div className="shrink-0">
@@ -291,6 +332,7 @@ export default function SyncPageClient({
               onClick={async () => {
                 setSyncingCalendar(true);
                 setCalendarSyncError(null);
+                setCalendarSyncSuccess(null);
                 try {
                   const response = await fetch('/api/calendar/sync', { 
                     method: 'POST',
@@ -299,6 +341,16 @@ export default function SyncPageClient({
                   const data = await response.json();
                   if (!data.ok) {
                     setCalendarSyncError(data.error || 'Failed to sync calendar');
+                  } else {
+                    if (data.webhookSubscribed) {
+                      setCalendarSyncSuccess('Calendar sync completed and automatic real-time sync has been enabled!');
+                      // Immediately refetch subscription status to show updated UI
+                      queryClient.invalidateQueries({ queryKey: ["calendar-subscription-status", effectiveUserId] });
+                    } else {
+                      setCalendarSyncSuccess(`Calendar sync completed successfully. ${data.synced || 0} events synced.`);
+                    }
+                    // Clear success message after 5 seconds
+                    setTimeout(() => setCalendarSyncSuccess(null), 5000);
                   }
                 } catch (err) {
                   setCalendarSyncError(err instanceof Error ? err.message : 'Failed to sync calendar');
@@ -327,7 +379,7 @@ export default function SyncPageClient({
               </svg>
             }
           >
-            Sync Calendar
+            {subscriptionStatus?.hasActiveSubscription ? 'Sync Calendar Now' : 'Set Up Calendar Sync'}
           </Button>
           </div>
         </div>
@@ -338,6 +390,16 @@ export default function SyncPageClient({
             onDismiss={() => setCalendarSyncError(null)}
             className="mt-3"
           />
+        )}
+        {calendarSyncSuccess && (
+          <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-sm">
+            <p className="text-sm text-green-800 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {calendarSyncSuccess}
+            </p>
+          </div>
         )}
       </Card>
 

@@ -190,6 +190,15 @@ export interface Contact {
     googleUpdated?: unknown; // Google's updated timestamp (Firestore timestamp)
     sourceOfTruth?: "google" | "crm_touchpoint"; // Where event originated
     isDirty?: boolean; // Has local changes not synced to Google
+    // Bidirectional sync tracking
+    syncInProgress?: boolean; // Prevent concurrent syncs
+    lastSyncAttempt?: unknown; // Track sync attempts (Firestore timestamp)
+    lastSyncedFrom?: "google" | "crm"; // Track sync direction
+    syncLockUntil?: unknown; // Temporary lock to prevent rapid re-syncs (Firestore timestamp)
+    // Conflict tracking
+    hasConflict?: boolean; // Event has a conflict that needs user resolution
+    conflictType?: "simple" | "complex"; // Type of conflict
+    conflictDetectedAt?: unknown; // When conflict was detected (Firestore timestamp)
     
     // Contact matching
     matchedContactId?: string | null;
