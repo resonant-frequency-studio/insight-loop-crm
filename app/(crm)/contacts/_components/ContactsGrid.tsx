@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Card from "@/components/Card";
 import { Button } from "@/components/Button";
 import ContactCard from "../../_components/ContactCard";
@@ -7,12 +8,19 @@ import Pagination from "@/components/Pagination";
 import ThemedSuspense from "@/components/ThemedSuspense";
 import { useContactsFilter } from "./ContactsFilterContext";
 import EmptyState from "@/components/dashboard/EmptyState";
+import { InlineNudge } from "@/components/guidance/InlineNudge";
+import { useAuth } from "@/hooks/useAuth";
+import { getUserGuidancePreferences, updateUserGuidancePreferences } from "@/src/guidance/user-preferences";
 
 interface ContactsGridProps {
   userId: string;
 }
 
 export default function ContactsGrid({ userId }: ContactsGridProps) {
+  const { user } = useAuth();
+  const [showNudge, setShowNudge] = useState(false);
+  const [nudgeLoaded, setNudgeLoaded] = useState(false);
+
   const {
     filteredContacts,
     totalContactsCount,
@@ -31,6 +39,36 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
     toggleSelectAll,
   } = useContactsFilter();
 
+  // Check if nudge should be shown
+  useEffect(() => {
+    if (!user?.uid || nudgeLoaded) return;
+
+    getUserGuidancePreferences(user.uid)
+      .then((prefs) => {
+        const shouldShow = !prefs.dismissedNudges?.contactsEmpty;
+        setShowNudge(shouldShow);
+        setNudgeLoaded(true);
+      })
+      .catch((error) => {
+        console.error("Failed to load guidance preferences:", error);
+        setNudgeLoaded(true);
+      });
+  }, [user?.uid, nudgeLoaded]);
+
+  const handleDismissNudge = async () => {
+    if (!user?.uid) return;
+    setShowNudge(false);
+    try {
+      await updateUserGuidancePreferences(user.uid, {
+        dismissedNudges: {
+          contactsEmpty: true,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save nudge dismissal:", error);
+    }
+  };
+
   // Show skeletons only when loading AND no contacts available
   // If contacts exist (even from cache), show them immediately
   const showSkeletons = (isLoading || !userId) && totalContactsCount === 0;
@@ -48,7 +86,18 @@ export default function ContactsGrid({ userId }: ContactsGridProps) {
   if (hasConfirmedNoContacts && totalContactsCount === 0) {
     return (
       <Card padding="md">
-        <EmptyState wrapInCard={false} size="lg" />
+        <div className="space-y-6">
+          {showNudge && (
+            <InlineNudge
+              title="Start small."
+              body="Add 3 people you care about staying close to. This system works best when it begins with real relationships—not a full import."
+              ctaLabel="Add a contact"
+              ctaHref="/contacts/new"
+              onDismiss={handleDismissNudge}
+            />
+          )}
+          <EmptyState wrapInCard={false} size="lg" />
+        </div>
       </Card>
     );
   }

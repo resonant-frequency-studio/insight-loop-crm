@@ -217,7 +217,7 @@ export default function ContactTimelineCard({
       case "view-event":
         if (item.eventId) {
           // Open calendar event modal or navigate to calendar
-          router.push(`/calendar?eventId=${item.eventId}`);
+          router.push(`/schedule?eventId=${item.eventId}`);
         }
         break;
       case "view-email":

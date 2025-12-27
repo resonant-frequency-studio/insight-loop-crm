@@ -101,7 +101,7 @@ export default function CalendarFilterBar({
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-theme-darkest">Filters & Search</h2>
+        <h2 className="text-lg font-semibold text-theme-darkest">Find what matters</h2>
         {hasActiveFilters && !disabled && (
           <Button
             onClick={handleClearFilters}
@@ -118,7 +118,7 @@ export default function CalendarFilterBar({
         {/* Segment Filter */}
         <div>
           <label htmlFor="segment-filter" className="block text-sm font-medium text-theme-darker mb-2">
-            Segment
+            Group
           </label>
           <Select
             id="segment-filter"
@@ -131,7 +131,7 @@ export default function CalendarFilterBar({
             }
             disabled={disabled || events.length === 0}
           >
-            <option value="">All Segments</option>
+            <option value="">All Groups</option>
             {uniqueSegments.map((segment) => (
               <option key={segment} value={segment}>
                 {segment}
@@ -151,7 +151,7 @@ export default function CalendarFilterBar({
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
               onFocus={() => setShowTagDropdown(true)}
-              placeholder="Search tags..."
+              placeholder="Filter by tag…"
               className="pr-10"
               disabled={disabled || events.length === 0}
             />
@@ -204,7 +204,7 @@ export default function CalendarFilterBar({
         {/* Search */}
         <div>
           <label htmlFor="event-search" className="block text-sm font-medium text-theme-darker mb-2">
-            Search Events
+            Search
           </label>
           <Input
             id="event-search"
@@ -216,7 +216,7 @@ export default function CalendarFilterBar({
                 search: e.target.value,
               })
             }
-            placeholder="Search by title or contact name..."
+            placeholder="Search by title or client…"
             disabled={disabled || events.length === 0}
           />
         </div>
@@ -232,7 +232,7 @@ export default function CalendarFilterBar({
               onlyLinked: e.target.checked,
             })
           }
-          label="Only Linked Events"
+          label="Client-linked only"
           disabled={disabled || events.length === 0}
         />
         <Checkbox
@@ -243,7 +243,7 @@ export default function CalendarFilterBar({
               onlyTouchpoints: e.target.checked,
             })
           }
-          label="Only Touchpoints"
+          label="Follow-ups only"
           disabled={disabled || events.length === 0}
         />
       </div>

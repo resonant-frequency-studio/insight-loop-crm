@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { SavingStateProvider } from "@/contexts/SavingStateContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { GuidanceProvider } from "./providers/GuidanceProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -27,10 +28,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <SavingStateProvider>
         <ThemeProvider>
-        {children}
-        {process.env.NODE_ENV === "development" && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
+          <GuidanceProvider>
+            {children}
+            {process.env.NODE_ENV === "development" && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </GuidanceProvider>
         </ThemeProvider>
       </SavingStateProvider>
     </QueryClientProvider>

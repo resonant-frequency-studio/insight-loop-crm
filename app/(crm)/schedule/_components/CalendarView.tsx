@@ -6,11 +6,14 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
+import "./calendar.tokens.css";
+import "./calendar.rbc.css";
 import { CalendarEvent } from "@/types/firestore";
 import { useTheme } from "@/components/ThemeProvider";
 import CalendarEventCard from "./CalendarEventCard";
 import Card from "@/components/Card";
 import Modal from "@/components/Modal";
+import { eventPropGetter, dayPropGetter, slotPropGetter } from "./rbcStyleGetters";
 
 const CALENDAR_VIEW_STORAGE_KEY = "insight-loop-calendar-view";
 
@@ -229,36 +232,8 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
     }
   };
 
-  // Style events based on their properties (linked, segment, touchpoint)
-  const eventPropGetter = (event: Event) => {
-    const calendarEvent = event.resource as CalendarEvent;
-    const classes: string[] = [];
-
-    // Add class for linked events
-    if (calendarEvent.matchedContactId) {
-      classes.push("rbc-event-linked");
-    }
-
-    // Add class for touchpoint events
-    if (calendarEvent.sourceOfTruth === "crm_touchpoint") {
-      classes.push("rbc-event-touchpoint");
-    }
-
-    // Add segment-specific class if contact is linked and has a segment
-    if (calendarEvent.contactSnapshot?.segment) {
-      const segmentSlug = calendarEvent.contactSnapshot.segment
-        .toLowerCase()
-        .replace(/\s+/g, "-");
-      classes.push(`rbc-event-segment-${segmentSlug}`);
-    }
-
-    return {
-      className: classes.join(" "),
-    };
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 crm-calendar">
       <Card padding="none" className="">
         <div className="p-4">
           <Calendar
@@ -276,6 +251,8 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
             onSelectSlot={handleSelectSlot}
             selectable
             eventPropGetter={eventPropGetter}
+            dayPropGetter={dayPropGetter}
+            slotPropGetter={slotPropGetter}
             className={`rbc-calendar-${resolvedTheme}`}
           />
         </div>

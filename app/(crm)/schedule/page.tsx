@@ -5,8 +5,8 @@ import { isPlaywrightTest } from "@/util/test-utils";
 import CalendarData from "./_components/CalendarData";
 
 export const metadata: Metadata = {
-  title: "Calendar | Insight Loop CRM",
-  description: "View and manage your calendar events",
+  title: "Schedule | Insight Loop CRM",
+  description: "Plan your week with clarity—sessions, follow-ups, and focus time in one place",
 };
 
 export default async function CalendarPage() {

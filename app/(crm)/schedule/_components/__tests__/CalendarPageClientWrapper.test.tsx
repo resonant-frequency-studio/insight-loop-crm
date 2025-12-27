@@ -136,7 +136,7 @@ describe("CalendarPageClientWrapper", () => {
   it("should display 'Never synced' when no sync history exists", () => {
     renderWithProviders(<CalendarPageClientWrapper />);
     
-    expect(screen.getByText(/Last synced: Never synced/i)).toBeInTheDocument();
+    expect(screen.getByText(/Up to date as of never synced/i)).toBeInTheDocument();
   });
 
   it("should display last synced time when sync history exists", () => {
@@ -160,13 +160,13 @@ describe("CalendarPageClientWrapper", () => {
 
     renderWithProviders(<CalendarPageClientWrapper />);
     
-    expect(screen.getByText(/Last synced: 2 hours ago/i)).toBeInTheDocument();
+    expect(screen.getByText(/Up to date as of 2 hours ago/i)).toBeInTheDocument();
   });
 
   it("should display link to sync page", () => {
     renderWithProviders(<CalendarPageClientWrapper />);
     
-    const syncLink = screen.getByRole("link", { name: /Manage sync settings/i });
+    const syncLink = screen.getByRole("link", { name: /Sync preferences/i });
     expect(syncLink).toBeInTheDocument();
     expect(syncLink).toHaveAttribute("href", "/sync");
   });
@@ -180,8 +180,8 @@ describe("CalendarPageClientWrapper", () => {
 
     renderWithProviders(<CalendarPageClientWrapper />);
     
-    // Should not show "Never synced" when loading
-    expect(screen.queryByText(/Last synced:/i)).not.toBeInTheDocument();
+    // Should not show sync status when loading
+    expect(screen.queryByText(/Up to date as of/i)).not.toBeInTheDocument();
   });
 
 });

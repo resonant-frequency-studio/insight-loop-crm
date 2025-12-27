@@ -83,6 +83,8 @@
 /* ============================================
    Time View Styles
    ============================================ */
+/* Time grid lines - now handled by calendar.rbc.css with token system */
+/* These old styles are intentionally left for non-.crm-calendar contexts but are overridden by calendar.rbc.css */
 .rbc-time-slot {
   border-top-color: var(--theme-light);
 }

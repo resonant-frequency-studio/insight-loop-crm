@@ -13,10 +13,10 @@ import { useSidebarState } from "@/hooks/useSidebarState";
 import { useMobileMenu } from "@/hooks/useMobileMenu";
 import { useSessionManagement } from "@/hooks/useSessionManagement";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
-import { SidebarLogo } from "./layout/SidebarLogo";
-import { SidebarNavigation } from "./layout/SidebarNavigation";
-import { SidebarCollapseHandle } from "./layout/SidebarCollapseHandle";
-import { UserProfilePopover } from "./layout/UserProfilePopover";
+import { SidebarLogo } from "./SidebarLogo";
+import { SidebarNavigation } from "./SidebarNavigation";
+import { SidebarCollapseHandle } from "./SidebarCollapseHandle";
+import { UserProfilePopover } from "./UserProfilePopover";
 
 export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

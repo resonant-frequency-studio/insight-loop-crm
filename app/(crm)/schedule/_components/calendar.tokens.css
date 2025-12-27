@@ -1,0 +1,124 @@
+/* Calendar Token System - Theme-aware CSS variables
+ * Scoped to .crm-calendar to avoid app-wide side effects
+ */
+
+/* Light Theme - Default */
+[data-theme="light"] .crm-calendar,
+.crm-calendar {
+  /* Surfaces */
+  --cal-bg: var(--background, #eeeeec);
+  --cal-surface: var(--card-light, #fafaf9);
+  --cal-panel: var(--card-light, #fafaf9);
+
+  /* Structure */
+  --cal-grid-line: rgba(141, 138, 133, 0.15); /* theme-medium with low opacity */
+  --cal-grid-line-strong: rgba(141, 138, 133, 0.3);
+  --cal-header-bg: var(--selected-background, #e0e0e0);
+  --cal-header-text: var(--foreground, #191919);
+  --cal-time-text: rgba(25, 25, 25, 0.6); /* Lower contrast than event text */
+
+  /* Selection + state */
+  --cal-selection-bg: rgba(59, 130, 246, 0.1); /* Blue with low opacity */
+  --cal-selection-border: rgba(59, 130, 246, 0.3);
+  --cal-today-bg: rgba(59, 130, 246, 0.05); /* Very subtle tint */
+  --cal-now-line: #3b82f6; /* Blue */
+
+  /* Events (base) */
+  --cal-event-bg: var(--card-light, #fafaf9);
+  --cal-event-border: rgba(141, 138, 133, 0.3);
+  --cal-event-text: var(--foreground, #191919);
+  --cal-event-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Interaction */
+  --cal-focus-ring: #3b82f6;
+  --cal-hover-bg: rgba(59, 130, 246, 0.05);
+
+  /* Event type accents */
+  --cal-accent-session: #3b82f6; /* Blue - primary coaching sessions */
+  --cal-accent-followup: #10b981; /* Green - follow-ups */
+  --cal-accent-prep: #8b5cf6; /* Purple - prep/reflection */
+  --cal-accent-admin: #f59e0b; /* Amber - admin/ops */
+  --cal-accent-focus: #6366f1; /* Indigo - deep work */
+  --cal-accent-hold: #6b7280; /* Gray - placeholder/hold */
+}
+
+/* Dark Theme - Subdued, not bright whites */
+[data-theme="dark"] .crm-calendar {
+  /* Surfaces - use dark theme variables, not bright whites */
+  --cal-bg: var(--background, #191919);
+  --cal-surface: var(--card-light, #292927); /* card-light in dark = dark gray */
+  --cal-panel: rgba(255, 255, 255, 0.04); /* Very subtle panel, matching globals.css pattern */
+
+  /* Structure - subdued grid lines (matching month view subtlety) */
+  --cal-grid-line: rgba(255, 255, 255, 0.03); /* Very subtle time grid lines - even more subdued */
+  --cal-grid-line-strong: rgba(255, 255, 255, 0.05); /* Day boundaries - slightly more visible */
+  --cal-header-bg: rgba(255, 255, 255, 0.06); /* Subtle header, matching surface-bar */
+  --cal-header-text: var(--foreground, #eeeeec);
+  --cal-time-text: rgba(238, 238, 236, 0.5); /* Subdued time labels */
+
+  /* Selection + state */
+  --cal-selection-bg: rgba(59, 130, 246, 0.15);
+  --cal-selection-border: rgba(59, 130, 246, 0.35);
+  --cal-today-bg: rgba(59, 130, 246, 0.08); /* Very subtle today highlight */
+  --cal-now-line: #60a5fa; /* Lighter blue for dark mode */
+
+  /* Events (base) - subdued backgrounds */
+  --cal-event-bg: rgba(147, 197, 253, 0.12); /* Subtle blue tint, matching globals.css calendar-event-bg */
+  --cal-event-border: rgba(147, 197, 253, 0.25);
+  --cal-event-text: var(--foreground, #eeeeec);
+  --cal-event-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); /* Stronger shadow in dark */
+
+  /* Interaction */
+  --cal-focus-ring: rgba(59, 130, 246, 0.40); /* Matching globals.css focus-ring */
+  --cal-hover-bg: rgba(255, 255, 255, 0.06); /* Subtle hover, matching surface-hover */
+
+  /* Event type accents - adjusted for dark mode visibility */
+  --cal-accent-session: #60a5fa; /* blue-400 */
+  --cal-accent-followup: #34d399; /* emerald-400 */
+  --cal-accent-prep: #a78bfa; /* violet-400 */
+  --cal-accent-admin: #fbbf24; /* amber-400 */
+  --cal-accent-focus: #818cf8; /* indigo-400 */
+  --cal-accent-hold: #9ca3af; /* gray-400 */
+}
+
+/* Dark theme via browser preference (when no manual override) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .crm-calendar {
+    /* Surfaces - use dark theme variables, not bright whites */
+    --cal-bg: var(--background, #191919);
+    --cal-surface: var(--card-light, #292927);
+    --cal-panel: rgba(255, 255, 255, 0.04);
+
+    /* Structure - subdued grid lines (matching month view subtlety) */
+    --cal-grid-line: rgba(255, 255, 255, 0.03); /* Very subtle time grid lines - even more subdued */
+    --cal-grid-line-strong: rgba(255, 255, 255, 0.05); /* Day boundaries - slightly more visible */
+    --cal-header-bg: rgba(255, 255, 255, 0.06);
+    --cal-header-text: var(--foreground, #eeeeec);
+    --cal-time-text: rgba(238, 238, 236, 0.5);
+
+    /* Selection + state */
+    --cal-selection-bg: rgba(59, 130, 246, 0.15);
+    --cal-selection-border: rgba(59, 130, 246, 0.35);
+    --cal-today-bg: rgba(59, 130, 246, 0.08);
+    --cal-now-line: #60a5fa;
+
+    /* Events (base) - subdued backgrounds */
+    --cal-event-bg: rgba(147, 197, 253, 0.12);
+    --cal-event-border: rgba(147, 197, 253, 0.25);
+    --cal-event-text: var(--foreground, #eeeeec);
+    --cal-event-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+    /* Interaction */
+    --cal-focus-ring: rgba(59, 130, 246, 0.40);
+    --cal-hover-bg: rgba(255, 255, 255, 0.06);
+
+    /* Event type accents */
+    --cal-accent-session: #60a5fa;
+    --cal-accent-followup: #34d399;
+    --cal-accent-prep: #a78bfa;
+    --cal-accent-admin: #fbbf24;
+    --cal-accent-focus: #818cf8;
+    --cal-accent-hold: #9ca3af;
+  }
+}
+

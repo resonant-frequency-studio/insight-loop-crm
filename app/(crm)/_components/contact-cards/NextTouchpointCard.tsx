@@ -322,7 +322,7 @@ export default function NextTouchpointCard({
 
       // Navigate to calendar or show success
       if (data.event?.eventId) {
-        router.push(`/calendar?eventId=${data.event.eventId}`);
+        router.push(`/schedule?eventId=${data.event.eventId}`);
       }
     } catch (error) {
       reportException(error, {
@@ -475,7 +475,7 @@ export default function NextTouchpointCard({
               </p>
             </div>
             <ContactGuardedLink
-              href={`/calendar?eventId=${contact.linkedGoogleEventId}`}
+              href={`/schedule?eventId=${contact.linkedGoogleEventId}`}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               View Event →

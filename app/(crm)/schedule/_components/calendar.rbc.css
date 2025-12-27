@@ -1,0 +1,314 @@
+/* React Big Calendar Overrides
+ * Scoped to .crm-calendar to avoid app-wide side effects
+ * Grid recedes, events lead
+ * 
+ * These styles override the old calendar.css styles with higher specificity
+ */
+
+.crm-calendar {
+  background: var(--cal-bg);
+}
+
+/* Override Card background within calendar to use calendar surface */
+.crm-calendar > .bg-card-light {
+  background: var(--cal-surface) !important;
+}
+
+/* Calendar Container - Override old calendar.css styles */
+.crm-calendar .rbc-calendar {
+  background: var(--cal-surface) !important;
+  color: var(--cal-event-text) !important;
+}
+
+/* Filters Panel */
+.crm-calendar .rbc-toolbar,
+.crm-calendar .calendar-filters-panel {
+  background: var(--cal-panel);
+}
+
+/* Grid Lines - Minor (time slots) - Target rbc-timeslot-group directly
+ * The timeslot-group is the element that creates the horizontal grid lines
+ * Both border-top and border-bottom need to be subdued
+ */
+.crm-calendar .rbc-timeslot-group {
+  border-top-color: var(--cal-grid-line) !important;
+  border-top-width: 1px !important;
+  border-top-style: solid !important;
+  border-bottom-color: var(--cal-grid-line) !important;
+  border-bottom-width: 1px !important;
+  border-bottom-style: solid !important;
+}
+
+/* Also target individual time slots as fallback */
+.crm-calendar .rbc-time-slot,
+.crm-calendar .rbc-day-slot .rbc-time-slot {
+  border-top-color: var(--cal-grid-line) !important;
+}
+
+/* Override dark mode - ensure very subdued lines on timeslot-group (both top and bottom) */
+[data-theme="dark"] .crm-calendar .rbc-timeslot-group {
+  border-top-color: rgba(255, 255, 255, 0.03) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-time-slot,
+[data-theme="dark"] .crm-calendar .rbc-day-slot .rbc-time-slot {
+  border-top-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .crm-calendar .rbc-timeslot-group {
+    border-top-color: rgba(255, 255, 255, 0.03) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.03) !important;
+  }
+  
+  :root:not([data-theme]) .crm-calendar .rbc-time-slot,
+  :root:not([data-theme]) .crm-calendar .rbc-day-slot .rbc-time-slot {
+    border-top-color: rgba(255, 255, 255, 0.03) !important;
+  }
+}
+
+/* Grid Lines - Major (day boundaries) */
+.crm-calendar .rbc-day-bg {
+  border-color: var(--cal-grid-line-strong) !important;
+}
+
+.crm-calendar .rbc-time-header-content {
+  border-left-color: var(--cal-grid-line-strong) !important;
+}
+
+/* Time content border - override old calendar.css */
+.crm-calendar .rbc-time-content {
+  border-top-color: var(--cal-grid-line-strong) !important;
+  border-top-width: 1px !important;
+  border-top-style: solid !important;
+}
+
+/* Override dark mode specific rules from old calendar.css */
+[data-theme="dark"] .crm-calendar .rbc-time-header-content {
+  border-left-color: var(--cal-grid-line-strong) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-time-content {
+  border-top-color: var(--cal-grid-line-strong) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .crm-calendar .rbc-time-header-content {
+    border-left-color: var(--cal-grid-line-strong) !important;
+  }
+  
+  :root:not([data-theme]) .crm-calendar .rbc-time-content {
+    border-top-color: var(--cal-grid-line-strong) !important;
+  }
+}
+
+/* Header */
+.crm-calendar .rbc-header {
+  background: var(--cal-header-bg);
+  color: var(--cal-header-text);
+  border-bottom-color: var(--cal-grid-line-strong);
+}
+
+.crm-calendar .rbc-time-header {
+  border-bottom-color: var(--cal-grid-line-strong);
+}
+
+/* Time Gutter Labels */
+.crm-calendar .rbc-label {
+  color: var(--cal-time-text);
+}
+
+.crm-calendar .rbc-time-header-gutter .rbc-label {
+  color: var(--cal-time-text);
+}
+
+/* Today Column */
+.crm-calendar .rbc-day-bg.rbc-today {
+  background: var(--cal-today-bg);
+}
+
+/* Now Indicator - Override old calendar.css */
+.crm-calendar .rbc-current-time-indicator {
+  background-color: var(--cal-now-line) !important;
+  height: 2px !important;
+  z-index: 3;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+}
+
+[data-theme="dark"] .crm-calendar .rbc-current-time-indicator {
+  background-color: var(--cal-now-line) !important;
+  box-shadow: 0 0 4px rgba(96, 165, 250, 0.5);
+}
+
+/* Current time indicator dot */
+.crm-calendar .rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--cal-now-line);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+  z-index: 11;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-current-time-indicator::before {
+  background: var(--cal-now-line);
+  box-shadow: 0 0 4px rgba(96, 165, 250, 0.5);
+}
+
+/* Selection Overlay - Clearly distinct from events */
+.crm-calendar .rbc-slot-selection {
+  background: var(--cal-selection-bg);
+  border: 1px dashed var(--cal-selection-border);
+  z-index: 1;
+}
+
+.crm-calendar .rbc-slot-selection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--cal-selection-bg);
+  opacity: 0.3;
+}
+
+/* Base Event Styling - Override old calendar.css */
+.crm-calendar .rbc-event {
+  background: var(--cal-event-bg) !important;
+  color: var(--cal-event-text) !important;
+  border: 1px solid var(--cal-event-border) !important;
+  border-left: 3px solid !important;
+  border-left-color: var(--cal-event-accent, var(--cal-accent-session)) !important;
+  box-shadow: var(--cal-event-shadow) !important;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  --cal-event-accent: var(--cal-accent-session); /* Default accent */
+}
+
+/* Event Hover - Override old calendar.css */
+.crm-calendar .rbc-event:hover {
+  background: var(--cal-hover-bg) !important;
+  border-left-color: var(--cal-event-accent, var(--cal-accent-session)) !important;
+  z-index: 2;
+}
+
+/* Event Focus */
+.crm-calendar .rbc-event:focus-visible {
+  outline: 2px solid var(--cal-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Event Type Classes - Applied via eventPropGetter */
+.crm-calendar .rbc-event.cal-event--session {
+  --cal-event-accent: var(--cal-accent-session);
+  font-weight: 600;
+}
+
+.crm-calendar .rbc-event.cal-event--follow_up {
+  --cal-event-accent: var(--cal-accent-followup);
+}
+
+.crm-calendar .rbc-event.cal-event--prep {
+  --cal-event-accent: var(--cal-accent-prep);
+}
+
+.crm-calendar .rbc-event.cal-event--admin {
+  --cal-event-accent: var(--cal-accent-admin);
+}
+
+.crm-calendar .rbc-event.cal-event--focus {
+  --cal-event-accent: var(--cal-accent-focus);
+}
+
+.crm-calendar .rbc-event.cal-event--hold {
+  --cal-event-accent: var(--cal-accent-hold);
+  opacity: 0.85;
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+/* Update border-left-color to use the accent variable */
+.crm-calendar .rbc-event {
+  border-left-color: var(--cal-event-accent);
+}
+
+/* Month View Events */
+.crm-calendar .rbc-month-view .rbc-event {
+  border-left-width: 3px;
+}
+
+/* Time View Events (Week/Day) */
+.crm-calendar .rbc-time-view .rbc-event {
+  border-left-width: 3px;
+}
+
+/* Event Content - Override old calendar.css */
+.crm-calendar .rbc-event-content {
+  color: var(--cal-event-text) !important;
+}
+
+/* Ensure events are above grid */
+.crm-calendar .rbc-event {
+  z-index: 2;
+}
+
+/* Agenda View */
+.crm-calendar .rbc-agenda-view table {
+  background: var(--cal-surface);
+}
+
+.crm-calendar .rbc-agenda-view .rbc-agenda-date-cell,
+.crm-calendar .rbc-agenda-view .rbc-agenda-time-cell {
+  border-color: var(--cal-grid-line);
+  color: var(--cal-time-text);
+}
+
+.crm-calendar .rbc-agenda-view .rbc-agenda-event-cell {
+  border-color: var(--cal-grid-line);
+}
+
+/* Additional dark mode overrides for elements that might be styled by old calendar.css */
+[data-theme="dark"] .crm-calendar .rbc-toolbar {
+  background: var(--cal-panel) !important;
+  border-bottom-color: var(--cal-grid-line-strong) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-toolbar button {
+  border-color: var(--cal-grid-line-strong) !important;
+  color: var(--cal-header-text) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-toolbar button:hover {
+  background: var(--cal-hover-bg) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-btn-group button {
+  border-color: var(--cal-grid-line-strong) !important;
+  color: var(--cal-header-text) !important;
+}
+
+[data-theme="dark"] .crm-calendar .rbc-btn-group button:hover {
+  background: var(--cal-hover-bg) !important;
+}
+
+/* Month view date cells in dark mode */
+[data-theme="dark"] .crm-calendar .rbc-date-cell,
+[data-theme="dark"] .crm-calendar .rbc-date-cell > a {
+  color: var(--cal-header-text) !important;
+}
+
+/* Off-range background in dark mode */
+[data-theme="dark"] .crm-calendar .rbc-off-range-bg {
+  background: rgba(212, 209, 204, 0.05) !important;
+  opacity: 0.3;
+}
+

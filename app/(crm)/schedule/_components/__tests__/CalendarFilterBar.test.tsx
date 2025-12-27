@@ -148,12 +148,12 @@ describe("CalendarFilterBar", () => {
       />
     );
 
-    expect(screen.getByText("Filters & Search")).toBeInTheDocument();
-    expect(screen.getByText("Segment")).toBeInTheDocument();
+    expect(screen.getByText("Find what matters")).toBeInTheDocument();
+    expect(screen.getByText("Group")).toBeInTheDocument();
     expect(screen.getByText("Tags")).toBeInTheDocument();
-    expect(screen.getByText("Search Events")).toBeInTheDocument();
-    expect(screen.getByLabelText("Only Linked Events")).toBeInTheDocument();
-    expect(screen.getByLabelText("Only Touchpoints")).toBeInTheDocument();
+    expect(screen.getByText("Search")).toBeInTheDocument();
+    expect(screen.getByLabelText("Client-linked only")).toBeInTheDocument();
+    expect(screen.getByLabelText("Follow-ups only")).toBeInTheDocument();
   });
 
   it("should render when no events (but with disabled state)", () => {
@@ -166,7 +166,7 @@ describe("CalendarFilterBar", () => {
     );
 
     // Component should still render, but inputs should be disabled when events.length === 0
-    expect(screen.getByText("Filters & Search")).toBeInTheDocument();
+    expect(screen.getByText("Find what matters")).toBeInTheDocument();
     const segmentSelect = screen.getAllByRole("combobox")[0] as HTMLSelectElement;
     expect(segmentSelect).toBeDisabled();
   });
@@ -199,7 +199,7 @@ describe("CalendarFilterBar", () => {
       />
     );
 
-    const searchInput = screen.getByPlaceholderText("Search by title or contact name...");
+    const searchInput = screen.getByPlaceholderText("Search by title or client…");
     fireEvent.change(searchInput, { target: { value: "Meeting" } });
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith({
@@ -217,7 +217,7 @@ describe("CalendarFilterBar", () => {
       />
     );
 
-    const onlyLinkedCheckbox = screen.getByLabelText("Only Linked Events");
+    const onlyLinkedCheckbox = screen.getByLabelText("Client-linked only");
     fireEvent.click(onlyLinkedCheckbox);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith({
@@ -235,7 +235,7 @@ describe("CalendarFilterBar", () => {
       />
     );
 
-    const onlyTouchpointsCheckbox = screen.getByLabelText("Only Touchpoints");
+    const onlyTouchpointsCheckbox = screen.getByLabelText("Follow-ups only");
     fireEvent.click(onlyTouchpointsCheckbox);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith({
@@ -285,7 +285,7 @@ describe("CalendarFilterBar", () => {
     );
 
     const segmentSelect = screen.getAllByRole("combobox")[0] as HTMLSelectElement;
-    expect(segmentSelect).toHaveTextContent("All Segments");
+    expect(segmentSelect).toHaveTextContent("All Groups");
     expect(segmentSelect).toHaveTextContent("Prospect");
     expect(segmentSelect).toHaveTextContent("VIP");
   });

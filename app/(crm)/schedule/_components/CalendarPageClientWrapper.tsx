@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { View } from "react-big-calendar";
-import { startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
+import { startOfWeek, endOfWeek, startOfDay, endOfDay, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useCalendarEventsRealtime } from "@/hooks/useCalendarEventsRealtime";
 import { useContactsRealtime } from "@/hooks/useContactsRealtime";
@@ -57,6 +57,12 @@ export default function CalendarPageClientWrapper() {
       case "week":
         min = startOfWeek(currentDate, { weekStartsOn: 0 }); // Sunday
         max = endOfWeek(currentDate, { weekStartsOn: 0 }); // Saturday
+        break;
+      case "agenda":
+        // Agenda view shows events from current date forward
+        // Fetch a wide range (6 months ahead) to ensure all agenda events are available
+        min = startOfDay(currentDate);
+        max = endOfMonth(addMonths(currentDate, 6)); // 6 months ahead
         break;
       case "month":
       default:
@@ -156,12 +162,12 @@ export default function CalendarPageClientWrapper() {
   // Don't show empty state while loading - let the calendar view handle loading state
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 crm-calendar">
       {/* Header - Mobile: stacked, Desktop: row with buttons on right */}
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Calendar</h1>
-          <p className="text-theme-dark text-lg">View and manage your calendar events</p>
+          <h1 className="text-4xl font-bold text-theme-darkest mb-2">Schedule</h1>
+          <p className="text-theme-dark text-lg">Plan your week with clarity—sessions, follow-ups, and focus time in one place</p>
         </div>
         {/* Buttons - Mobile: below header, Desktop: right side */}
         <div className="flex flex-col items-stretch sm:items-end gap-3 xl:shrink-0 w-full sm:w-auto">
@@ -174,7 +180,7 @@ export default function CalendarPageClientWrapper() {
             fullWidth
             className="whitespace-nowrap shadow-sm"
           >
-            New Event
+            Add time block
           </Button>
         </div>
       </div>
@@ -196,14 +202,14 @@ export default function CalendarPageClientWrapper() {
             />
           </svg>
           <span>
-            Last synced: {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "Never synced"}
+            Up to date as of {lastSync?.finishedAt ? formatRelativeTime(lastSync.finishedAt) : "never synced"}
           </span>
           <span className="text-theme-medium">•</span>
           <a
             href="/sync"
             className="text-blue-600 hover:text-blue-800 underline text-sm"
           >
-            Manage sync settings
+            Sync preferences
           </a>
         </div>
       )}
