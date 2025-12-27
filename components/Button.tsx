@@ -8,6 +8,7 @@ export type ButtonVariant =
   | "danger"
   | "secondary"
   | "outline"
+  | "accordion"
   | "link";
 
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
@@ -33,6 +34,8 @@ const variantStyles: Record<ButtonVariant, string> = {
     "bg-btn-secondary-bg text-btn-secondary-fg border-2 border-btn-secondary-border hover:bg-btn-secondary-bg-hover focus:ring-btn-secondary-focus-ring disabled:bg-btn-secondary-bg-disabled disabled:text-btn-secondary-fg-disabled",
   outline:
     "bg-transparent border-2 border-theme-dark text-theme-darker hover:bg-theme-light focus:ring-gray-500 disabled:border-gray-300 disabled:text-gray-400",
+  accordion:
+    "bg-transparent border-0 text-foreground hover:bg-card-highlight-light focus:ring-2 focus:ring-blue-500 disabled:text-theme-medium",
   link: "bg-transparent text-blue-600 hover:text-blue-700 underline focus:ring-blue-500 disabled:text-blue-400",
 };
 

@@ -284,21 +284,23 @@ function TouchpointsContent({ userId }: { userId: string }) {
       {/* Today's Priorities - Combined Section */}
       {(contactsWithTodayTouchpoints.length > 0 || contactsWithOverdueTouchpoints.length > 0) && (
         <Card padding="sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-theme-darkest">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold text-theme-darkest break-words">
                 Your Touchpoints This Week ({totalTodayPriorities} touchpoints scheduled)
               </h2>
               <p className="text-xs text-theme-dark mt-1">
                 Includes past due and upcoming touchpoints.
               </p>
             </div>
-            <ViewAllLink href="/touchpoints/today" />
+            <div className="flex-shrink-0">
+              <ViewAllLink href="/touchpoints/today" />
+            </div>
           </div>
 
           {/* Select All Checkbox for Today's Priorities */}
           {(contactsWithTodayTouchpoints.length > 0 || contactsWithOverdueTouchpoints.length > 0) && (
-            <div className="flex items-center gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
+            <div className="flex items-start gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
               <Checkbox
                 checked={
                   [...contactsWithTodayTouchpoints, ...contactsWithOverdueTouchpoints].every((c) =>
@@ -320,7 +322,7 @@ function TouchpointsContent({ userId }: { userId: string }) {
                   });
                 }}
                 label={`Select all ${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length} priorit${contactsWithTodayTouchpoints.length + contactsWithOverdueTouchpoints.length === 1 ? "y" : "ies"} for bulk actions`}
-                labelClassName="text-sm font-medium text-theme-darker break-words flex-1 min-w-0"
+                labelClassName="text-xs sm:text-sm font-medium text-theme-darker break-words flex-1 min-w-0 leading-tight"
               />
             </div>
           )}
@@ -332,9 +334,9 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
           {/* Due Today Subsection */}
           {contactsWithTodayTouchpoints.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-theme-darker mb-3">Due Today</h3>
-              <div className="grid grid-cols-1 gap-4">
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-sm font-medium text-theme-darker mb-2 sm:mb-3">Due Today</h3>
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 {contactsWithTodayTouchpoints.map((contact) => {
                   const isSelected = selectedTouchpointIds.has(contact.id);
                   return (
@@ -361,12 +363,14 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
           {/* Overdue Subsection */}
           {contactsWithOverdueTouchpoints.length > 0 && (
-            <div className={contactsWithTodayTouchpoints.length > 0 ? "border-t border-gray-200 pt-6" : ""}>
-              <div className="flex items-center justify-between mb-3">
+            <div className={contactsWithTodayTouchpoints.length > 0 ? "border-t border-gray-200 pt-4 sm:pt-6" : ""}>
+              <div className="flex items-center justify-between gap-3 mb-3">
                 <h3 className="text-sm font-medium text-theme-darkest">Past due</h3>
-                <ViewAllLink href="/touchpoints/overdue" />
+                <div className="flex-shrink-0">
+                  <ViewAllLink href="/touchpoints/overdue" />
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 {contactsWithOverdueTouchpoints.map((contact) => {
                   const isSelected = selectedTouchpointIds.has(contact.id);
                   return (
@@ -403,22 +407,24 @@ function TouchpointsContent({ userId }: { userId: string }) {
       {/* Upcoming Touchpoints */}
       {contactsWithUpcomingTouchpoints.length > 0 && (
         <Card padding="sm">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-            <h2 className="text-xl font-semibold text-theme-darkest">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-theme-darkest break-words">
               Upcoming ({totalUpcomingCount} total)
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               {contactsWithUpcomingTouchpoints.filter((c) => c.needsReminder).length > 0 && (
-                <span className="px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full">
+                <span className="px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-full whitespace-nowrap">
                   {contactsWithUpcomingTouchpoints.filter((c) => c.needsReminder).length} need attention
                 </span>
               )}
-              <ViewAllLink href="/touchpoints/upcoming" />
+              <div className="flex-shrink-0">
+                <ViewAllLink href="/touchpoints/upcoming" />
+              </div>
             </div>
           </div>
 
           {contactsWithUpcomingTouchpoints.length > 0 && (
-            <div className="flex items-center gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
+            <div className="flex items-start gap-2 sm:gap-3 pb-3 mb-3 border-b border-gray-200">
               <Checkbox
                 checked={contactsWithUpcomingTouchpoints.every((c) => selectedTouchpointIds.has(c.id))}
                 onChange={() => {
@@ -437,14 +443,14 @@ function TouchpointsContent({ userId }: { userId: string }) {
                   }
                 }}
                 label={`Select all ${contactsWithUpcomingTouchpoints.length} upcoming touchpoint${contactsWithUpcomingTouchpoints.length !== 1 ? "s" : ""}`}
-                labelClassName="text-sm font-medium text-theme-darker break-words flex-1 min-w-0"
+                labelClassName="text-xs sm:text-sm font-medium text-theme-darker break-words flex-1 min-w-0 leading-tight"
               />
             </div>
           )}
 
           {renderBulkActions(contactsWithUpcomingTouchpoints)}
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {contactsWithUpcomingTouchpoints.map((contact) => {
               const isSelected = selectedTouchpointIds.has(contact.id);
               return (
@@ -471,14 +477,18 @@ function TouchpointsContent({ userId }: { userId: string }) {
 
       {/* Recently Active - Always render */}
       <Card padding="sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-theme-darkest">Recently Active</h2>
-          {!showSkeletons && recentContacts.length > 0 && <ViewAllLink href="/contacts" />}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-theme-darkest">Recently Active</h2>
+          {!showSkeletons && recentContacts.length > 0 && (
+            <div className="flex-shrink-0">
+              <ViewAllLink href="/contacts" />
+            </div>
+          )}
         </div>
         {showSkeletons ? (
           <ThemedSuspense isLoading={true} variant="list" />
         ) : recentContacts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {recentContacts.map((contact) => (
               <ContactCard key={contact.contactId} contact={{ ...contact, id: contact.contactId }} showArrow={true} userId={userId} />
             ))}

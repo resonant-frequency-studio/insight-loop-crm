@@ -26,10 +26,10 @@ export default function SentimentAlertsCard({
   if (negativeContacts.length === 0) {
     return (
       <Card padding="md">
-      <h3 className="text-lg font-semibold text-theme-darkest mb-2">
+      <h3 className="text-base sm:text-lg font-semibold text-theme-darkest mb-2">
         Conversations That May Need Care
       </h3>
-      <p className="text-sm text-theme-dark">
+      <p className="text-xs sm:text-sm text-theme-dark">
         No conversations with concerning sentiment in recent activity.
       </p>
       </Card>
@@ -38,21 +38,21 @@ export default function SentimentAlertsCard({
 
   return (
     <Card padding="md">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-theme-darkest">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-theme-darkest">
           Conversations That May Need Care
         </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-theme-dark">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span className="text-xs sm:text-sm text-theme-dark">
             {negativeContacts.length}{" "}
             {negativeContacts.length === 1 ? "conversation" : "conversations"}
           </span>
-          <Button onClick={handleReviewAll} variant="secondary" size="sm">
+          <Button onClick={handleReviewAll} variant="secondary" size="sm" className="w-full sm:w-auto">
             Review relationships
           </Button>
         </div>
       </div>
-      <div className="space-y-3 mb-4">
+      <div className="space-y-2 sm:space-y-3 mb-4">
         {topThree.map((contact) => {
           const snippet = contact.summary
             ? contact.summary.substring(0, 100) + (contact.summary.length > 100 ? "..." : "")
@@ -60,30 +60,32 @@ export default function SentimentAlertsCard({
           return (
             <div
               key={contact.contactId}
-              className="p-3 bg-card-highlight-light rounded-sm border-l-4 border-red-500"
+              className="p-2.5 sm:p-3 bg-card-highlight-light rounded-sm border-l-4 border-red-500"
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <Link
-                    href={`/contacts/${encodeURIComponent(contact.contactId)}`}
-                    className="text-sm font-medium text-theme-darkest hover:underline block mb-1"
-                  >
-                    {getDisplayName(contact)}
-                  </Link>
-                  <p className="text-xs text-theme-dark line-clamp-2">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <Link
+                      href={`/contacts/${encodeURIComponent(contact.contactId)}`}
+                      className="text-xs sm:text-sm font-medium text-theme-darkest hover:underline block flex-1 min-w-0"
+                    >
+                      {getDisplayName(contact)}
+                    </Link>
+                    <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-sm shrink-0 whitespace-nowrap">
+                      {contact.sentiment}
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-theme-dark line-clamp-2 break-words">
                     {snippet}
                   </p>
                 </div>
-                <span className="px-2 py-1 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-sm shrink-0">
-                  {contact.sentiment}
-                </span>
               </div>
             </div>
           );
         })}
       </div>
       {negativeContacts.length > 3 && (
-        <p className="text-xs text-theme-dark text-center">
+        <p className="text-[11px] sm:text-xs text-theme-dark text-center">
           +{negativeContacts.length - 3} more contacts with negative sentiment
         </p>
       )}
