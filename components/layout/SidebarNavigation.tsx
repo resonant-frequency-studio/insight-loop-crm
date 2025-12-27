@@ -44,6 +44,17 @@ export function SidebarNavigation({
           ? `${baseLinkClasses} ${isSaving ? "text-theme-medium cursor-not-allowed pointer-events-none" : linkIsActive ? "bg-card-light text-foreground" : "text-foreground hover:bg-card-light"}`
           : baseLinkClasses;
 
+        // Generate data-tour attribute for tour targeting
+        const getTourSelector = (href: string): string | undefined => {
+          if (href === "/insights") return "nav-insights";
+          if (href === "/schedule") return "nav-schedule";
+          if (href === "/contacts") return "nav-contacts";
+          if (href === "/action-items") return "nav-action-items";
+          return undefined;
+        };
+
+        const tourSelector = getTourSelector(navLink.href);
+
         const linkContent = (
           <Link
             href={navLink.href}
@@ -51,6 +62,7 @@ export function SidebarNavigation({
             prefetch={navLink.href !== "#"}
             className={linkClasses}
             title={isCollapsed ? navLink.label : undefined}
+            {...(tourSelector ? { "data-tour": tourSelector } : {})}
           >
             <svg
               className={`${isCollapsed ? "w-5 h-5" : "w-5 h-5 mr-3"}`}
