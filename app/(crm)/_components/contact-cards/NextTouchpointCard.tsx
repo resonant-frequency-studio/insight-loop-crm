@@ -80,11 +80,18 @@ export default function NextTouchpointCard({
     if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
       return false;
     }
-    const date = new Date(dateString);
+    // Parse date string components manually to avoid timezone issues
+    // new Date("2024-01-16") interprets as UTC midnight, which can shift dates
+    // when setHours is called in local timezone. Instead, parse components directly.
+    const [year, month, day] = dateString.split("-").map(Number);
+    // month is 0-indexed in Date constructor (0 = January, 11 = December)
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+    
+    // Get today's date in local timezone at midnight
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    date.setHours(0, 0, 0, 0);
-    return date > today;
+    const todayAtMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+    
+    return date > todayAtMidnight;
   };
 
   // Check if touchpoint is active (future date + non-empty message)
