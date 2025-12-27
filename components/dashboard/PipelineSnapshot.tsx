@@ -71,7 +71,6 @@ export default function PipelineSnapshot({ userId }: PipelineSnapshotProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="text-lg font-semibold text-theme-darkest mb-4">Pipeline Snapshot</h3>
       <div className="grid grid-cols-2 gap-3">
         {topSegments.map(([segment, count], index) => (
           <Link

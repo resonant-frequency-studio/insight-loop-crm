@@ -35,40 +35,42 @@ const DescriptionContent = React.memo(({ description }: { description: string })
   return (
     <div className="mb-2">
       {displayText && (
-        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2 break-words">
           {displayText}
         </p>
       )}
       {hasLinks && (
         <div className="space-y-1 mt-2">
-          <p className="text-xs font-medium text-gray-500 mb-1">Documents:</p>
+          <p className="text-[10px] sm:text-xs font-medium text-gray-500 mb-1">Documents:</p>
           {parsed.links.map((link, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-xs">
-              <span className="text-gray-600 truncate flex-1">
+            <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 text-xs">
+              <span className="text-gray-600 truncate flex-1 min-w-0">
                 {link.hostname}
                 {link.path && ` ${formatLinkPath(link.path, 40)}`}
               </span>
-              <button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(link.url);
-                  } catch (err) {
-                    // Silently fail - clipboard errors are usually user permission issues
-                  }
-                }}
-                className="px-2 py-0.5 text-gray-600 hover:bg-gray-100 rounded"
-                title="Copy link"
-              >
-                Copy
-              </button>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2 py-0.5 text-blue-600 hover:bg-blue-50 rounded"
-              >
-                Open
-              </a>
+              <div className="flex gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(link.url);
+                    } catch (err) {
+                      // Silently fail - clipboard errors are usually user permission issues
+                    }
+                  }}
+                  className="px-1.5 py-0.5 sm:px-2 text-[10px] sm:text-xs text-gray-600 hover:bg-gray-100 rounded whitespace-nowrap"
+                  title="Copy link"
+                >
+                  Copy
+                </button>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-1.5 py-0.5 sm:px-2 text-[10px] sm:text-xs text-blue-600 hover:bg-blue-50 rounded whitespace-nowrap"
+                >
+                  Open
+                </a>
+              </div>
             </div>
           ))}
         </div>
@@ -124,25 +126,25 @@ export default function ContactTimelineCard({
     switch (type) {
       case "calendar_event":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         );
       case "touchpoint":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
       case "action_item":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
           </svg>
         );
       case "email":
         return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         );
@@ -261,14 +263,14 @@ export default function ContactTimelineCard({
   return (
     <Card padding="md">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-theme-darkest mb-3">Timeline</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-theme-darkest mb-3">Timeline</h2>
         {/* Filter buttons */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {(["all", "calendar_event", "touchpoint", "action_item", "email"] as TimelineFilter[]).map((filterType) => (
             <button
               key={filterType}
               onClick={() => setFilter(filterType)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`px-2 py-1 sm:px-3 text-xs sm:text-sm rounded-md transition-colors whitespace-nowrap ${
                 filter === filterType
                   ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -280,15 +282,15 @@ export default function ContactTimelineCard({
         </div>
       </div>
       <div className="mb-6">
-        <p className="text-sm text-theme-dark mb-3">
+        <p className="text-xs sm:text-sm text-theme-dark mb-3">
           View all interactions, meetings, touchpoints, and action items in chronological order.
         </p>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
           {/* Date range selector */}
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="px-2 py-1 text-sm rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-2 py-1 text-xs sm:text-sm rounded-md border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
           >
             <option value={15}>Last 15 days</option>
             <option value={30}>Last 30 days</option>
@@ -298,7 +300,7 @@ export default function ContactTimelineCard({
           {days < MAX_TIMELINE_DAYS && (
             <button
               onClick={handleLoadOlder}
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 underline text-left sm:text-right"
             >
               Load older activity
             </button>
@@ -356,27 +358,29 @@ export default function ContactTimelineCard({
               return (
                 <div
                   key={series.seriesId}
-                  className="flex gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex gap-2 sm:gap-4 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    {getItemIcon("calendar_event")}
+                  <div className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-xs font-medium text-gray-500 uppercase">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                          <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase">
                             Meeting
                           </span>
-                          <span className="text-xs text-gray-400">·</span>
-                          <span className="text-sm font-semibold text-theme-darkest">
+                          <span className="text-xs text-gray-400 hidden sm:inline">·</span>
+                          <span className="text-xs sm:text-sm font-semibold text-theme-darkest break-words">
                             {series.title}
                           </span>
-                          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                          <span className="inline-flex items-center px-1.5 py-0.5 sm:px-2 text-[10px] sm:text-xs font-medium rounded bg-purple-100 text-purple-800">
                             Recurring
                           </span>
                         </div>
-                        <div className="text-sm text-gray-600 mb-2">
+                        <div className="text-xs sm:text-sm text-gray-600 mb-2">
                           <span className="inline-block mr-1">↳</span>
                           <span>{series.occurrenceCount} occurrences</span>
                           {frequency !== "Recurring" && (
@@ -389,19 +393,19 @@ export default function ContactTimelineCard({
                           <span>Last: {lastDateStr}</span>
                         </div>
                       </div>
-                      <div className="shrink-0 flex gap-2">
+                      <div className="shrink-0 flex flex-wrap gap-1.5 sm:gap-2">
                         <button
                           onClick={() => {
                             // TODO: Expand series accordion (will implement in next step)
                           }}
-                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
                         >
                           View series
                         </button>
                         {mostRecentEvent?.eventId && (
                           <button
                             onClick={() => handleQuickAction(mostRecentEvent, "view-event")}
-                            className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                            className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
                           >
                             View most recent
                           </button>
@@ -442,26 +446,26 @@ export default function ContactTimelineCard({
             return (
               <div
                 key={item.id}
-                className="flex gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex gap-2 sm:gap-4 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <div className="shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <div className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                   {getItemIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-500 uppercase">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase">
                           {getItemTypeLabel(item.type)}
                         </span>
                         <span className="text-xs text-gray-400">
                           {formatTimestamp(item.timestamp)}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-theme-darkest mb-1">{item.title}</h3>
+                      <h3 className="text-sm sm:text-base font-semibold text-theme-darkest mb-1 break-words">{item.title}</h3>
                       {item.description && <DescriptionContent description={item.description} />}
                       {item.type === "calendar_event" && item.location && (
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-500 mb-2 break-words">
                           📍 {item.location}
                         </p>
                       )}
@@ -471,11 +475,11 @@ export default function ContactTimelineCard({
                         </p>
                       )}
                     </div>
-                    <div className="shrink-0 flex gap-2">
+                    <div className="shrink-0 flex flex-wrap gap-1.5 sm:gap-2">
                       {item.type === "calendar_event" && (
                         <button
                           onClick={() => handleQuickAction(item, "view-event")}
-                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                          className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 whitespace-nowrap"
                         >
                           View Event
                         </button>
@@ -483,7 +487,7 @@ export default function ContactTimelineCard({
                       {item.type === "action_item" && item.status === "pending" && (
                         <button
                           onClick={() => handleQuickAction(item, "complete-action")}
-                          className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100"
+                          className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 whitespace-nowrap"
                         >
                           Complete
                         </button>
@@ -491,7 +495,7 @@ export default function ContactTimelineCard({
                       {item.type === "email" && (
                         <button
                           onClick={() => handleQuickAction(item, "view-email")}
-                          className="text-xs px-2 py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100"
+                          className="text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 bg-gray-50 text-gray-600 rounded hover:bg-gray-100 whitespace-nowrap"
                         >
                           View Email
                         </button>

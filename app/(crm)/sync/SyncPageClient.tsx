@@ -220,43 +220,46 @@ export default function SyncPageClient({
 
       {/* Sync Gmail Button - Static, renders immediately */}
       <Card padding="md" className="bg-sync-blue-bg border-sync-blue-border">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-sync-blue-text-primary mb-1">Sync Gmail</h3>
-            <p className="text-xs text-sync-blue-text-secondary mb-3">
-              Fetches new email threads from your Gmail account and links them to your contacts. This will:
+            <div className="text-xs text-sync-blue-text-secondary mb-3">
+              <p className="mb-1">Fetches new email threads from your Gmail account and links them to your contacts. This will:</p>
               <ul className="list-disc list-inside mt-1 space-y-0.5">
                 <li>Download recent email threads (or all threads if this is your first sync)</li>
                 <li>Match emails to existing contacts by email address</li>
                 <li>Store email messages and thread metadata in your CRM</li>
                 <li>Update contact last email dates and thread counts</li>
               </ul>
-            </p>
+            </div>
           </div>
-          <Button
-            onClick={handleManualSync}
-            disabled={syncing}
-            loading={syncing}
-            size="sm"
-            variant="secondary"
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            }
-          >
-            Sync Gmail
-          </Button>
+          <div className="shrink-0">
+            <Button
+              onClick={handleManualSync}
+              disabled={syncing}
+              loading={syncing}
+              size="sm"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              icon={
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              }
+            >
+              Sync Gmail
+            </Button>
+          </div>
         </div>
         {syncError && (
           <ErrorMessage
@@ -270,53 +273,55 @@ export default function SyncPageClient({
 
       {/* Sync Calendar Button - Static, renders immediately */}
       <Card padding="md" className="bg-sync-purple-bg border-sync-purple-border">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-sync-purple-text-primary mb-1">Sync Calendar</h3>
-            <p className="text-xs text-sync-purple-text-secondary mb-3">
-              Imports calendar events from your Google Calendar and links them to your contacts. This will:
+            <div className="text-xs text-sync-purple-text-secondary mb-3">
+              <p className="mb-1">Imports calendar events from your Google Calendar and links them to your contacts. This will:</p>
               <ul className="list-disc list-inside mt-1 space-y-0.5">
                 <li>Fetch calendar events from the past 30-180 days (depending on sync type)</li>
                 <li>Match events to contacts by email addresses in attendee lists</li>
                 <li>Create calendar event records linked to your contacts</li>
                 <li>Extract meeting insights and action items from event descriptions</li>
               </ul>
-            </p>
+            </div>
           </div>
-          <Button
-            onClick={async () => {
-              setSyncingCalendar(true);
-              setCalendarSyncError(null);
-              try {
-                const response = await fetch('/api/calendar/sync', { 
-                  method: 'POST',
-                  credentials: 'include',
-                });
-                const data = await response.json();
-                if (!data.ok) {
-                  setCalendarSyncError(data.error || 'Failed to sync calendar');
+          <div className="shrink-0">
+            <Button
+              onClick={async () => {
+                setSyncingCalendar(true);
+                setCalendarSyncError(null);
+                try {
+                  const response = await fetch('/api/calendar/sync', { 
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                  const data = await response.json();
+                  if (!data.ok) {
+                    setCalendarSyncError(data.error || 'Failed to sync calendar');
+                  }
+                } catch (err) {
+                  setCalendarSyncError(err instanceof Error ? err.message : 'Failed to sync calendar');
+                } finally {
+                  setSyncingCalendar(false);
                 }
-              } catch (err) {
-                setCalendarSyncError(err instanceof Error ? err.message : 'Failed to sync calendar');
-              } finally {
-                setSyncingCalendar(false);
-              }
-            }}
-            disabled={syncingCalendar}
-            loading={syncingCalendar}
-            size="sm"
-            variant="secondary"
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
+              }}
+              disabled={syncingCalendar}
+              loading={syncingCalendar}
+              size="sm"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              icon={
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
@@ -324,6 +329,7 @@ export default function SyncPageClient({
           >
             Sync Calendar
           </Button>
+          </div>
         </div>
         {calendarSyncError && (
           <ErrorMessage
@@ -337,11 +343,11 @@ export default function SyncPageClient({
 
       {/* Import Contacts Button - Static, renders immediately */}
       <Card padding="md" className="bg-sync-green-bg border-sync-green-border">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-sync-green-text-primary mb-1">Sync Contacts</h3>
-            <p className="text-xs text-sync-green-text-secondary mb-3">
-              Imports contacts from your Google Contacts account. This will:
+            <div className="text-xs text-sync-green-text-secondary mb-3">
+              <p className="mb-1">Imports contacts from your Google Contacts account. This will:</p>
               <ul className="list-disc list-inside mt-1 space-y-0.5">
                 <li>Fetch all contacts from your Google Contacts</li>
                 <li>Create new contact records for contacts not already in your CRM</li>
@@ -349,86 +355,89 @@ export default function SyncPageClient({
                 <li>Import contact names, email addresses, company names, and profile photos</li>
                 <li>Only add new contacts—never overwrites or modifies existing contacts</li>
               </ul>
-            </p>
+            </div>
           </div>
-          <Button
-            onClick={async () => {
-              setSyncingContacts(true);
-              setContactsSyncError(null);
-              setCurrentContactsSyncJobId(null);
+          <div className="shrink-0">
+            <Button
+              onClick={async () => {
+                setSyncingContacts(true);
+                setContactsSyncError(null);
+                setCurrentContactsSyncJobId(null);
 
-              try {
-                const response = await fetch("/api/contacts/sync");
-
-                // Check if response is OK before parsing JSON
-                if (!response.ok) {
-                  // Try to get error message from response
-                  let errorMessage = `Import failed with status ${response.status}`;
-                  try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.error || errorMessage;
-                  } catch {
-                    // If response is not JSON, use status text
-                    errorMessage = response.statusText || errorMessage;
-                  }
-                  throw new Error(errorMessage);
-                }
-
-                // Parse JSON response with error handling
-                let data;
                 try {
-                  const text = await response.text();
-                  if (!text || text.trim() === "") {
-                    throw new Error("Empty response from server");
-                  }
-                  data = JSON.parse(text);
-                } catch (parseError) {
-                  if (parseError instanceof SyntaxError) {
-                    throw new Error("Invalid response from server. Please try again.");
-                  }
-                  throw parseError;
-                }
+                  const response = await fetch("/api/contacts/sync");
 
-                if (!data.ok) {
-                  const errorMessage = data.error || "Import failed";
-                  throw new Error(errorMessage);
-                }
+                  // Check if response is OK before parsing JSON
+                  if (!response.ok) {
+                    // Try to get error message from response
+                    let errorMessage = `Import failed with status ${response.status}`;
+                    try {
+                      const errorData = await response.json();
+                      errorMessage = errorData.error || errorMessage;
+                    } catch {
+                      // If response is not JSON, use status text
+                      errorMessage = response.statusText || errorMessage;
+                    }
+                    throw new Error(errorMessage);
+                  }
 
-                // Success - start tracking the sync job
-                setCurrentContactsSyncJobId(data.syncJobId);
-                setSyncingContacts(false); // Button is no longer "loading" since job runs in background
-              } catch (error) {
-                const errorMessage = extractErrorMessage(error);
-                setContactsSyncError(errorMessage);
-                reportException(error, {
-                  context: "Manual contacts import error",
-                  tags: { component: "SyncPageClient" },
-                });
-                setSyncingContacts(false);
+                  // Parse JSON response with error handling
+                  let data;
+                  try {
+                    const text = await response.text();
+                    if (!text || text.trim() === "") {
+                      throw new Error("Empty response from server");
+                    }
+                    data = JSON.parse(text);
+                  } catch (parseError) {
+                    if (parseError instanceof SyntaxError) {
+                      throw new Error("Invalid response from server. Please try again.");
+                    }
+                    throw parseError;
+                  }
+
+                  if (!data.ok) {
+                    const errorMessage = data.error || "Import failed";
+                    throw new Error(errorMessage);
+                  }
+
+                  // Success - start tracking the sync job
+                  setCurrentContactsSyncJobId(data.syncJobId);
+                  setSyncingContacts(false); // Button is no longer "loading" since job runs in background
+                } catch (error) {
+                  const errorMessage = extractErrorMessage(error);
+                  setContactsSyncError(errorMessage);
+                  reportException(error, {
+                    context: "Manual contacts import error",
+                    tags: { component: "SyncPageClient" },
+                  });
+                  setSyncingContacts(false);
+                }
+              }}
+              disabled={syncingContacts || (contactsSyncJob?.status === "running")}
+              loading={syncingContacts}
+              size="sm"
+              variant="secondary"
+              className="w-full sm:w-auto"
+              icon={
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
               }
-            }}
-            disabled={syncingContacts || (contactsSyncJob?.status === "running")}
-            loading={syncingContacts}
-            size="sm"
-            variant="secondary"
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            }
-          >
-            Sync Contacts
-          </Button>
+            >
+              Sync Contacts
+            </Button>
+          </div>
         </div>
         {contactsSyncError && (
           <ErrorMessage
@@ -695,20 +704,21 @@ export default function SyncPageClient({
 
         {/* Sync History */}
         <Card padding="md">
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-theme-darkest mb-1">Sync History</h2>
-              <p className="text-sm text-theme-medium">
+              <h2 className="text-lg sm:text-xl font-semibold text-theme-darkest mb-1">Sync History</h2>
+              <p className="text-xs sm:text-sm text-theme-medium">
                 View past sync operations for Gmail, Calendar, and Contacts. Each entry shows what was synced, when it started, and the results.
               </p>
             </div>
             {syncHistory.length > 1 && (
-              <div className="ml-4">
+              <div className="shrink-0 sm:ml-4">
                 <Button
                   onClick={() => setShowClearConfirm(true)}
                   disabled={clearingHistory}
                   size="sm"
                   variant="outline"
+                  className="w-full sm:w-auto"
                   icon={
                     <svg
                       className="w-4 h-4"

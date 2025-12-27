@@ -55,7 +55,6 @@ export default function SavedSegments({ userId }: SavedSegmentsProps) {
 
   return (
     <Card className="p-4">
-      <h3 className="text-lg font-semibold text-theme-darkest mb-4">Saved Segments</h3>
       <div className="space-y-2">
         {topSegments.map(([segment, count]) => (
           <Link

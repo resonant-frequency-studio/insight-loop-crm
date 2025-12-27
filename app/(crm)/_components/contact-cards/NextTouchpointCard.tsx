@@ -163,7 +163,8 @@ export default function NextTouchpointCard({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contact?.touchpointStatus, showRestoreButton]);
+    // Note: showRestoreButton is intentionally NOT in dependencies to avoid clearing timer when it changes
+  }, [contact?.touchpointStatus]);
   
   // Reset form state only when contactId changes (switching to a different contact)
   // Don't reset when contact data updates from our own save

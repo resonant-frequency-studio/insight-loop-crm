@@ -50,14 +50,19 @@ interface CalendarViewProps {
   onNavigate: (date: Date) => void;
   contacts?: import("@/types/firestore").Contact[]; // Optional contacts for event card
   onSlotSelect?: (start: Date, end: Date) => void; // Callback when slot is selected
+  onViewChange?: (view: View) => void; // Callback when view changes
+  initialView?: View; // Initial view to use
 }
 
-export default function CalendarView({ events, currentDate, onNavigate, contacts, onSlotSelect }: CalendarViewProps) {
+export default function CalendarView({ events, currentDate, onNavigate, contacts, onSlotSelect, onViewChange, initialView }: CalendarViewProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
   
-  // Compute the effective view: mobile always uses day, desktop uses saved preference
+  // Compute the effective view: mobile always uses day, desktop uses saved preference or initialView
   const effectiveView = useMemo(() => {
+    if (initialView) {
+      return initialView;
+    }
     if (isMobile) {
       return "day" as View;
     }
@@ -69,12 +74,12 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
       }
     }
     return "month" as View;
-  }, [isMobile]);
+  }, [isMobile, initialView]);
 
   const [view, setView] = useState<View>(effectiveView);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
-  // Update view when effective view changes (e.g., device type change)
+  // Update view when effective view changes (e.g., device type change or initialView prop)
   useEffect(() => {
     setView(effectiveView);
   }, [effectiveView]);
@@ -126,6 +131,10 @@ export default function CalendarView({ events, currentDate, onNavigate, contacts
     setView(newView);
     if (!isMobile && typeof window !== "undefined") {
       localStorage.setItem(CALENDAR_VIEW_STORAGE_KEY, newView);
+    }
+    // Notify parent component of view change
+    if (onViewChange) {
+      onViewChange(newView);
     }
   };
 

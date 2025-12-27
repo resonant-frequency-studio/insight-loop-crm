@@ -135,7 +135,7 @@ export default function BasicInfoCard({ contactId, userId }: BasicInfoCardProps)
               firstName: currentFirstName,
               lastName: currentLastName,
               company: currentCompany,
-              secondaryEmails: currentSecondaryEmails.length > 0 ? currentSecondaryEmails : undefined,
+              secondaryEmails: currentSecondaryEmails, // Always send array, even if empty, to clear existing emails
             },
           },
           {

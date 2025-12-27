@@ -19,9 +19,14 @@ interface FilterState {
   companySearch: string;
   upcomingTouchpoints: boolean;
   showArchived: boolean;
-  customFilter?: "at-risk" | "warm" | null;
+  customFilter?: "at-risk" | "warm" | "needs-attention" | null;
   lastEmailDateRange: DateRange;
   includeNewContacts: boolean;
+  leadSourceMissing?: boolean;
+  engagementLevel?: "low" | "high" | null;
+  lastEmailRecent?: boolean;
+  sentimentNegative?: boolean;
+  tagsMissing?: string | null;
 }
 
 interface UseFilterContactsReturn {
@@ -35,9 +40,14 @@ interface UseFilterContactsReturn {
   companySearch: string;
   upcomingTouchpoints: boolean;
   showArchived: boolean;
-  customFilter?: "at-risk" | "warm" | null;
+  customFilter?: "at-risk" | "warm" | "needs-attention" | null;
   lastEmailDateRange: DateRange;
   includeNewContacts: boolean;
+  leadSourceMissing?: boolean;
+  engagementLevel?: "low" | "high" | null;
+  lastEmailRecent?: boolean;
+  sentimentNegative?: boolean;
+  tagsMissing?: string | null;
   setSelectedSegment: (segment: string) => void;
   setSelectedTags: (tags: string[]) => void;
   setEmailSearch: (email: string) => void;
@@ -46,9 +56,14 @@ interface UseFilterContactsReturn {
   setCompanySearch: (company: string) => void;
   setUpcomingTouchpoints: (value: boolean) => void;
   setShowArchived: (value: boolean) => void;
-  setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setCustomFilter: (filter: "at-risk" | "warm" | "needs-attention" | null) => void;
   setLastEmailDateRange: (range: DateRange) => void;
   setIncludeNewContacts: (value: boolean) => void;
+  setLeadSourceMissing: (value: boolean) => void;
+  setEngagementLevel: (level: "low" | "high" | null) => void;
+  setLastEmailRecent: (value: boolean) => void;
+  setSentimentNegative: (value: boolean) => void;
+  setTagsMissing: (tag: string | null) => void;
   onSegmentChange: (segment: string) => void;
   onTagsChange: (tags: string[]) => void;
   onEmailSearchChange: (email: string) => void;
@@ -72,7 +87,12 @@ export function useFilterContacts(
   const [companySearch, setCompanySearch] = useState<string>("");
   const [upcomingTouchpoints, setUpcomingTouchpoints] = useState<boolean>(initialUpcomingTouchpoints);
   const [showArchived, setShowArchived] = useState<boolean>(false);
-  const [customFilter, setCustomFilter] = useState<"at-risk" | "warm" | null>(null);
+  const [customFilter, setCustomFilter] = useState<"at-risk" | "warm" | "needs-attention" | null>(null);
+  const [leadSourceMissing, setLeadSourceMissing] = useState<boolean>(false);
+  const [engagementLevel, setEngagementLevel] = useState<"low" | "high" | null>(null);
+  const [lastEmailRecent, setLastEmailRecent] = useState<boolean>(false);
+  const [sentimentNegative, setSentimentNegative] = useState<boolean>(false);
+  const [tagsMissing, setTagsMissing] = useState<string | null>(null);
   
   // Default date range: last 12 months
   const getDefaultDateRange = (): DateRange => {
@@ -131,6 +151,11 @@ export function useFilterContacts(
     customFilter,
     lastEmailDateRange,
     includeNewContacts,
+    leadSourceMissing,
+    engagementLevel,
+    lastEmailRecent,
+    sentimentNegative,
+    tagsMissing,
   };
 
   const filteredContacts = useMemo(() => {
@@ -219,8 +244,10 @@ export function useFilterContacts(
     // Custom filters from AI Insights
     if (filters.customFilter === "at-risk") {
       const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       filtered = filtered.filter((contact) => {
-        if (!contact.lastEmailDate) return true; // No email history is at-risk
+        const hasLowEngagement = !contact.engagementScore || contact.engagementScore < 40;
+        if (!contact.lastEmailDate) return hasLowEngagement;
         // Handle Firestore Timestamp or Date string
         const lastEmailDate =
           contact.lastEmailDate instanceof Date
@@ -230,14 +257,103 @@ export function useFilterContacts(
             : typeof contact.lastEmailDate === "object" && "toDate" in contact.lastEmailDate
             ? (contact.lastEmailDate as { toDate: () => Date }).toDate()
             : null;
-        if (!lastEmailDate) return true;
-        const daysSinceReply = (now.getTime() - lastEmailDate.getTime()) / (1000 * 60 * 60 * 24);
-        return daysSinceReply >= 14;
+        if (!lastEmailDate) return hasLowEngagement;
+        return lastEmailDate < ninetyDaysAgo && hasLowEngagement;
       });
     } else if (filters.customFilter === "warm") {
       filtered = filtered.filter((contact) => {
         const score = contact.engagementScore || 0;
         return score >= 50 && score < 70; // Medium-high engagement
+      });
+    } else if (filters.customFilter === "needs-attention") {
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter((contact) => {
+        // Low engagement
+        const hasLowEngagement = !contact.engagementScore || contact.engagementScore < 40;
+        
+        // Overdue touchpoint
+        const hasOverdueTouchpoint =
+          contact.touchpointStatus === "pending" &&
+          contact.nextTouchpointDate &&
+          (() => {
+            const touchpointDate =
+              contact.nextTouchpointDate instanceof Date
+                ? contact.nextTouchpointDate
+                : typeof contact.nextTouchpointDate === "string"
+                ? new Date(contact.nextTouchpointDate)
+                : typeof contact.nextTouchpointDate === "object" && "toDate" in contact.nextTouchpointDate
+                ? (contact.nextTouchpointDate as { toDate: () => Date }).toDate()
+                : null;
+            return touchpointDate && touchpointDate < now;
+          })();
+        
+        // Negative sentiment
+        const hasNegativeSentiment =
+          contact.sentiment === "Negative" || contact.sentiment === "Very Negative";
+        
+        // Last interaction > 90 days ago
+        const lastInteractionOld =
+          !contact.lastEmailDate ||
+          (() => {
+            const lastEmail =
+              contact.lastEmailDate instanceof Date
+                ? contact.lastEmailDate
+                : typeof contact.lastEmailDate === "string"
+                ? new Date(contact.lastEmailDate)
+                : typeof contact.lastEmailDate === "object" && "toDate" in contact.lastEmailDate
+                ? (contact.lastEmailDate as { toDate: () => Date }).toDate()
+                : null;
+            return lastEmail && lastEmail < ninetyDaysAgo;
+          })();
+        
+        return hasLowEngagement || hasOverdueTouchpoint || hasNegativeSentiment || lastInteractionOld;
+      });
+    }
+
+    // Filter by missing lead source
+    if (filters.leadSourceMissing) {
+      filtered = filtered.filter((contact) => !contact.leadSource || contact.leadSource.trim() === "");
+    }
+
+    // Filter by engagement level
+    if (filters.engagementLevel === "low") {
+      filtered = filtered.filter((contact) => !contact.engagementScore || contact.engagementScore < 40);
+    } else if (filters.engagementLevel === "high") {
+      filtered = filtered.filter((contact) => contact.engagementScore !== null && contact.engagementScore !== undefined && contact.engagementScore >= 70);
+    }
+
+    // Filter by recent last email
+    if (filters.lastEmailRecent) {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter((contact) => {
+        if (!contact.lastEmailDate) return false;
+        const lastEmailDate =
+          contact.lastEmailDate instanceof Date
+            ? contact.lastEmailDate
+            : typeof contact.lastEmailDate === "string"
+            ? new Date(contact.lastEmailDate)
+            : typeof contact.lastEmailDate === "object" && "toDate" in contact.lastEmailDate
+            ? (contact.lastEmailDate as { toDate: () => Date }).toDate()
+            : null;
+        return lastEmailDate && lastEmailDate >= sevenDaysAgo;
+      });
+    }
+
+    // Filter by negative sentiment
+    if (filters.sentimentNegative) {
+      filtered = filtered.filter(
+        (contact) =>
+          contact.sentiment === "Negative" || contact.sentiment === "Very Negative"
+      );
+    }
+
+    // Filter by missing tag
+    if (filters.tagsMissing) {
+      filtered = filtered.filter((contact) => {
+        const tags = contact.tags || [];
+        return !tags.includes(filters.tagsMissing!);
       });
     }
 
@@ -280,7 +396,7 @@ export function useFilterContacts(
     }
 
     return filtered;
-  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter, filters.lastEmailDateRange, filters.includeNewContacts]);
+  }, [contacts, filters.selectedSegment, filters.selectedTags, filters.emailSearch, filters.firstNameSearch, filters.lastNameSearch, filters.companySearch, filters.upcomingTouchpoints, filters.showArchived, filters.customFilter, filters.lastEmailDateRange, filters.includeNewContacts, filters.leadSourceMissing, filters.engagementLevel, filters.lastEmailRecent, filters.sentimentNegative, filters.tagsMissing]);
 
   const clearFilters = () => {
     setSelectedSegment("");
@@ -294,6 +410,11 @@ export function useFilterContacts(
     setCustomFilter(null);
     setLastEmailDateRange(getDefaultDateRange());
     setIncludeNewContacts(true);
+    setLeadSourceMissing(false);
+    setEngagementLevel(null);
+    setLastEmailRecent(false);
+    setSentimentNegative(false);
+    setTagsMissing(null);
   };
 
   // Check if date range is different from default (12 months)
@@ -325,7 +446,12 @@ export function useFilterContacts(
     upcomingTouchpoints ||
     showArchived ||
     !!customFilter ||
-    !isDefaultDateRange;
+    !isDefaultDateRange ||
+    leadSourceMissing ||
+    !!engagementLevel ||
+    lastEmailRecent ||
+    sentimentNegative ||
+    !!tagsMissing;
 
   return {
     filteredContacts,
@@ -352,6 +478,16 @@ export function useFilterContacts(
     setCustomFilter,
     setLastEmailDateRange,
     setIncludeNewContacts,
+    leadSourceMissing,
+    engagementLevel,
+    lastEmailRecent,
+    sentimentNegative,
+    tagsMissing,
+    setLeadSourceMissing,
+    setEngagementLevel,
+    setLastEmailRecent,
+    setSentimentNegative,
+    setTagsMissing,
     onSegmentChange: setSelectedSegment,
     onTagsChange: setSelectedTags,
     onEmailSearchChange: setEmailSearch,

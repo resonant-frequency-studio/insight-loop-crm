@@ -2,14 +2,14 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserId } from "@/lib/auth-utils";
 import { isPlaywrightTest } from "@/util/test-utils";
-import ChartsPageClient from "./ChartsPageClient";
+import InsightsPageClient from "./InsightsPageClient";
 
 export const metadata: Metadata = {
-  title: "Charts | Insight Loop CRM",
-  description: "Visual analytics and insights for your contacts",
+  title: "Insights | Insight Loop CRM",
+  description: "Understand relationship health, surface risks early, and focus where it matters most",
 };
 
-export default async function ChartsPage() {
+export default async function InsightsPage() {
   let userId: string | null = null;
 
   if (!isPlaywrightTest()) {
@@ -27,6 +27,6 @@ export default async function ChartsPage() {
     }
   }
 
-  return <ChartsPageClient userId={userId} />;
+  return <InsightsPageClient userId={userId} />;
 }
 

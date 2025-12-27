@@ -78,8 +78,8 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
             >
               <Button
                 onClick={() => toggleFAQ(actualIndex)}
-                variant="outline"
-                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 hover:bg-gray-50 group cursor-pointer"
+                variant="accordion"
+                className="w-full px-6 py-5 text-left flex items-start justify-between gap-4 group"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -115,7 +115,7 @@ export default function FAQPageClient({ faqData, categories }: FAQPageClientProp
                 } overflow-hidden`}
               >
                 <div className="px-6 pb-5 pt-0">
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-4">
                     <p className="text-theme-darker leading-relaxed whitespace-pre-line">
                       {faq.answer}
                     </p>

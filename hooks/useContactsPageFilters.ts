@@ -32,7 +32,7 @@ interface UseContactsPageFiltersReturn {
   setFirstNameSearch: (firstName: string) => void;
   setLastNameSearch: (lastName: string) => void;
   setCompanySearch: (company: string) => void;
-  setCustomFilter: (filter: "at-risk" | "warm" | null) => void;
+  setCustomFilter: (filter: "at-risk" | "warm" | "needs-attention" | null) => void;
   setLastEmailDateRange: (range: DateRange) => void;
   onClearFilters: () => void;
   
@@ -45,7 +45,7 @@ interface UseContactsPageFiltersReturn {
   onCompanySearchChange: (company: string) => void;
   onShowArchivedChange: (show: boolean) => void;
   onIncludeNewContactsChange: (include: boolean) => void;
-  onCustomFilterChange: (filter: "at-risk" | "warm" | null) => void;
+  onCustomFilterChange: (filter: "at-risk" | "warm" | "needs-attention" | null) => void;
   onLastEmailDateRangeChange: (range: DateRange) => void;
   
   // Pagination
@@ -70,7 +70,7 @@ interface UseContactsPageFiltersReturn {
   firstNameSearch: string;
   lastNameSearch: string;
   companySearch: string;
-  customFilter?: "at-risk" | "warm" | null;
+  customFilter?: "at-risk" | "warm" | "needs-attention" | null;
 }
 
 const DEFAULT_ITEMS_PER_PAGE = 20;
@@ -80,7 +80,7 @@ export function useContactsPageFilters({
   itemsPerPage = DEFAULT_ITEMS_PER_PAGE,
 }: UseContactsPageFiltersOptions): UseContactsPageFiltersReturn {
   const searchParams = useSearchParams();
-  const urlParamsInitializedRef = useRef(false);
+  const prevUrlParamsRef = useRef<string>("");
   
   // Selection state
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
@@ -99,6 +99,11 @@ export function useContactsPageFilters({
     setSelectedSegment,
     setSelectedTags,
     setCustomFilter,
+    setLeadSourceMissing,
+    setEngagementLevel,
+    setLastEmailRecent,
+    setSentimentNegative,
+    setTagsMissing,
     selectedSegment,
     selectedTags,
     emailSearch,
@@ -110,32 +115,121 @@ export function useContactsPageFilters({
     setLastEmailDateRange,
   } = filterContacts;
 
-  // Initialize filters from URL search params on mount
+  // Initialize and update filters from URL search params when they change
   useEffect(() => {
-    if (urlParamsInitializedRef.current) return; // Only initialize once
-    
     const segment = searchParams.get("segment");
     const tags = searchParams.get("tags");
     const filter = searchParams.get("filter");
+    const leadSource = searchParams.get("leadSource");
+    const engagement = searchParams.get("engagement");
+    const lastEmail = searchParams.get("lastEmail");
+    const sentiment = searchParams.get("sentiment");
+    const tagsMissing = searchParams.get("tagsMissing");
     
-    if (segment) {
-      setSelectedSegment(decodeURIComponent(segment));
+    // Create a string representation of URL params to detect changes
+    const currentUrlParams = JSON.stringify({
+      segment,
+      tags,
+      filter,
+      leadSource,
+      engagement,
+      lastEmail,
+      sentiment,
+      tagsMissing,
+    });
+    
+    // Only process if URL params have changed
+    if (currentUrlParams === prevUrlParamsRef.current) {
+      return;
+    }
+    prevUrlParamsRef.current = currentUrlParams;
+    
+    // Check if any URL filter parameters are present
+    const hasUrlFilters = !!(
+      segment ||
+      tags ||
+      filter ||
+      leadSource ||
+      engagement ||
+      lastEmail ||
+      sentiment ||
+      tagsMissing
+    );
+    
+    // If URL filters are present, set date range to last 90 days to match insights page
+    // This ensures consistency: insights page shows contacts from last 90 days,
+    // so the filtered contacts page should show the same scope
+    if (hasUrlFilters) {
+      queueMicrotask(() => {
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        setLastEmailDateRange({ start: ninetyDaysAgo, end: now });
+        setIncludeNewContacts(false); // Exclude contacts without email history to match insights
+      });
     }
     
-    if (tags) {
-      const tagArray = decodeURIComponent(tags).split(",").filter(Boolean);
-      if (tagArray.length > 0) {
-        setSelectedTags(tagArray);
+    // Update filters based on URL params
+    queueMicrotask(() => {
+      if (segment) {
+        setSelectedSegment(decodeURIComponent(segment));
+      } else {
+        setSelectedSegment("");
       }
-    }
-    
-    // Handle custom filter types from AI Insights
-    if (filter === "at-risk" || filter === "warm") {
-      setCustomFilter(filter as "at-risk" | "warm");
-    }
-    
-    urlParamsInitializedRef.current = true;
-  }, [searchParams, setSelectedSegment, setSelectedTags, setCustomFilter]);
+      
+      if (tags) {
+        const tagArray = decodeURIComponent(tags).split(",").filter(Boolean);
+        if (tagArray.length > 0) {
+          setSelectedTags(tagArray);
+        } else {
+          setSelectedTags([]);
+        }
+      } else {
+        setSelectedTags([]);
+      }
+      
+      // Handle custom filter types from AI Insights
+      if (filter === "at-risk" || filter === "warm" || filter === "needs-attention") {
+        setCustomFilter(filter as "at-risk" | "warm" | "needs-attention");
+      } else {
+        setCustomFilter(null);
+      }
+      
+      // Handle lead source filter
+      if (leadSource === "missing") {
+        setLeadSourceMissing(true);
+      } else {
+        setLeadSourceMissing(false);
+      }
+      
+      // Handle engagement level filter
+      if (engagement === "low" || engagement === "high") {
+        setEngagementLevel(engagement);
+      } else {
+        setEngagementLevel(null);
+      }
+      
+      // Handle recent last email filter
+      if (lastEmail === "recent") {
+        setLastEmailRecent(true);
+      } else {
+        setLastEmailRecent(false);
+      }
+      
+      // Handle sentiment filter
+      if (sentiment === "negative") {
+        setSentimentNegative(true);
+      } else {
+        setSentimentNegative(false);
+      }
+      
+      // Handle missing tag filter
+      if (tagsMissing) {
+        setTagsMissing(decodeURIComponent(tagsMissing));
+      } else {
+        setTagsMissing(null);
+      }
+    });
+  }, [searchParams, setSelectedSegment, setSelectedTags, setCustomFilter, setLeadSourceMissing, setEngagementLevel, setLastEmailRecent, setSentimentNegative, setTagsMissing, setLastEmailDateRange, setIncludeNewContacts]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -154,6 +248,11 @@ export function useContactsPageFilters({
     showArchived,
     includeNewContacts,
     lastEmailDateRange,
+    filterContacts.leadSourceMissing,
+    filterContacts.engagementLevel,
+    filterContacts.lastEmailRecent,
+    filterContacts.sentimentNegative,
+    filterContacts.tagsMissing,
   ]);
 
   // Paginate filtered contacts

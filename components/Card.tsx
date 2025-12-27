@@ -15,11 +15,11 @@ export default function Card({
 }: CardProps) {
   const paddingClasses = {
     none: "",
-    sm: "p-3",
-    md: "p-6",
-    lg: "p-8",
-    xl: "p-12",
-    responsive: "p-3 xl:p-6",
+    sm: "p-4 sm:p-3",
+    md: "p-4 sm:p-6",
+    lg: "p-6 sm:p-8",
+    xl: "p-8 sm:p-12",
+    responsive: "p-4 sm:p-3 xl:p-6",
   };
 
   const baseClasses = "bg-card-light rounded-sm shadow-sm border border-theme-lighter";

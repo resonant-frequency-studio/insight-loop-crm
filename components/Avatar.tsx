@@ -24,6 +24,13 @@ const sizeClasses = {
   xl: "w-16 h-16 text-2xl",
 };
 
+const sizePixels = {
+  sm: "32px",
+  md: "40px",
+  lg: "48px",
+  xl: "64px",
+};
+
 export default function Avatar({ 
   contact,
   photoUrl: photoUrlProp,
@@ -72,6 +79,7 @@ export default function Avatar({
           src={photoUrl!}
           alt={displayName}
           fill
+          sizes={sizePixels[size]}
           className="object-cover"
           onError={() => setImageError(true)}
         />

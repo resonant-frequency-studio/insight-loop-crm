@@ -77,9 +77,9 @@ export default function ContactCard({
 
   return (
     <div
-      className={`rounded-sm p-4 transition-all duration-200 ${getVariantStyles()} relative`}
+      className={`rounded-sm p-3 sm:p-4 transition-all duration-200 ${getVariantStyles()} relative`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2 sm:gap-3">
         {/* Checkbox */}
         {showCheckbox && (
           <label className="flex items-center pt-1 cursor-pointer">
@@ -94,11 +94,11 @@ export default function ContactCard({
         )}
 
         {/* Contact Card Content */}
-        <div className="flex-1 min-w-0 flex items-start xl:items-stretch gap-3">
+        <div className="flex-1 min-w-0 flex items-start xl:items-stretch gap-2 sm:gap-3">
           {/* Left Column - Clickable Link Area */}
           <Link
             href={`/contacts/${contact.id}`}
-            className="flex items-start gap-3 flex-1 min-w-0 xl:flex-[1_1_60%] xl:max-w-[60%] group"
+            className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0 xl:flex-[1_1_60%] xl:max-w-[60%] group"
           >
             {/* Avatar */}
             <div className="shrink-0">
@@ -107,8 +107,8 @@ export default function ContactCard({
 
             {/* Contact Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-col xxl:flex-row items-start justify-between gap-2 mb-1">
-                <div className="flex-1 min-w-0 flex items-center gap-2">
+              <div className="flex flex-col xxl:flex-row items-start justify-between gap-1.5 sm:gap-2 mb-1">
+                <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <h3 className={`text-sm font-semibold group-hover:text-theme-darker transition-colors text-theme-darkest wrap-break-word`}>
                     {getDisplayName(contact)}
                   </h3>
@@ -125,7 +125,7 @@ export default function ContactCard({
                 </div>
                 {/* Touchpoint Date Badges */}
                 {isTouchpointVariant && (
-                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap">
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 flex-wrap">
                     {variant === "touchpoint-upcoming" && needsReminder && (
                       <span className="px-2 py-1 text-xs font-medium text-theme-darker border border-theme-medium rounded-sm whitespace-nowrap">
                         Due Soon
@@ -328,8 +328,8 @@ export default function ContactCard({
 
       {/* Touchpoint Message - Outside Link to span full width */}
       {isTouchpointVariant && contact.nextTouchpointMessage && (
-        <div className="mt-2 mb-3">
-          <p className={`text-xs sm:text-sm rounded px-2.5 sm:px-3 py-2 sm:py-1.5 line-clamp-2 sm:line-clamp-none w-full block wrap-break-word`}>
+        <div className="mt-2 sm:mt-2 mb-2 sm:mb-3">
+          <p className={`text-xs sm:text-sm rounded px-2 sm:px-2.5 py-1.5 sm:py-2 line-clamp-2 sm:line-clamp-none w-full block wrap-break-word`}>
             {contact.nextTouchpointMessage}
           </p>
         </div>
@@ -337,7 +337,7 @@ export default function ContactCard({
 
       {/* Touchpoint Status Actions */}
       {showTouchpointActions && (
-        <div className={`pt-3 border-t ${
+        <div className={`pt-2 sm:pt-3 border-t ${
           variant === "touchpoint-overdue"
             ? "border-red-200"
             : needsReminder
