@@ -761,15 +761,25 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
           role="button"
           tabIndex={0}
           onPointerDown={(e) => {
+            // Only handle if this click actually started on the collapse handle or its children
+            const target = e.target as Node;
+            const currentTarget = e.currentTarget as HTMLElement;
+            if (target !== currentTarget && !currentTarget.contains(target)) {
+              return;
+            }
+            
             e.preventDefault();
             e.stopPropagation();
             
             const startX = e.clientX;
             const startCollapsed = isSidebarCollapsed;
             const dragThreshold = 10; // Minimum pixels to move before considering it a drag
+            const pointerId = e.pointerId;
+            const handleElement = e.currentTarget as HTMLElement;
             
             let hasMoved = false;
             let finalDeltaX = 0;
+            let isActive = true;
 
             // Prevent text selection during drag
             const originalUserSelect = document.body.style.userSelect;
@@ -780,6 +790,9 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
             document.body.style.pointerEvents = 'auto';
 
             const handlePointerMove = (moveEvent: PointerEvent) => {
+              // Only handle if this is the same pointer interaction and still active
+              if (moveEvent.pointerId !== pointerId || !isActive) return;
+              
               moveEvent.preventDefault();
               const deltaX = moveEvent.clientX - startX;
               finalDeltaX = deltaX;
@@ -791,6 +804,10 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
             };
 
             const handlePointerUp = (upEvent: PointerEvent) => {
+              // Only handle if this is the same pointer interaction and still active
+              if (upEvent.pointerId !== pointerId || !isActive) return;
+              
+              isActive = false;
               upEvent.preventDefault();
               
               // Restore styles
@@ -816,18 +833,32 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               }
               
               setDragWidth(null);
-              window.removeEventListener("pointermove", handlePointerMove);
-              window.removeEventListener("pointerup", handlePointerUp);
+              window.removeEventListener("pointermove", handlePointerMove, { capture: true });
+              window.removeEventListener("pointerup", handlePointerUp, { capture: true });
+              
+              // Release pointer capture
+              if (handleElement.hasPointerCapture && handleElement.hasPointerCapture(pointerId)) {
+                handleElement.releasePointerCapture(pointerId);
+              }
             };
 
-            // Use capture phase to ensure we catch events
+            // Set pointer capture FIRST to ensure we only get events for this interaction
+            // This prevents other elements from receiving pointer events during the drag
+            try {
+              handleElement.setPointerCapture(pointerId);
+            } catch {
+              // If pointer capture fails, don't set up drag handlers
+              // Restore styles and return early
+              document.body.style.userSelect = originalUserSelect;
+              document.body.style.cursor = originalCursor;
+              document.body.style.pointerEvents = originalPointerEvents;
+              return;
+            }
+            
+            // Use capture phase to ensure we catch events, but only for this specific pointer
+            // The pointerId check ensures we only handle events from this interaction
             window.addEventListener("pointermove", handlePointerMove, { capture: true });
             window.addEventListener("pointerup", handlePointerUp, { capture: true });
-            
-            // Also set pointer capture on the element
-            if (e.currentTarget instanceof HTMLElement) {
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -835,7 +866,7 @@ export function CrmLayoutWrapper({ children }: { children: React.ReactNode }) {
               setIsSidebarCollapsed(!isSidebarCollapsed);
             }
           }}
-          className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-background border-r border-theme-light rounded-tr-md rounded-br-md items-center justify-center hover:bg-card-light transition-colors z-10 cursor-grab active:cursor-grabbing select-none"
+          className="hidden xl:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-background border-r border-theme-light rounded-tr-md rounded-br-md items-center justify-center hover:bg-card-light transition-colors z-10 cursor-grab active:cursor-grabbing select-none pointer-events-auto"
           style={{
             borderLeft: 'none',
             borderTop: 'none',
